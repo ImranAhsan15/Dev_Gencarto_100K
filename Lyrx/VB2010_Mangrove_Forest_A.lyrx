@@ -3,16 +3,17 @@
   "version" : "3.5.0",
   "build" : 57366,
   "layers" : [
-    "CIMPATH=01_Gen10K1/VB2010_Mangrove_Forest_A.json"
+    "CIMPATH=GenCarto100K/VB2010_Mangrove_Forest_A.json"
   ],
   "layerDefinitions" : [
     {
       "type" : "CIMFeatureLayer",
       "name" : "VB2010_Mangrove_Forest_A",
-      "uRI" : "CIMPATH=01_Gen10K1/VB2010_Mangrove_Forest_A.json",
+      "uRI" : "CIMPATH=GenCarto100K/VB2010_Mangrove_Forest_A.json",
       "sourceModifiedTime" : {
         "type" : "TimeInstant"
       },
+      "metadataURI" : "CIMPATH=Metadata/ee89bc1ee5c559149cb86437e5b6aa0b.xml",
       "useSourceMetadata" : true,
       "description" : "VB2010_Mangrove_Forest_A",
       "layerElevation" : {
@@ -59,7 +60,7 @@
         "dataConnection" : {
           "type" : "CIMFeatureDatasetDataConnection",
           "featureDataset" : "Topo",
-          "workspaceConnectionString" : "DATABASE=..\\GenCarto10K\\PDGK.gdb",
+          "workspaceConnectionString" : "DATABASE=..\\GenCarto50K\\PDGK.gdb",
           "workspaceFactory" : "FileGDB",
           "dataset" : "VB2010_Mangrove_Forest_A",
           "datasetType" : "esriDTFeatureClass"
@@ -301,12 +302,45 @@
           "primitiveOverrides" : [
             {
               "type" : "CIMPrimitiveOverride",
-              "primitiveName" : "39a68164-d8ca-464f-89de-32c85a7aa41e",
+              "primitiveName" : "0421f314-e31a-4e94-b2b3-ad1179c62ca8",
               "propertyName" : "FillColor",
               "valueExpressionInfo" : {
                 "type" : "CIMExpressionInfo",
                 "title" : "Custom",
-                "expression" : "$feature.FNM",
+                "expression" : "$feature.FCD",
+                "returnType" : "Default"
+              }
+            },
+            {
+              "type" : "CIMPrimitiveOverride",
+              "primitiveName" : "0421f314-e31a-4e94-b2b3-ad1179c62ca8",
+              "propertyName" : "StrokeColor",
+              "valueExpressionInfo" : {
+                "type" : "CIMExpressionInfo",
+                "title" : "Custom",
+                "expression" : "$feature.FCD",
+                "returnType" : "Default"
+              }
+            },
+            {
+              "type" : "CIMPrimitiveOverride",
+              "primitiveName" : "0421f314-e31a-4e94-b2b3-ad1179c62ca8",
+              "propertyName" : "StrokeWidth",
+              "valueExpressionInfo" : {
+                "type" : "CIMExpressionInfo",
+                "title" : "Custom",
+                "expression" : "$feature.FCD",
+                "returnType" : "Default"
+              }
+            },
+            {
+              "type" : "CIMPrimitiveOverride",
+              "primitiveName" : "2.0",
+              "propertyName" : "Size",
+              "valueExpressionInfo" : {
+                "type" : "CIMExpressionInfo",
+                "title" : "Custom",
+                "expression" : "$feature.FCD",
                 "returnType" : "Default"
               }
             },
@@ -317,7 +351,7 @@
               "valueExpressionInfo" : {
                 "type" : "CIMExpressionInfo",
                 "title" : "Custom",
-                "expression" : "$feature.FNM",
+                "expression" : "$feature.FCD",
                 "returnType" : "Default"
               }
             }
@@ -27528,6 +27562,27 @@
                       "type" : "CIMPolygonSymbol",
                       "symbolLayers" : [
                         {
+                          "type" : "CIMSolidStroke",
+                          "enable" : true,
+                          "name" : "New_64b44398-6bfa-4b5c-b3ca-89889362da64",
+                          "capStyle" : "Round",
+                          "joinStyle" : "Round",
+                          "lineStyle3D" : "Strip",
+                          "miterLimit" : 4,
+                          "width" : 0,
+                          "height3D" : 1,
+                          "anchor3D" : "Center",
+                          "color" : {
+                            "type" : "CIMRGBColor",
+                            "values" : [
+                              0,
+                              0,
+                              0,
+                              100
+                            ]
+                          }
+                        },
+                        {
                           "type" : "CIMSolidFill",
                           "enable" : true,
                           "color" : {
@@ -27544,7 +27599,7 @@
                       ],
                       "angleAlignment" : "Map"
                     },
-                    "primitiveName" : "39a68164-d8ca-464f-89de-32c85a7aa41e"
+                    "primitiveName" : "0421f314-e31a-4e94-b2b3-ad1179c62ca8"
                   },
                   {
                     "type" : "CIMMarkerGraphic",
@@ -72460,6 +72515,13 @@
       },
       "scaleSymbols" : true,
       "snappable" : true
+    }
+  ],
+  "binaryReferences" : [
+    {
+      "type" : "CIMBinaryReference",
+      "uRI" : "CIMPATH=Metadata/ee89bc1ee5c559149cb86437e5b6aa0b.xml",
+      "data" : "<?xml version=\"1.0\"?>\r\n<metadata xml:lang=\"en\"><Esri><CreaDate>20251006</CreaDate><CreaTime>04083600</CreaTime><ArcGISFormat>1.0</ArcGISFormat><SyncOnce>TRUE</SyncOnce></Esri><dataIdInfo><idCitation><resTitle>VB2010_Mangrove_Forest_A</resTitle></idCitation><idAbs>VB2010_Mangrove_Forest_A</idAbs><idCredit></idCredit><idPurp></idPurp><resConst><Consts><useLimit></useLimit></Consts></resConst></dataIdInfo></metadata>\r\n"
     }
   ],
   "rGBColorProfile" : "sRGB IEC61966-2.1",

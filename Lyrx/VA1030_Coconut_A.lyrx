@@ -3,16 +3,17 @@
   "version" : "3.5.0",
   "build" : 57366,
   "layers" : [
-    "CIMPATH=01_Gen10K1/VA1030_Coconut_A.json"
+    "CIMPATH=GenCarto100K/VA1030_Coconut_A.json"
   ],
   "layerDefinitions" : [
     {
       "type" : "CIMFeatureLayer",
       "name" : "VA1030_Coconut_A",
-      "uRI" : "CIMPATH=01_Gen10K1/VA1030_Coconut_A.json",
+      "uRI" : "CIMPATH=GenCarto100K/VA1030_Coconut_A.json",
       "sourceModifiedTime" : {
         "type" : "TimeInstant"
       },
+      "metadataURI" : "CIMPATH=Metadata/8dd6fe4a2b853a4b1544a01059901325.xml",
       "useSourceMetadata" : true,
       "description" : "VA1030_Coconut_A",
       "layerElevation" : {
@@ -59,7 +60,7 @@
         "dataConnection" : {
           "type" : "CIMFeatureDatasetDataConnection",
           "featureDataset" : "Topo",
-          "workspaceConnectionString" : "DATABASE=..\\GenCarto10K\\PDGK.gdb",
+          "workspaceConnectionString" : "DATABASE=..\\GenCarto50K\\PDGK.gdb",
           "workspaceFactory" : "FileGDB",
           "dataset" : "VA1030_Coconut_A",
           "datasetType" : "esriDTFeatureClass"
@@ -301,34 +302,155 @@
           "primitiveOverrides" : [
             {
               "type" : "CIMPrimitiveOverride",
-              "primitiveName" : "5c15c730-8ab6-4cbb-be8d-1a9b3f31a567",
-              "propertyName" : "FillColor",
+              "primitiveName" : "10.0",
+              "propertyName" : "Color",
               "valueExpressionInfo" : {
                 "type" : "CIMExpressionInfo",
                 "title" : "Custom",
-                "expression" : "$feature.FNM",
+                "expression" : "$feature.FCD",
                 "returnType" : "Default"
               }
             },
             {
               "type" : "CIMPrimitiveOverride",
-              "primitiveName" : "ea14a6a9-e9c1-4edb-bcaa-e4e02e46522e",
-              "propertyName" : "FillColor",
+              "primitiveName" : "10.0",
+              "propertyName" : "Width",
               "valueExpressionInfo" : {
                 "type" : "CIMExpressionInfo",
                 "title" : "Custom",
-                "expression" : "$feature.FNM",
+                "expression" : "$feature.FCD",
                 "returnType" : "Default"
               }
             },
             {
               "type" : "CIMPrimitiveOverride",
-              "primitiveName" : "1785b2c0-8881-4261-9dec-3d95cf15234f",
+              "primitiveName" : "a651aa32-79c4-474f-bbf1-c5ed716bf7bb",
               "propertyName" : "FillColor",
               "valueExpressionInfo" : {
                 "type" : "CIMExpressionInfo",
                 "title" : "Custom",
-                "expression" : "$feature.FNM",
+                "expression" : "$feature.FCD",
+                "returnType" : "Default"
+              }
+            },
+            {
+              "type" : "CIMPrimitiveOverride",
+              "primitiveName" : "a651aa32-79c4-474f-bbf1-c5ed716bf7bb",
+              "propertyName" : "StrokeColor",
+              "valueExpressionInfo" : {
+                "type" : "CIMExpressionInfo",
+                "title" : "Custom",
+                "expression" : "$feature.FCD",
+                "returnType" : "Default"
+              }
+            },
+            {
+              "type" : "CIMPrimitiveOverride",
+              "primitiveName" : "a651aa32-79c4-474f-bbf1-c5ed716bf7bb",
+              "propertyName" : "StrokeWidth",
+              "valueExpressionInfo" : {
+                "type" : "CIMExpressionInfo",
+                "title" : "Custom",
+                "expression" : "$feature.FCD",
+                "returnType" : "Default"
+              }
+            },
+            {
+              "type" : "CIMPrimitiveOverride",
+              "primitiveName" : "8.0",
+              "propertyName" : "Size",
+              "valueExpressionInfo" : {
+                "type" : "CIMExpressionInfo",
+                "title" : "Custom",
+                "expression" : "$feature.FCD",
+                "returnType" : "Default"
+              }
+            },
+            {
+              "type" : "CIMPrimitiveOverride",
+              "primitiveName" : "ede903d8-8ca4-48e7-afb6-cfaab3f96628",
+              "propertyName" : "FillColor",
+              "valueExpressionInfo" : {
+                "type" : "CIMExpressionInfo",
+                "title" : "Custom",
+                "expression" : "$feature.FCD",
+                "returnType" : "Default"
+              }
+            },
+            {
+              "type" : "CIMPrimitiveOverride",
+              "primitiveName" : "ede903d8-8ca4-48e7-afb6-cfaab3f96628",
+              "propertyName" : "StrokeColor",
+              "valueExpressionInfo" : {
+                "type" : "CIMExpressionInfo",
+                "title" : "Custom",
+                "expression" : "$feature.FCD",
+                "returnType" : "Default"
+              }
+            },
+            {
+              "type" : "CIMPrimitiveOverride",
+              "primitiveName" : "ede903d8-8ca4-48e7-afb6-cfaab3f96628",
+              "propertyName" : "StrokeWidth",
+              "valueExpressionInfo" : {
+                "type" : "CIMExpressionInfo",
+                "title" : "Custom",
+                "expression" : "$feature.FCD",
+                "returnType" : "Default"
+              }
+            },
+            {
+              "type" : "CIMPrimitiveOverride",
+              "primitiveName" : "6.0",
+              "propertyName" : "Size",
+              "valueExpressionInfo" : {
+                "type" : "CIMExpressionInfo",
+                "title" : "Custom",
+                "expression" : "$feature.FCD",
+                "returnType" : "Default"
+              }
+            },
+            {
+              "type" : "CIMPrimitiveOverride",
+              "primitiveName" : "798e10c1-51f9-4f93-8b1f-4c9addca2b5d",
+              "propertyName" : "FillColor",
+              "valueExpressionInfo" : {
+                "type" : "CIMExpressionInfo",
+                "title" : "Custom",
+                "expression" : "$feature.FCD",
+                "returnType" : "Default"
+              }
+            },
+            {
+              "type" : "CIMPrimitiveOverride",
+              "primitiveName" : "798e10c1-51f9-4f93-8b1f-4c9addca2b5d",
+              "propertyName" : "StrokeColor",
+              "valueExpressionInfo" : {
+                "type" : "CIMExpressionInfo",
+                "title" : "Custom",
+                "expression" : "$feature.FCD",
+                "returnType" : "Default"
+              }
+            },
+            {
+              "type" : "CIMPrimitiveOverride",
+              "primitiveName" : "798e10c1-51f9-4f93-8b1f-4c9addca2b5d",
+              "propertyName" : "StrokeWidth",
+              "valueExpressionInfo" : {
+                "type" : "CIMExpressionInfo",
+                "title" : "Custom",
+                "expression" : "$feature.FCD",
+                "returnType" : "Default"
+              }
+            },
+            {
+              "type" : "CIMPrimitiveOverride",
+              "primitiveName" : "3.0",
+              "propertyName" : "Size",
+              "valueExpressionInfo" : {
+                "type" : "CIMExpressionInfo",
+                "title" : "Custom",
+                "expression" : "$feature.FCD",
                 "returnType" : "Default"
               }
             },
@@ -339,7 +461,7 @@
               "valueExpressionInfo" : {
                 "type" : "CIMExpressionInfo",
                 "title" : "Custom",
-                "expression" : "$feature.FNM",
+                "expression" : "$feature.FCD",
                 "returnType" : "Default"
               }
             }
@@ -348,9 +470,33 @@
             "type" : "CIMPolygonSymbol",
             "symbolLayers" : [
               {
+                "type" : "CIMSolidStroke",
+                "enable" : true,
+                "name" : "New_95a28c64-cbd2-4a3f-84b8-8133c44056ff",
+                "colorLocked" : true,
+                "primitiveName" : "10.0",
+                "capStyle" : "Round",
+                "joinStyle" : "Round",
+                "lineStyle3D" : "Strip",
+                "miterLimit" : 10,
+                "width" : 0.028346456692913389,
+                "height3D" : 1,
+                "anchor3D" : "Center",
+                "color" : {
+                  "type" : "CIMCMYKColor",
+                  "values" : [
+                    50,
+                    0,
+                    100,
+                    0,
+                    100
+                  ]
+                }
+              },
+              {
                 "type" : "CIMVectorMarker",
                 "enable" : true,
-                "name" : "New_04256688-6fcb-4114-b961-5640cab398b5",
+                "name" : "New_83d699d2-e1c6-45aa-90f2-8c6701eafec6",
                 "colorLocked" : true,
                 "primitiveName" : "8.0",
                 "anchorPoint" : {
@@ -533,6 +679,27 @@
                       "type" : "CIMPolygonSymbol",
                       "symbolLayers" : [
                         {
+                          "type" : "CIMSolidStroke",
+                          "enable" : true,
+                          "name" : "New_601fa388-da07-4d21-be7b-1ef96340f969",
+                          "capStyle" : "Round",
+                          "joinStyle" : "Round",
+                          "lineStyle3D" : "Strip",
+                          "miterLimit" : 4,
+                          "width" : 0,
+                          "height3D" : 1,
+                          "anchor3D" : "Center",
+                          "color" : {
+                            "type" : "CIMRGBColor",
+                            "values" : [
+                              0,
+                              0,
+                              0,
+                              100
+                            ]
+                          }
+                        },
+                        {
                           "type" : "CIMSolidFill",
                           "enable" : true,
                           "color" : {
@@ -549,7 +716,7 @@
                       ],
                       "angleAlignment" : "Map"
                     },
-                    "primitiveName" : "5c15c730-8ab6-4cbb-be8d-1a9b3f31a567"
+                    "primitiveName" : "a651aa32-79c4-474f-bbf1-c5ed716bf7bb"
                   }
                 ],
                 "scaleSymbolsProportionally" : true,
@@ -558,7 +725,7 @@
               {
                 "type" : "CIMVectorMarker",
                 "enable" : true,
-                "name" : "New_4bb840da-68df-4694-a2a2-f58c031559de",
+                "name" : "New_918b37b3-8670-4649-ab16-811543c6932a",
                 "colorLocked" : true,
                 "primitiveName" : "6.0",
                 "anchorPoint" : {
@@ -745,6 +912,27 @@
                       "type" : "CIMPolygonSymbol",
                       "symbolLayers" : [
                         {
+                          "type" : "CIMSolidStroke",
+                          "enable" : true,
+                          "name" : "New_3320f6b9-14a5-4899-9b4f-d74f33a47fdb",
+                          "capStyle" : "Round",
+                          "joinStyle" : "Round",
+                          "lineStyle3D" : "Strip",
+                          "miterLimit" : 4,
+                          "width" : 0,
+                          "height3D" : 1,
+                          "anchor3D" : "Center",
+                          "color" : {
+                            "type" : "CIMRGBColor",
+                            "values" : [
+                              0,
+                              0,
+                              0,
+                              100
+                            ]
+                          }
+                        },
+                        {
                           "type" : "CIMSolidFill",
                           "enable" : true,
                           "color" : {
@@ -761,7 +949,7 @@
                       ],
                       "angleAlignment" : "Map"
                     },
-                    "primitiveName" : "ea14a6a9-e9c1-4edb-bcaa-e4e02e46522e"
+                    "primitiveName" : "ede903d8-8ca4-48e7-afb6-cfaab3f96628"
                   }
                 ],
                 "scaleSymbolsProportionally" : true,
@@ -956,6 +1144,27 @@
                       "type" : "CIMPolygonSymbol",
                       "symbolLayers" : [
                         {
+                          "type" : "CIMSolidStroke",
+                          "enable" : true,
+                          "name" : "New_c92f3d06-9813-4e43-b4f5-f2dd40a6fc92",
+                          "capStyle" : "Round",
+                          "joinStyle" : "Round",
+                          "lineStyle3D" : "Strip",
+                          "miterLimit" : 4,
+                          "width" : 0,
+                          "height3D" : 1,
+                          "anchor3D" : "Center",
+                          "color" : {
+                            "type" : "CIMRGBColor",
+                            "values" : [
+                              0,
+                              0,
+                              0,
+                              100
+                            ]
+                          }
+                        },
+                        {
                           "type" : "CIMSolidFill",
                           "enable" : true,
                           "color" : {
@@ -972,7 +1181,7 @@
                       ],
                       "angleAlignment" : "Map"
                     },
-                    "primitiveName" : "1785b2c0-8881-4261-9dec-3d95cf15234f"
+                    "primitiveName" : "798e10c1-51f9-4f93-8b1f-4c9addca2b5d"
                   }
                 ],
                 "scaleSymbolsProportionally" : true,
@@ -986,9 +1195,9 @@
                 "color" : {
                   "type" : "CIMCMYKColor",
                   "values" : [
-                    10,
                     0,
-                    20,
+                    0,
+                    0,
                     0,
                     100
                   ]
@@ -1001,6 +1210,13 @@
       },
       "scaleSymbols" : true,
       "snappable" : true
+    }
+  ],
+  "binaryReferences" : [
+    {
+      "type" : "CIMBinaryReference",
+      "uRI" : "CIMPATH=Metadata/8dd6fe4a2b853a4b1544a01059901325.xml",
+      "data" : "<?xml version=\"1.0\"?>\r\n<metadata xml:lang=\"en\"><Esri><CreaDate>20251006</CreaDate><CreaTime>04083600</CreaTime><ArcGISFormat>1.0</ArcGISFormat><SyncOnce>TRUE</SyncOnce></Esri><dataIdInfo><idCitation><resTitle>VA1030_Coconut_A</resTitle></idCitation><idAbs>VA1030_Coconut_A</idAbs><idCredit></idCredit><idPurp></idPurp><resConst><Consts><useLimit></useLimit></Consts></resConst></dataIdInfo></metadata>\r\n"
     }
   ],
   "rGBColorProfile" : "sRGB IEC61966-2.1",

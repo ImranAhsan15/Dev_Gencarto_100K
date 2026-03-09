@@ -3,16 +3,17 @@
   "version" : "3.5.0",
   "build" : 57366,
   "layers" : [
-    "CIMPATH=01_Gen10K1/HA0100_Reef_A.json"
+    "CIMPATH=GenCarto100K/HA0100_Reef_A.json"
   ],
   "layerDefinitions" : [
     {
       "type" : "CIMFeatureLayer",
       "name" : "HA0100_Reef_A",
-      "uRI" : "CIMPATH=01_Gen10K1/HA0100_Reef_A.json",
+      "uRI" : "CIMPATH=GenCarto100K/HA0100_Reef_A.json",
       "sourceModifiedTime" : {
         "type" : "TimeInstant"
       },
+      "metadataURI" : "CIMPATH=Metadata/5fa0445dd0d79a38aaf9e542bfc946c7.xml",
       "useSourceMetadata" : true,
       "description" : "HA0100_Reef_A",
       "layerElevation" : {
@@ -59,7 +60,7 @@
         "dataConnection" : {
           "type" : "CIMFeatureDatasetDataConnection",
           "featureDataset" : "Topo",
-          "workspaceConnectionString" : "DATABASE=..\\GenCarto10K\\PDGK.gdb",
+          "workspaceConnectionString" : "DATABASE=..\\PDGK.gdb",
           "workspaceFactory" : "FileGDB",
           "dataset" : "HA0100_Reef_A",
           "datasetType" : "esriDTFeatureClass"
@@ -301,15 +302,15 @@
           "primitiveOverrides" : [
             {
               "type" : "CIMPrimitiveOverride",
-              "primitiveName" : "d26a7c1a-bd61-47e4-a6ca-c103b7f932a2",
+              "primitiveName" : "5b1d8ff2-cfb5-4780-96e6-f1bffc8ce36e",
               "propertyName" : "FillColor",
-              "expression" : "[FNM]"
+              "expression" : "[FCD]"
             },
             {
               "type" : "CIMPrimitiveOverride",
-              "primitiveName" : "d26a7c1a-bd61-47e4-a6ca-c103b7f932a2",
+              "primitiveName" : "5b1d8ff2-cfb5-4780-96e6-f1bffc8ce36e",
               "propertyName" : "StrokeColor",
-              "expression" : "[FNM]"
+              "expression" : "[FCD]"
             }
           ],
           "symbol" : {
@@ -411,7 +412,7 @@
                         {
                           "type" : "CIMSolidStroke",
                           "enable" : true,
-                          "name" : "New_d3c8470a-8ce3-4131-bba0-845a122f464a",
+                          "name" : "New_9680f9f2-0164-4f9b-ba36-6bbc161ef97d",
                           "capStyle" : "Round",
                           "joinStyle" : "Round",
                           "lineStyle3D" : "Strip",
@@ -446,7 +447,7 @@
                       ],
                       "angleAlignment" : "Map"
                     },
-                    "primitiveName" : "d26a7c1a-bd61-47e4-a6ca-c103b7f932a2"
+                    "primitiveName" : "5b1d8ff2-cfb5-4780-96e6-f1bffc8ce36e"
                   }
                 ],
                 "scaleSymbolsProportionally" : true,
@@ -459,6 +460,13 @@
       },
       "scaleSymbols" : true,
       "snappable" : true
+    }
+  ],
+  "binaryReferences" : [
+    {
+      "type" : "CIMBinaryReference",
+      "uRI" : "CIMPATH=Metadata/5fa0445dd0d79a38aaf9e542bfc946c7.xml",
+      "data" : "<?xml version=\"1.0\"?>\r\n<metadata xml:lang=\"en\"><Esri><CreaDate>20251006</CreaDate><CreaTime>04083600</CreaTime><ArcGISFormat>1.0</ArcGISFormat><SyncOnce>TRUE</SyncOnce></Esri><dataIdInfo><idCitation><resTitle>HA0100_Reef_A</resTitle></idCitation><idAbs>HA0100_Reef_A</idAbs><idCredit></idCredit><idPurp></idPurp><resConst><Consts><useLimit></useLimit></Consts></resConst></dataIdInfo></metadata>\r\n"
     }
   ],
   "rGBColorProfile" : "sRGB IEC61966-2.1",

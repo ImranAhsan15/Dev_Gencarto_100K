@@ -3,16 +3,17 @@
   "version" : "3.5.0",
   "build" : 57366,
   "layers" : [
-    "CIMPATH=01_Gen10K1/UD0083_Oil_Tank_P.json"
+    "CIMPATH=GenCarto100K/UD0083_Oil_Tank_P.json"
   ],
   "layerDefinitions" : [
     {
       "type" : "CIMFeatureLayer",
       "name" : "UD0083_Oil_Tank_P",
-      "uRI" : "CIMPATH=01_Gen10K1/UD0083_Oil_Tank_P.json",
+      "uRI" : "CIMPATH=GenCarto100K/UD0083_Oil_Tank_P.json",
       "sourceModifiedTime" : {
         "type" : "TimeInstant"
       },
+      "metadataURI" : "CIMPATH=Metadata/ee5b640ba71c68f36705129ee348986d.xml",
       "useSourceMetadata" : true,
       "description" : "UD0083_Oil_Tank_P",
       "layerElevation" : {
@@ -59,7 +60,7 @@
         "dataConnection" : {
           "type" : "CIMFeatureDatasetDataConnection",
           "featureDataset" : "Topo",
-          "workspaceConnectionString" : "DATABASE=..\\GenCarto10K\\PDGK.gdb",
+          "workspaceConnectionString" : "DATABASE=..\\GenCarto50K\\PDGK.gdb",
           "workspaceFactory" : "FileGDB",
           "dataset" : "UD0083_Oil_Tank_P",
           "datasetType" : "esriDTFeatureClass"
@@ -301,23 +302,56 @@
           "primitiveOverrides" : [
             {
               "type" : "CIMPrimitiveOverride",
-              "primitiveName" : "05f2f5ed-7e6d-44c9-850c-6186f4a60fb2",
+              "primitiveName" : "1c7cd3a8-0901-4d41-9e9c-4dff082ebbc7",
               "propertyName" : "FillColor",
               "valueExpressionInfo" : {
                 "type" : "CIMExpressionInfo",
                 "title" : "Custom",
-                "expression" : "$feature.FNM",
+                "expression" : "$feature.FCD",
                 "returnType" : "Default"
               }
             },
             {
               "type" : "CIMPrimitiveOverride",
-              "primitiveName" : "22dd7efc-d584-4be9-9a88-d40ebd7003ef",
+              "primitiveName" : "1c7cd3a8-0901-4d41-9e9c-4dff082ebbc7",
+              "propertyName" : "StrokeColor",
+              "valueExpressionInfo" : {
+                "type" : "CIMExpressionInfo",
+                "title" : "Custom",
+                "expression" : "$feature.FCD",
+                "returnType" : "Default"
+              }
+            },
+            {
+              "type" : "CIMPrimitiveOverride",
+              "primitiveName" : "1c7cd3a8-0901-4d41-9e9c-4dff082ebbc7",
+              "propertyName" : "StrokeWidth",
+              "valueExpressionInfo" : {
+                "type" : "CIMExpressionInfo",
+                "title" : "Custom",
+                "expression" : "$feature.FCD",
+                "returnType" : "Default"
+              }
+            },
+            {
+              "type" : "CIMPrimitiveOverride",
+              "primitiveName" : "1.0",
+              "propertyName" : "Size",
+              "valueExpressionInfo" : {
+                "type" : "CIMExpressionInfo",
+                "title" : "Custom",
+                "expression" : "$feature.FCD",
+                "returnType" : "Default"
+              }
+            },
+            {
+              "type" : "CIMPrimitiveOverride",
+              "primitiveName" : "1.0",
               "propertyName" : "Rotation",
               "valueExpressionInfo" : {
                 "type" : "CIMExpressionInfo",
                 "title" : "Custom",
-                "expression" : "$feature.ANGLE",
+                "expression" : "$feature.Orientation_Degree",
                 "returnType" : "Default"
               }
             }
@@ -328,20 +362,21 @@
               {
                 "type" : "CIMVectorMarker",
                 "enable" : true,
-                "primitiveName" : "22dd7efc-d584-4be9-9a88-d40ebd7003ef",
+                "colorLocked" : true,
+                "primitiveName" : "1.0",
                 "anchorPoint" : {
                   "x" : 0,
                   "y" : 0
                 },
                 "anchorPointUnits" : "Relative",
                 "dominantSizeAxis3D" : "Z",
-                "size" : 4,
+                "size" : 4.2519685039370083,
                 "billboardMode3D" : "FaceNearPlane",
                 "frame" : {
-                  "xmin" : -2,
-                  "ymin" : -2,
-                  "xmax" : 2,
-                  "ymax" : 2
+                  "xmin" : -2.1299999999999999,
+                  "ymin" : -2.1299999999999999,
+                  "xmax" : 2.1299999999999999,
+                  "ymax" : 2.1299999999999999
                 },
                 "markerGraphics" : [
                   {
@@ -350,21 +385,71 @@
                       "curveRings" : [
                         [
                           [
-                            1.2246467991473532e-16,
-                            2
+                            0,
+                            2.1299999999999999
                           ],
                           {
-                            "a" : [
+                            "b" : [
                               [
-                                1.2246467991473532e-16,
-                                2
-                              ],
-                              [
-                                2.2962127484012875e-16,
+                                2.1299999999999999,
                                 0
                               ],
-                              0,
-                              1
+                              [
+                                1.1699999999999999,
+                                2.1299999999999999
+                              ],
+                              [
+                                2.1299999999999999,
+                                1.1699999999999999
+                              ]
+                            ]
+                          },
+                          {
+                            "b" : [
+                              [
+                                0,
+                                -2.1299999999999999
+                              ],
+                              [
+                                2.1299999999999999,
+                                -1.1699999999999999
+                              ],
+                              [
+                                1.1699999999999999,
+                                -2.1299999999999999
+                              ]
+                            ]
+                          },
+                          {
+                            "b" : [
+                              [
+                                -2.1299999999999999,
+                                0
+                              ],
+                              [
+                                -1.1699999999999999,
+                                -2.1299999999999999
+                              ],
+                              [
+                                -2.1299999999999999,
+                                -1.1699999999999999
+                              ]
+                            ]
+                          },
+                          {
+                            "b" : [
+                              [
+                                0,
+                                2.1299999999999999
+                              ],
+                              [
+                                -2.1299999999999999,
+                                1.1699999999999999
+                              ],
+                              [
+                                -1.1699999999999999,
+                                2.1299999999999999
+                              ]
                             ]
                           }
                         ]
@@ -376,11 +461,12 @@
                         {
                           "type" : "CIMSolidStroke",
                           "enable" : true,
+                          "name" : "New_583de3da-bc56-4abe-a409-98c6bab1d565",
                           "capStyle" : "Round",
                           "joinStyle" : "Round",
                           "lineStyle3D" : "Strip",
-                          "miterLimit" : 10,
-                          "width" : 0.69999999999999996,
+                          "miterLimit" : 4,
+                          "width" : 0,
                           "height3D" : 1,
                           "anchor3D" : "Center",
                           "color" : {
@@ -397,11 +483,12 @@
                           "type" : "CIMSolidFill",
                           "enable" : true,
                           "color" : {
-                            "type" : "CIMRGBColor",
+                            "type" : "CIMCMYKColor",
                             "values" : [
-                              143.88,
-                              46.409999999999997,
-                              165.75,
+                              0,
+                              0,
+                              0,
+                              100,
                               100
                             ]
                           }
@@ -409,7 +496,7 @@
                       ],
                       "angleAlignment" : "Map"
                     },
-                    "primitiveName" : "05f2f5ed-7e6d-44c9-850c-6186f4a60fb2"
+                    "primitiveName" : "1c7cd3a8-0901-4d41-9e9c-4dff082ebbc7"
                   }
                 ],
                 "scaleSymbolsProportionally" : true,
@@ -418,12 +505,19 @@
             ],
             "haloSize" : 1,
             "scaleX" : 1,
-            "angleAlignment" : "Display"
+            "angleAlignment" : "Map"
           }
         }
       },
       "scaleSymbols" : true,
       "snappable" : true
+    }
+  ],
+  "binaryReferences" : [
+    {
+      "type" : "CIMBinaryReference",
+      "uRI" : "CIMPATH=Metadata/ee5b640ba71c68f36705129ee348986d.xml",
+      "data" : "<?xml version=\"1.0\"?>\r\n<metadata xml:lang=\"en\"><Esri><CreaDate>20251006</CreaDate><CreaTime>04083600</CreaTime><ArcGISFormat>1.0</ArcGISFormat><SyncOnce>TRUE</SyncOnce></Esri><dataIdInfo><idCitation><resTitle>UD0083_Oil_Tank_P</resTitle></idCitation><idAbs>UD0083_Oil_Tank_P</idAbs><idCredit></idCredit><idPurp></idPurp><resConst><Consts><useLimit></useLimit></Consts></resConst></dataIdInfo></metadata>\r\n"
     }
   ],
   "rGBColorProfile" : "sRGB IEC61966-2.1",

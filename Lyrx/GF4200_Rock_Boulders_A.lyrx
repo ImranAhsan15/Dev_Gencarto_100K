@@ -3,16 +3,17 @@
   "version" : "3.5.0",
   "build" : 57366,
   "layers" : [
-    "CIMPATH=01_Gen10K1/GF4200_Rock_Boulders_A.json"
+    "CIMPATH=GenCarto100K/GF4200_Rock_Boulders_A.json"
   ],
   "layerDefinitions" : [
     {
       "type" : "CIMFeatureLayer",
       "name" : "GF4200_Rock_Boulders_A",
-      "uRI" : "CIMPATH=01_Gen10K1/GF4200_Rock_Boulders_A.json",
+      "uRI" : "CIMPATH=GenCarto100K/GF4200_Rock_Boulders_A.json",
       "sourceModifiedTime" : {
         "type" : "TimeInstant"
       },
+      "metadataURI" : "CIMPATH=Metadata/e4225cf40b353432ed63d0c8e6ee5388.xml",
       "useSourceMetadata" : true,
       "description" : "GF4200_Rock_Boulders_A",
       "layerElevation" : {
@@ -59,7 +60,7 @@
         "dataConnection" : {
           "type" : "CIMFeatureDatasetDataConnection",
           "featureDataset" : "Topo",
-          "workspaceConnectionString" : "DATABASE=..\\GenCarto10K\\PDGK.gdb",
+          "workspaceConnectionString" : "DATABASE=..\\PDGK.gdb",
           "workspaceFactory" : "FileGDB",
           "dataset" : "GF4200_Rock_Boulders_A",
           "datasetType" : "esriDTFeatureClass"
@@ -301,15 +302,15 @@
           "primitiveOverrides" : [
             {
               "type" : "CIMPrimitiveOverride",
-              "primitiveName" : "9100b16b-9a8c-4120-b32b-c9f5ba8cba88",
+              "primitiveName" : "2e717903-dcfc-44fb-bf8a-05b370fd57db",
               "propertyName" : "FillColor",
-              "expression" : "[FNM]"
+              "expression" : "[FCD]"
             },
             {
               "type" : "CIMPrimitiveOverride",
-              "primitiveName" : "9100b16b-9a8c-4120-b32b-c9f5ba8cba88",
+              "primitiveName" : "2e717903-dcfc-44fb-bf8a-05b370fd57db",
               "propertyName" : "StrokeColor",
-              "expression" : "[FNM]"
+              "expression" : "[FCD]"
             }
           ],
           "symbol" : {
@@ -411,7 +412,7 @@
                         {
                           "type" : "CIMSolidStroke",
                           "enable" : true,
-                          "name" : "New_0f77da8d-2433-463d-8967-6d5718417cda",
+                          "name" : "New_d28269c6-579b-47c0-9244-fb58d16e3776",
                           "capStyle" : "Round",
                           "joinStyle" : "Round",
                           "lineStyle3D" : "Strip",
@@ -446,7 +447,7 @@
                       ],
                       "angleAlignment" : "Map"
                     },
-                    "primitiveName" : "9100b16b-9a8c-4120-b32b-c9f5ba8cba88"
+                    "primitiveName" : "2e717903-dcfc-44fb-bf8a-05b370fd57db"
                   }
                 ],
                 "scaleSymbolsProportionally" : true,
@@ -459,6 +460,13 @@
       },
       "scaleSymbols" : true,
       "snappable" : true
+    }
+  ],
+  "binaryReferences" : [
+    {
+      "type" : "CIMBinaryReference",
+      "uRI" : "CIMPATH=Metadata/e4225cf40b353432ed63d0c8e6ee5388.xml",
+      "data" : "<?xml version=\"1.0\"?>\r\n<metadata xml:lang=\"en\"><Esri><CreaDate>20251006</CreaDate><CreaTime>04083600</CreaTime><ArcGISFormat>1.0</ArcGISFormat><SyncOnce>TRUE</SyncOnce></Esri><dataIdInfo><idCitation><resTitle>GF4200_Rock_Boulders_A</resTitle></idCitation><idAbs>GF4200_Rock_Boulders_A</idAbs><idCredit></idCredit><idPurp></idPurp><resConst><Consts><useLimit></useLimit></Consts></resConst></dataIdInfo></metadata>\r\n"
     }
   ],
   "rGBColorProfile" : "sRGB IEC61966-2.1",

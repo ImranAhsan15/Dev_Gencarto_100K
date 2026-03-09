@@ -3,16 +3,17 @@
   "version" : "3.5.0",
   "build" : 57366,
   "layers" : [
-    "CIMPATH=01_Gen10K1/HH0192_Irrigation_Canal_Coverage_A.json"
+    "CIMPATH=GenCarto100K/HH0192_Irrigation_Canal_Coverage_A.json"
   ],
   "layerDefinitions" : [
     {
       "type" : "CIMFeatureLayer",
       "name" : "HH0192_Irrigation_Canal_Coverage_A",
-      "uRI" : "CIMPATH=01_Gen10K1/HH0192_Irrigation_Canal_Coverage_A.json",
+      "uRI" : "CIMPATH=GenCarto100K/HH0192_Irrigation_Canal_Coverage_A.json",
       "sourceModifiedTime" : {
         "type" : "TimeInstant"
       },
+      "metadataURI" : "CIMPATH=Metadata/01b29a7ccabf6331c930fdeb67d9c3b3.xml",
       "useSourceMetadata" : true,
       "description" : "HH0192_Irrigation_Canal_Coverage_A",
       "layerElevation" : {
@@ -59,7 +60,7 @@
         "dataConnection" : {
           "type" : "CIMFeatureDatasetDataConnection",
           "featureDataset" : "Topo",
-          "workspaceConnectionString" : "DATABASE=..\\GenCarto10K\\PDGK.gdb",
+          "workspaceConnectionString" : "DATABASE=..\\PDGK.gdb",
           "workspaceFactory" : "FileGDB",
           "dataset" : "HH0192_Irrigation_Canal_Coverage_A",
           "datasetType" : "esriDTFeatureClass"
@@ -301,14 +302,66 @@
           "primitiveOverrides" : [
             {
               "type" : "CIMPrimitiveOverride",
+              "primitiveName" : "2.0",
+              "propertyName" : "Color",
+              "expression" : "[FCD]"
+            },
+            {
+              "type" : "CIMPrimitiveOverride",
+              "primitiveName" : "2.0",
+              "propertyName" : "Width",
+              "valueExpressionInfo" : {
+                "type" : "CIMExpressionInfo",
+                "title" : "Custom",
+                "expression" : "$feature.FCD",
+                "returnType" : "Default"
+              }
+            },
+            {
+              "type" : "CIMPrimitiveOverride",
               "primitiveName" : "1.0",
               "propertyName" : "Color",
-              "expression" : "[FNM]"
+              "expression" : "[FCD]"
             }
           ],
           "symbol" : {
             "type" : "CIMPolygonSymbol",
             "symbolLayers" : [
+              {
+                "type" : "CIMSolidStroke",
+                "effects" : [
+                  {
+                    "type" : "CIMGeometricEffectDashes",
+                    "primitiveName" : "3.0",
+                    "dashTemplate" : [
+                      5.6692913385826778,
+                      1.4173228346456694
+                    ],
+                    "lineDashEnding" : "FullGap",
+                    "controlPointEnding" : "HalfGap"
+                  }
+                ],
+                "enable" : true,
+                "colorLocked" : true,
+                "primitiveName" : "2.0",
+                "capStyle" : "Butt",
+                "joinStyle" : "Miter",
+                "lineStyle3D" : "Strip",
+                "miterLimit" : 10,
+                "width" : 0.22677165354330711,
+                "height3D" : 1,
+                "anchor3D" : "Center",
+                "color" : {
+                  "type" : "CIMCMYKColor",
+                  "values" : [
+                    100,
+                    0,
+                    0,
+                    0,
+                    100
+                  ]
+                }
+              },
               {
                 "type" : "CIMSolidFill",
                 "enable" : true,
@@ -332,6 +385,13 @@
       },
       "scaleSymbols" : true,
       "snappable" : true
+    }
+  ],
+  "binaryReferences" : [
+    {
+      "type" : "CIMBinaryReference",
+      "uRI" : "CIMPATH=Metadata/01b29a7ccabf6331c930fdeb67d9c3b3.xml",
+      "data" : "<?xml version=\"1.0\"?>\r\n<metadata xml:lang=\"en\"><Esri><CreaDate>20251006</CreaDate><CreaTime>04083600</CreaTime><ArcGISFormat>1.0</ArcGISFormat><SyncOnce>TRUE</SyncOnce></Esri><dataIdInfo><idCitation><resTitle>HH0192_Irrigation_Canal_Coverage_A</resTitle></idCitation><idAbs>HH0192_Irrigation_Canal_Coverage_A</idAbs><idCredit></idCredit><idPurp></idPurp><resConst><Consts><useLimit></useLimit></Consts></resConst></dataIdInfo></metadata>\r\n"
     }
   ],
   "rGBColorProfile" : "sRGB IEC61966-2.1",

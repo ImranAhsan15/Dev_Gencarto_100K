@@ -3,13 +3,13 @@
   "version" : "3.5.0",
   "build" : 57366,
   "layers" : [
-    "CIMPATH=01_Gen10K1/BB0082_Retail_A.json"
+    "CIMPATH=GenCarto100K/BB0082_Retail_A.json"
   ],
   "layerDefinitions" : [
     {
       "type" : "CIMFeatureLayer",
       "name" : "BB0082_Retail_A",
-      "uRI" : "CIMPATH=01_Gen10K1/BB0082_Retail_A.json",
+      "uRI" : "CIMPATH=GenCarto100K/BB0082_Retail_A.json",
       "sourceModifiedTime" : {
         "type" : "TimeInstant"
       },
@@ -59,7 +59,7 @@
         "dataConnection" : {
           "type" : "CIMFeatureDatasetDataConnection",
           "featureDataset" : "Topo",
-          "workspaceConnectionString" : "DATABASE=..\\GenCarto10K\\PDGK.gdb",
+          "workspaceConnectionString" : "DATABASE=..\\PDGK.gdb",
           "workspaceFactory" : "FileGDB",
           "dataset" : "BB0082_Retail_A",
           "datasetType" : "esriDTFeatureClass"
@@ -298,19 +298,6 @@
         "patch" : "Default",
         "symbol" : {
           "type" : "CIMSymbolReference",
-          "primitiveOverrides" : [
-            {
-              "type" : "CIMPrimitiveOverride",
-              "primitiveName" : "1.0",
-              "propertyName" : "Color",
-              "valueExpressionInfo" : {
-                "type" : "CIMExpressionInfo",
-                "title" : "Custom",
-                "expression" : "$feature.FNM",
-                "returnType" : "Default"
-              }
-            }
-          ],
           "symbol" : {
             "type" : "CIMPolygonSymbol",
             "symbolLayers" : [
@@ -323,9 +310,9 @@
                   "type" : "CIMCMYKColor",
                   "values" : [
                     0,
-                    35,
-                    20,
                     0,
+                    0,
+                    100,
                     100
                   ]
                 }

@@ -3,16 +3,17 @@
   "version" : "3.5.0",
   "build" : 57366,
   "layers" : [
-    "CIMPATH=01_Gen10K1/VB3010_Acacia_A.json"
+    "CIMPATH=GenCarto100K/VB3010_Acacia_A.json"
   ],
   "layerDefinitions" : [
     {
       "type" : "CIMFeatureLayer",
       "name" : "VB3010_Acacia_A",
-      "uRI" : "CIMPATH=01_Gen10K1/VB3010_Acacia_A.json",
+      "uRI" : "CIMPATH=GenCarto100K/VB3010_Acacia_A.json",
       "sourceModifiedTime" : {
         "type" : "TimeInstant"
       },
+      "metadataURI" : "CIMPATH=Metadata/9d67bc00fd8bcd5ceed436a0870f10e6.xml",
       "useSourceMetadata" : true,
       "description" : "VB3010_Acacia_A",
       "layerElevation" : {
@@ -59,7 +60,7 @@
         "dataConnection" : {
           "type" : "CIMFeatureDatasetDataConnection",
           "featureDataset" : "Topo",
-          "workspaceConnectionString" : "DATABASE=..\\GenCarto10K\\PDGK.gdb",
+          "workspaceConnectionString" : "DATABASE=..\\GenCarto50K\\PDGK.gdb",
           "workspaceFactory" : "FileGDB",
           "dataset" : "VB3010_Acacia_A",
           "datasetType" : "esriDTFeatureClass"
@@ -301,12 +302,45 @@
           "primitiveOverrides" : [
             {
               "type" : "CIMPrimitiveOverride",
-              "primitiveName" : "c5d76f71-fe3e-41f6-86bb-b7aded4ec6d4",
+              "primitiveName" : "64aff177-04f4-4016-897a-37e3732e4d62",
               "propertyName" : "FillColor",
               "valueExpressionInfo" : {
                 "type" : "CIMExpressionInfo",
                 "title" : "Custom",
-                "expression" : "$feature.FNM",
+                "expression" : "$feature.FCD",
+                "returnType" : "Default"
+              }
+            },
+            {
+              "type" : "CIMPrimitiveOverride",
+              "primitiveName" : "64aff177-04f4-4016-897a-37e3732e4d62",
+              "propertyName" : "StrokeColor",
+              "valueExpressionInfo" : {
+                "type" : "CIMExpressionInfo",
+                "title" : "Custom",
+                "expression" : "$feature.FCD",
+                "returnType" : "Default"
+              }
+            },
+            {
+              "type" : "CIMPrimitiveOverride",
+              "primitiveName" : "64aff177-04f4-4016-897a-37e3732e4d62",
+              "propertyName" : "StrokeWidth",
+              "valueExpressionInfo" : {
+                "type" : "CIMExpressionInfo",
+                "title" : "Custom",
+                "expression" : "$feature.FCD",
+                "returnType" : "Default"
+              }
+            },
+            {
+              "type" : "CIMPrimitiveOverride",
+              "primitiveName" : "2.0",
+              "propertyName" : "Size",
+              "valueExpressionInfo" : {
+                "type" : "CIMExpressionInfo",
+                "title" : "Custom",
+                "expression" : "$feature.FCD",
                 "returnType" : "Default"
               }
             },
@@ -317,7 +351,7 @@
               "valueExpressionInfo" : {
                 "type" : "CIMExpressionInfo",
                 "title" : "Custom",
-                "expression" : "$feature.FNM",
+                "expression" : "$feature.FCD",
                 "returnType" : "Default"
               }
             }
@@ -27528,6 +27562,27 @@
                       "type" : "CIMPolygonSymbol",
                       "symbolLayers" : [
                         {
+                          "type" : "CIMSolidStroke",
+                          "enable" : true,
+                          "name" : "New_2eaddd65-de3c-40d4-a882-8f7bf8fcbb42",
+                          "capStyle" : "Round",
+                          "joinStyle" : "Round",
+                          "lineStyle3D" : "Strip",
+                          "miterLimit" : 4,
+                          "width" : 0,
+                          "height3D" : 1,
+                          "anchor3D" : "Center",
+                          "color" : {
+                            "type" : "CIMRGBColor",
+                            "values" : [
+                              0,
+                              0,
+                              0,
+                              100
+                            ]
+                          }
+                        },
+                        {
                           "type" : "CIMSolidFill",
                           "enable" : true,
                           "color" : {
@@ -27544,7 +27599,7 @@
                       ],
                       "angleAlignment" : "Map"
                     },
-                    "primitiveName" : "c5d76f71-fe3e-41f6-86bb-b7aded4ec6d4"
+                    "primitiveName" : "64aff177-04f4-4016-897a-37e3732e4d62"
                   },
                   {
                     "type" : "CIMMarkerGraphic",
@@ -72460,6 +72515,13 @@
       },
       "scaleSymbols" : true,
       "snappable" : true
+    }
+  ],
+  "binaryReferences" : [
+    {
+      "type" : "CIMBinaryReference",
+      "uRI" : "CIMPATH=Metadata/9d67bc00fd8bcd5ceed436a0870f10e6.xml",
+      "data" : "<?xml version=\"1.0\"?>\r\n<metadata xml:lang=\"en\"><Esri><CreaDate>20251006</CreaDate><CreaTime>04083600</CreaTime><ArcGISFormat>1.0</ArcGISFormat><SyncOnce>TRUE</SyncOnce></Esri><dataIdInfo><idCitation><resTitle>VB3010_Acacia_A</resTitle></idCitation><idAbs>VB3010_Acacia_A</idAbs><idCredit></idCredit><idPurp></idPurp><resConst><Consts><useLimit></useLimit></Consts></resConst></dataIdInfo></metadata>\r\n"
     }
   ],
   "rGBColorProfile" : "sRGB IEC61966-2.1",

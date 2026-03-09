@@ -3,16 +3,17 @@
   "version" : "3.5.0",
   "build" : 57366,
   "layers" : [
-    "CIMPATH=01_Gen10K1/VC1010_Bamboo_A.json"
+    "CIMPATH=GenCarto100K/VC1010_Bamboo_A.json"
   ],
   "layerDefinitions" : [
     {
       "type" : "CIMFeatureLayer",
       "name" : "VC1010_Bamboo_A",
-      "uRI" : "CIMPATH=01_Gen10K1/VC1010_Bamboo_A.json",
+      "uRI" : "CIMPATH=GenCarto100K/VC1010_Bamboo_A.json",
       "sourceModifiedTime" : {
         "type" : "TimeInstant"
       },
+      "metadataURI" : "CIMPATH=Metadata/a628244589d6feb588e05d3364e986f0.xml",
       "useSourceMetadata" : true,
       "description" : "VC1010_Bamboo_A",
       "layerElevation" : {
@@ -59,7 +60,7 @@
         "dataConnection" : {
           "type" : "CIMFeatureDatasetDataConnection",
           "featureDataset" : "Topo",
-          "workspaceConnectionString" : "DATABASE=..\\GenCarto10K\\PDGK.gdb",
+          "workspaceConnectionString" : "DATABASE=..\\GenCarto50K\\PDGK.gdb",
           "workspaceFactory" : "FileGDB",
           "dataset" : "VC1010_Bamboo_A",
           "datasetType" : "esriDTFeatureClass"
@@ -301,12 +302,45 @@
           "primitiveOverrides" : [
             {
               "type" : "CIMPrimitiveOverride",
-              "primitiveName" : "165950f4-433f-4983-8bf5-0fccc9f0b601",
+              "primitiveName" : "0c461aa7-ef0b-40f3-9953-4d82132ed32a",
               "propertyName" : "FillColor",
               "valueExpressionInfo" : {
                 "type" : "CIMExpressionInfo",
                 "title" : "Custom",
-                "expression" : "$feature.FNM",
+                "expression" : "$feature.FCD",
+                "returnType" : "Default"
+              }
+            },
+            {
+              "type" : "CIMPrimitiveOverride",
+              "primitiveName" : "0c461aa7-ef0b-40f3-9953-4d82132ed32a",
+              "propertyName" : "StrokeColor",
+              "valueExpressionInfo" : {
+                "type" : "CIMExpressionInfo",
+                "title" : "Custom",
+                "expression" : "$feature.FCD",
+                "returnType" : "Default"
+              }
+            },
+            {
+              "type" : "CIMPrimitiveOverride",
+              "primitiveName" : "0c461aa7-ef0b-40f3-9953-4d82132ed32a",
+              "propertyName" : "StrokeWidth",
+              "valueExpressionInfo" : {
+                "type" : "CIMExpressionInfo",
+                "title" : "Custom",
+                "expression" : "$feature.FCD",
+                "returnType" : "Default"
+              }
+            },
+            {
+              "type" : "CIMPrimitiveOverride",
+              "primitiveName" : "4.0",
+              "propertyName" : "Size",
+              "valueExpressionInfo" : {
+                "type" : "CIMExpressionInfo",
+                "title" : "Custom",
+                "expression" : "$feature.FCD",
                 "returnType" : "Default"
               }
             },
@@ -317,7 +351,7 @@
               "valueExpressionInfo" : {
                 "type" : "CIMExpressionInfo",
                 "title" : "Custom",
-                "expression" : "$feature.FNM",
+                "expression" : "$feature.FCD",
                 "returnType" : "Default"
               }
             }
@@ -435,6 +469,27 @@
                       "type" : "CIMPolygonSymbol",
                       "symbolLayers" : [
                         {
+                          "type" : "CIMSolidStroke",
+                          "enable" : true,
+                          "name" : "New_eec8399b-e1cb-41d1-b571-e2b2bbea7914",
+                          "capStyle" : "Round",
+                          "joinStyle" : "Round",
+                          "lineStyle3D" : "Strip",
+                          "miterLimit" : 4,
+                          "width" : 0,
+                          "height3D" : 1,
+                          "anchor3D" : "Center",
+                          "color" : {
+                            "type" : "CIMRGBColor",
+                            "values" : [
+                              0,
+                              0,
+                              0,
+                              100
+                            ]
+                          }
+                        },
+                        {
                           "type" : "CIMSolidFill",
                           "enable" : true,
                           "color" : {
@@ -451,7 +506,7 @@
                       ],
                       "angleAlignment" : "Map"
                     },
-                    "primitiveName" : "165950f4-433f-4983-8bf5-0fccc9f0b601"
+                    "primitiveName" : "0c461aa7-ef0b-40f3-9953-4d82132ed32a"
                   }
                 ],
                 "scaleSymbolsProportionally" : true,
@@ -480,6 +535,13 @@
       },
       "scaleSymbols" : true,
       "snappable" : true
+    }
+  ],
+  "binaryReferences" : [
+    {
+      "type" : "CIMBinaryReference",
+      "uRI" : "CIMPATH=Metadata/a628244589d6feb588e05d3364e986f0.xml",
+      "data" : "<?xml version=\"1.0\"?>\r\n<metadata xml:lang=\"en\"><Esri><CreaDate>20251006</CreaDate><CreaTime>04083600</CreaTime><ArcGISFormat>1.0</ArcGISFormat><SyncOnce>TRUE</SyncOnce></Esri><dataIdInfo><idCitation><resTitle>VC1010_Bamboo_A</resTitle></idCitation><idAbs>VC1010_Bamboo_A</idAbs><idCredit></idCredit><idPurp></idPurp><resConst><Consts><useLimit></useLimit></Consts></resConst></dataIdInfo></metadata>\r\n"
     }
   ],
   "rGBColorProfile" : "sRGB IEC61966-2.1",

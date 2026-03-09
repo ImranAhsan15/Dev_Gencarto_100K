@@ -3,16 +3,17 @@
   "version" : "3.5.0",
   "build" : 57366,
   "layers" : [
-    "CIMPATH=01_Gen10K1/GG2100_Geohazard_Site_A.json"
+    "CIMPATH=GenCarto100K/GG2100_Geohazard_Site_A.json"
   ],
   "layerDefinitions" : [
     {
       "type" : "CIMFeatureLayer",
       "name" : "GG2100_Geohazard_Site_A",
-      "uRI" : "CIMPATH=01_Gen10K1/GG2100_Geohazard_Site_A.json",
+      "uRI" : "CIMPATH=GenCarto100K/GG2100_Geohazard_Site_A.json",
       "sourceModifiedTime" : {
         "type" : "TimeInstant"
       },
+      "metadataURI" : "CIMPATH=Metadata/f9cc25965c5371a005e7d3d8f60d12b0.xml",
       "useSourceMetadata" : true,
       "description" : "GG2100_Geohazard_Site_A",
       "layerElevation" : {
@@ -59,7 +60,7 @@
         "dataConnection" : {
           "type" : "CIMFeatureDatasetDataConnection",
           "featureDataset" : "Topo",
-          "workspaceConnectionString" : "DATABASE=..\\GenCarto10K\\PDGK.gdb",
+          "workspaceConnectionString" : "DATABASE=..\\PDGK.gdb",
           "workspaceFactory" : "FileGDB",
           "dataset" : "GG2100_Geohazard_Site_A",
           "datasetType" : "esriDTFeatureClass"
@@ -301,15 +302,26 @@
           "primitiveOverrides" : [
             {
               "type" : "CIMPrimitiveOverride",
-              "primitiveName" : "4cbe087e-b9b6-4c21-8ef5-61f465545939",
+              "primitiveName" : "6c59f2ad-afda-48c2-bb8e-95d2530c9eb4",
               "propertyName" : "Color",
-              "expression" : "[FNM]"
+              "expression" : "[FCD]"
             },
             {
               "type" : "CIMPrimitiveOverride",
-              "primitiveName" : "69ff1822-c054-4fed-8555-c3d9b548e4bb",
+              "primitiveName" : "6c59f2ad-afda-48c2-bb8e-95d2530c9eb4",
+              "propertyName" : "Width",
+              "valueExpressionInfo" : {
+                "type" : "CIMExpressionInfo",
+                "title" : "Custom",
+                "expression" : "$feature.FCD",
+                "returnType" : "Default"
+              }
+            },
+            {
+              "type" : "CIMPrimitiveOverride",
+              "primitiveName" : "b48dec78-d901-42d8-815b-f15614d63a2d",
               "propertyName" : "Color",
-              "expression" : "[FNM]"
+              "expression" : "[FCD]"
             }
           ],
           "symbol" : {
@@ -318,8 +330,7 @@
               {
                 "type" : "CIMSolidStroke",
                 "enable" : true,
-                "name" : "New_290522be-e48d-4c7c-91ed-2f76d9369f90",
-                "primitiveName" : "4cbe087e-b9b6-4c21-8ef5-61f465545939",
+                "primitiveName" : "6c59f2ad-afda-48c2-bb8e-95d2530c9eb4",
                 "capStyle" : "Round",
                 "joinStyle" : "Round",
                 "lineStyle3D" : "Strip",
@@ -330,9 +341,9 @@
                 "color" : {
                   "type" : "CIMRGBColor",
                   "values" : [
-                    110,
-                    110,
-                    110,
+                    0,
+                    0,
+                    0,
                     100
                   ]
                 }
@@ -340,13 +351,13 @@
               {
                 "type" : "CIMSolidFill",
                 "enable" : true,
-                "primitiveName" : "69ff1822-c054-4fed-8555-c3d9b548e4bb",
+                "primitiveName" : "b48dec78-d901-42d8-815b-f15614d63a2d",
                 "color" : {
                   "type" : "CIMRGBColor",
                   "values" : [
-                    203,
-                    214,
-                    245,
+                    255,
+                    190,
+                    232,
                     100
                   ]
                 }
@@ -358,6 +369,13 @@
       },
       "scaleSymbols" : true,
       "snappable" : true
+    }
+  ],
+  "binaryReferences" : [
+    {
+      "type" : "CIMBinaryReference",
+      "uRI" : "CIMPATH=Metadata/f9cc25965c5371a005e7d3d8f60d12b0.xml",
+      "data" : "<?xml version=\"1.0\"?>\r\n<metadata xml:lang=\"en\"><Esri><CreaDate>20251006</CreaDate><CreaTime>04083600</CreaTime><ArcGISFormat>1.0</ArcGISFormat><SyncOnce>TRUE</SyncOnce></Esri><dataIdInfo><idCitation><resTitle>GG2100_Geohazard_Site_A</resTitle></idCitation><idAbs>GG2100_Geohazard_Site_A</idAbs><idCredit></idCredit><idPurp></idPurp><resConst><Consts><useLimit></useLimit></Consts></resConst></dataIdInfo></metadata>\r\n"
     }
   ],
   "rGBColorProfile" : "sRGB IEC61966-2.1",

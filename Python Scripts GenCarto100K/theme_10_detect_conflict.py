@@ -5,7 +5,7 @@ from common_utils import *
 
 def detect_write_conflicts(in_feature_loc, inputFCs, query, compareFCs,
                            conflictDistance, rev_workspace, rev_session, severity,
-                           ref_scale, partitions, map_name, symbology_file_path, logger):
+                           ref_scale, partitions, map_name, symbology_file_path, logger, working_gdb):
     arcpy.AddMessage('Starting conflicts detection.....')
     # values 'NEVER', 'NO_DISTANCE', 'ALL'
     # this value determines when we use symbology with no outline rather than using
@@ -18,6 +18,7 @@ def detect_write_conflicts(in_feature_loc, inputFCs, query, compareFCs,
     arcpy.env.overwriteOutput = True
     arcpy.env.addOutputsToMap = False
     arcpy.env.parallelProcessingFactor = "100%"
+    arcpy.env.workspace = working_gdb
 
     USE_NO_OUTLINE = 'ALL'
     try:

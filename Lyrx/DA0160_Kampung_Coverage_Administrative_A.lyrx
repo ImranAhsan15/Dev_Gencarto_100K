@@ -3,16 +3,17 @@
   "version" : "3.5.0",
   "build" : 57366,
   "layers" : [
-    "CIMPATH=01_Gen10K1/DA0160_Kampung_Coverage_Administrative_A.json"
+    "CIMPATH=GenCarto100K__PDGK_/DA0160_Kampung_Coverage_Administrative_A.json"
   ],
   "layerDefinitions" : [
     {
       "type" : "CIMFeatureLayer",
       "name" : "DA0160_Kampung_Coverage_Administrative_A",
-      "uRI" : "CIMPATH=01_Gen10K1/DA0160_Kampung_Coverage_Administrative_A.json",
+      "uRI" : "CIMPATH=GenCarto100K__PDGK_/DA0160_Kampung_Coverage_Administrative_A.json",
       "sourceModifiedTime" : {
         "type" : "TimeInstant"
       },
+      "metadataURI" : "CIMPATH=Metadata/282a523fae4db2e78569f0265bb7edfa.xml",
       "useSourceMetadata" : true,
       "description" : "DA0160_Kampung_Coverage_Administrative_A",
       "layerElevation" : {
@@ -59,7 +60,7 @@
         "dataConnection" : {
           "type" : "CIMFeatureDatasetDataConnection",
           "featureDataset" : "Topo",
-          "workspaceConnectionString" : "DATABASE=..\\GenCarto10K\\PDGK.gdb",
+          "workspaceConnectionString" : "DATABASE=..\\PDGK.gdb",
           "workspaceFactory" : "FileGDB",
           "dataset" : "DA0160_Kampung_Coverage_Administrative_A",
           "datasetType" : "esriDTFeatureClass"
@@ -301,15 +302,36 @@
           "primitiveOverrides" : [
             {
               "type" : "CIMPrimitiveOverride",
-              "primitiveName" : "a2fa16c8-fdb6-4456-ae8f-dcdf5ececd2f",
+              "primitiveName" : "3a51ea8a-ac74-4209-87a4-ffb2b7acaae9",
               "propertyName" : "Color",
-              "expression" : "[FNM]"
+              "valueExpressionInfo" : {
+                "type" : "CIMExpressionInfo",
+                "title" : "Custom",
+                "expression" : "$feature.FCD",
+                "returnType" : "Default"
+              }
             },
             {
               "type" : "CIMPrimitiveOverride",
-              "primitiveName" : "bd517bda-a348-4a79-9b01-95f373512a10",
+              "primitiveName" : "3a51ea8a-ac74-4209-87a4-ffb2b7acaae9",
+              "propertyName" : "Width",
+              "valueExpressionInfo" : {
+                "type" : "CIMExpressionInfo",
+                "title" : "Custom",
+                "expression" : "$feature.FCD",
+                "returnType" : "Default"
+              }
+            },
+            {
+              "type" : "CIMPrimitiveOverride",
+              "primitiveName" : "67e99aca-89c8-4307-90f5-c4c398664403",
               "propertyName" : "Color",
-              "expression" : "[FNM]"
+              "valueExpressionInfo" : {
+                "type" : "CIMExpressionInfo",
+                "title" : "Custom",
+                "expression" : "$feature.FCD",
+                "returnType" : "Default"
+              }
             }
           ],
           "symbol" : {
@@ -318,7 +340,7 @@
               {
                 "type" : "CIMSolidStroke",
                 "enable" : true,
-                "primitiveName" : "a2fa16c8-fdb6-4456-ae8f-dcdf5ececd2f",
+                "primitiveName" : "3a51ea8a-ac74-4209-87a4-ffb2b7acaae9",
                 "capStyle" : "Round",
                 "joinStyle" : "Round",
                 "lineStyle3D" : "Strip",
@@ -339,13 +361,13 @@
               {
                 "type" : "CIMSolidFill",
                 "enable" : true,
-                "primitiveName" : "bd517bda-a348-4a79-9b01-95f373512a10",
+                "primitiveName" : "67e99aca-89c8-4307-90f5-c4c398664403",
                 "color" : {
                   "type" : "CIMRGBColor",
                   "values" : [
-                    222,
-                    252,
-                    199,
+                    232,
+                    242,
+                    206,
                     100
                   ]
                 }
@@ -357,6 +379,13 @@
       },
       "scaleSymbols" : true,
       "snappable" : true
+    }
+  ],
+  "binaryReferences" : [
+    {
+      "type" : "CIMBinaryReference",
+      "uRI" : "CIMPATH=Metadata/282a523fae4db2e78569f0265bb7edfa.xml",
+      "data" : "<?xml version=\"1.0\"?>\r\n<metadata xml:lang=\"en\"><Esri><CreaDate>20250820</CreaDate><CreaTime>04540500</CreaTime><ArcGISFormat>1.0</ArcGISFormat><SyncOnce>TRUE</SyncOnce></Esri><dataIdInfo><idCitation><resTitle>DA0160_Kampung_Coverage_Administrative_A</resTitle></idCitation><idAbs>DA0160_Kampung_Coverage_Administrative_A</idAbs><idCredit></idCredit><idPurp></idPurp><resConst><Consts><useLimit></useLimit></Consts></resConst></dataIdInfo></metadata>\r\n"
     }
   ],
   "rGBColorProfile" : "sRGB IEC61966-2.1",

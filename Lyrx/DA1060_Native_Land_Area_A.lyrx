@@ -3,16 +3,17 @@
   "version" : "3.5.0",
   "build" : 57366,
   "layers" : [
-    "CIMPATH=01_Gen10K1/DA1060_Native_Land_Area_A.json"
+    "CIMPATH=GenCarto100K__PDGK_/DA1060_Native_Land_Area_A.json"
   ],
   "layerDefinitions" : [
     {
       "type" : "CIMFeatureLayer",
       "name" : "DA1060_Native_Land_Area_A",
-      "uRI" : "CIMPATH=01_Gen10K1/DA1060_Native_Land_Area_A.json",
+      "uRI" : "CIMPATH=GenCarto100K__PDGK_/DA1060_Native_Land_Area_A.json",
       "sourceModifiedTime" : {
         "type" : "TimeInstant"
       },
+      "metadataURI" : "CIMPATH=Metadata/f6f09caa0ca0c7e7a01421e5ce1bcf05.xml",
       "useSourceMetadata" : true,
       "description" : "DA1060_Native_Land_Area_A",
       "layerElevation" : {
@@ -59,7 +60,7 @@
         "dataConnection" : {
           "type" : "CIMFeatureDatasetDataConnection",
           "featureDataset" : "Topo",
-          "workspaceConnectionString" : "DATABASE=..\\GenCarto10K\\PDGK.gdb",
+          "workspaceConnectionString" : "DATABASE=..\\PDGK.gdb",
           "workspaceFactory" : "FileGDB",
           "dataset" : "DA1060_Native_Land_Area_A",
           "datasetType" : "esriDTFeatureClass"
@@ -301,15 +302,36 @@
           "primitiveOverrides" : [
             {
               "type" : "CIMPrimitiveOverride",
-              "primitiveName" : "017bdd5f-5df9-4f7e-98f8-96e434ec4690",
+              "primitiveName" : "94ea545b-80a3-4c72-8712-50be56a22a66",
               "propertyName" : "Color",
-              "expression" : "[FNM]"
+              "valueExpressionInfo" : {
+                "type" : "CIMExpressionInfo",
+                "title" : "Custom",
+                "expression" : "$feature.FCD",
+                "returnType" : "Default"
+              }
             },
             {
               "type" : "CIMPrimitiveOverride",
-              "primitiveName" : "dfe6db52-20db-47aa-8635-016aaacf08a1",
+              "primitiveName" : "94ea545b-80a3-4c72-8712-50be56a22a66",
+              "propertyName" : "Width",
+              "valueExpressionInfo" : {
+                "type" : "CIMExpressionInfo",
+                "title" : "Custom",
+                "expression" : "$feature.FCD",
+                "returnType" : "Default"
+              }
+            },
+            {
+              "type" : "CIMPrimitiveOverride",
+              "primitiveName" : "c2c2eb44-017a-4902-a02e-21d7660579b3",
               "propertyName" : "Color",
-              "expression" : "[FNM]"
+              "valueExpressionInfo" : {
+                "type" : "CIMExpressionInfo",
+                "title" : "Custom",
+                "expression" : "$feature.FCD",
+                "returnType" : "Default"
+              }
             }
           ],
           "symbol" : {
@@ -318,7 +340,7 @@
               {
                 "type" : "CIMSolidStroke",
                 "enable" : true,
-                "primitiveName" : "017bdd5f-5df9-4f7e-98f8-96e434ec4690",
+                "primitiveName" : "94ea545b-80a3-4c72-8712-50be56a22a66",
                 "capStyle" : "Round",
                 "joinStyle" : "Round",
                 "lineStyle3D" : "Strip",
@@ -339,13 +361,13 @@
               {
                 "type" : "CIMSolidFill",
                 "enable" : true,
-                "primitiveName" : "dfe6db52-20db-47aa-8635-016aaacf08a1",
+                "primitiveName" : "c2c2eb44-017a-4902-a02e-21d7660579b3",
                 "color" : {
                   "type" : "CIMRGBColor",
                   "values" : [
-                    210,
-                    227,
-                    250,
+                    197,
+                    252,
+                    245,
                     100
                   ]
                 }
@@ -357,6 +379,13 @@
       },
       "scaleSymbols" : true,
       "snappable" : true
+    }
+  ],
+  "binaryReferences" : [
+    {
+      "type" : "CIMBinaryReference",
+      "uRI" : "CIMPATH=Metadata/f6f09caa0ca0c7e7a01421e5ce1bcf05.xml",
+      "data" : "<?xml version=\"1.0\"?>\r\n<metadata xml:lang=\"en\"><Esri><CreaDate>20250820</CreaDate><CreaTime>04540500</CreaTime><ArcGISFormat>1.0</ArcGISFormat><SyncOnce>TRUE</SyncOnce></Esri><dataIdInfo><idCitation><resTitle>DA1060_Native_Land_Area_A</resTitle></idCitation><idAbs>DA1060_Native_Land_Area_A</idAbs><idCredit></idCredit><idPurp></idPurp><resConst><Consts><useLimit></useLimit></Consts></resConst></dataIdInfo></metadata>\r\n"
     }
   ],
   "rGBColorProfile" : "sRGB IEC61966-2.1",

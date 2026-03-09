@@ -3,16 +3,17 @@
   "version" : "3.5.0",
   "build" : 57366,
   "layers" : [
-    "CIMPATH=01_Gen10K1/GF4100_Rock_Outcrop_A.json"
+    "CIMPATH=GenCarto100K/GF4100_Rock_Outcrop_A.json"
   ],
   "layerDefinitions" : [
     {
       "type" : "CIMFeatureLayer",
       "name" : "GF4100_Rock_Outcrop_A",
-      "uRI" : "CIMPATH=01_Gen10K1/GF4100_Rock_Outcrop_A.json",
+      "uRI" : "CIMPATH=GenCarto100K/GF4100_Rock_Outcrop_A.json",
       "sourceModifiedTime" : {
         "type" : "TimeInstant"
       },
+      "metadataURI" : "CIMPATH=Metadata/4cfd8f16b2a35aafcbb38a7bf753d066.xml",
       "useSourceMetadata" : true,
       "description" : "GF4100_Rock_Outcrop_A",
       "layerElevation" : {
@@ -59,7 +60,7 @@
         "dataConnection" : {
           "type" : "CIMFeatureDatasetDataConnection",
           "featureDataset" : "Topo",
-          "workspaceConnectionString" : "DATABASE=..\\GenCarto10K\\PDGK.gdb",
+          "workspaceConnectionString" : "DATABASE=..\\PDGK.gdb",
           "workspaceFactory" : "FileGDB",
           "dataset" : "GF4100_Rock_Outcrop_A",
           "datasetType" : "esriDTFeatureClass"
@@ -301,45 +302,45 @@
           "primitiveOverrides" : [
             {
               "type" : "CIMPrimitiveOverride",
-              "primitiveName" : "4e86b7f6-e49f-47d4-84f4-3bf540173b7a",
+              "primitiveName" : "fb3c11f3-f862-4eae-9c46-f826e63b676a",
               "propertyName" : "FillColor",
-              "expression" : "[FNM]"
+              "expression" : "[FCD]"
             },
             {
               "type" : "CIMPrimitiveOverride",
-              "primitiveName" : "4e86b7f6-e49f-47d4-84f4-3bf540173b7a",
+              "primitiveName" : "fb3c11f3-f862-4eae-9c46-f826e63b676a",
               "propertyName" : "StrokeColor",
-              "expression" : "[FNM]"
+              "expression" : "[FCD]"
             },
             {
               "type" : "CIMPrimitiveOverride",
-              "primitiveName" : "fe50ff98-2707-44e9-a606-3e2eac6b3d9f",
+              "primitiveName" : "8bd9adec-5244-4222-a4b5-de3b577a6cc7",
               "propertyName" : "FillColor",
-              "expression" : "[FNM]"
+              "expression" : "[FCD]"
             },
             {
               "type" : "CIMPrimitiveOverride",
-              "primitiveName" : "fe50ff98-2707-44e9-a606-3e2eac6b3d9f",
+              "primitiveName" : "8bd9adec-5244-4222-a4b5-de3b577a6cc7",
               "propertyName" : "StrokeColor",
-              "expression" : "[FNM]"
+              "expression" : "[FCD]"
             },
             {
               "type" : "CIMPrimitiveOverride",
-              "primitiveName" : "e7b91483-0cd6-4397-8ae7-1abda98c4ce6",
+              "primitiveName" : "912de51f-a0b5-4faa-9aba-e7d4b4a989d1",
               "propertyName" : "FillColor",
-              "expression" : "[FNM]"
+              "expression" : "[FCD]"
             },
             {
               "type" : "CIMPrimitiveOverride",
-              "primitiveName" : "e7b91483-0cd6-4397-8ae7-1abda98c4ce6",
+              "primitiveName" : "912de51f-a0b5-4faa-9aba-e7d4b4a989d1",
               "propertyName" : "StrokeColor",
-              "expression" : "[FNM]"
+              "expression" : "[FCD]"
             },
             {
               "type" : "CIMPrimitiveOverride",
               "primitiveName" : "1.0",
               "propertyName" : "Color",
-              "expression" : "[FNM]"
+              "expression" : "[FCD]"
             }
           ],
           "symbol" : {
@@ -348,12 +349,12 @@
               {
                 "type" : "CIMVectorMarker",
                 "enable" : true,
-                "name" : "New_4d3f8b01-0dbf-4fea-99a3-7b061d455e4c",
+                "name" : "New_fbd435f7-c87a-48ce-82c1-352424b28e7a",
                 "colorLocked" : true,
                 "primitiveName" : "8.0",
                 "anchorPoint" : {
-                  "x" : -0.057661548188479336,
-                  "y" : 0.010313836072152473
+                  "x" : -0.057574026351155785,
+                  "y" : 0.010312217373703886
                 },
                 "anchorPointUnits" : "Relative",
                 "dominantSizeAxis3D" : "Z",
@@ -481,7 +482,7 @@
                         {
                           "type" : "CIMSolidFill",
                           "enable" : true,
-                          "name" : "New_0c3fa1e4-789f-4afd-b744-8661d6a1dcbf",
+                          "name" : "New_773ca34e-7ecd-450a-935c-776681fb65dd",
                           "color" : {
                             "type" : "CIMRGBColor",
                             "values" : [
@@ -495,7 +496,7 @@
                       ],
                       "angleAlignment" : "Map"
                     },
-                    "primitiveName" : "4e86b7f6-e49f-47d4-84f4-3bf540173b7a"
+                    "primitiveName" : "fb3c11f3-f862-4eae-9c46-f826e63b676a"
                   },
                   {
                     "type" : "CIMMarkerGraphic",
@@ -657,7 +658,7 @@
                             {
                               "type" : "CIMGeometricEffectCut",
                               "beginCut" : 3.4015748031496065,
-                              "endCut" : 2.6957480314960631,
+                              "endCut" : 2.7042519685039372,
                               "invert" : true
                             }
                           ],
@@ -851,12 +852,12 @@
               {
                 "type" : "CIMVectorMarker",
                 "enable" : true,
-                "name" : "New_e5afa139-3521-4814-8ee4-509217fa1f95",
+                "name" : "New_b05abad8-8921-43e0-9672-8b407421c3d9",
                 "colorLocked" : true,
                 "primitiveName" : "6.0",
                 "anchorPoint" : {
-                  "x" : -0.057633150776953114,
-                  "y" : 0.010313310867844759
+                  "x" : -0.057564405062735406,
+                  "y" : 0.010312039429945897
                 },
                 "anchorPointUnits" : "Relative",
                 "dominantSizeAxis3D" : "Z",
@@ -988,7 +989,7 @@
                         {
                           "type" : "CIMSolidFill",
                           "enable" : true,
-                          "name" : "New_c56de0fc-11c9-4cb5-85bd-94172fc85919",
+                          "name" : "New_35354d52-8460-4d9f-8453-6bd13a6c3b15",
                           "color" : {
                             "type" : "CIMRGBColor",
                             "values" : [
@@ -1002,7 +1003,7 @@
                       ],
                       "angleAlignment" : "Map"
                     },
-                    "primitiveName" : "fe50ff98-2707-44e9-a606-3e2eac6b3d9f"
+                    "primitiveName" : "8bd9adec-5244-4222-a4b5-de3b577a6cc7"
                   },
                   {
                     "type" : "CIMMarkerGraphic",
@@ -1164,7 +1165,7 @@
                             {
                               "type" : "CIMGeometricEffectCut",
                               "beginCut" : 3.4015748031496065,
-                              "endCut" : 2.6929133858267718,
+                              "endCut" : 2.7014173228346459,
                               "invert" : true
                             }
                           ],
@@ -1358,11 +1359,12 @@
               {
                 "type" : "CIMVectorMarker",
                 "enable" : true,
+                "name" : "New_78546499-3aed-4e89-b468-eb5cfc3aa4ff",
                 "colorLocked" : true,
                 "primitiveName" : "3.0",
                 "anchorPoint" : {
-                  "x" : -1.9788385925684517,
-                  "y" : -3.6549475055600587
+                  "x" : -1.9770978091788745,
+                  "y" : -3.6522262553369385
                 },
                 "anchorPointUnits" : "Relative",
                 "dominantSizeAxis3D" : "Z",
@@ -1381,7 +1383,7 @@
                   "xmin" : 5.6799999999999997,
                   "ymin" : 12.1199999999999992,
                   "xmax" : 9.5199999999999996,
-                  "ymax" : 15.9600000000000009
+                  "ymax" : 15.9700000000000006
                 },
                 "markerGraphics" : [
                   {
@@ -1494,7 +1496,7 @@
                         {
                           "type" : "CIMSolidFill",
                           "enable" : true,
-                          "name" : "New_6c2668b9-1f30-4761-8cac-e6a8fc4bf925",
+                          "name" : "New_e75e1cd6-1ff8-4565-8cfc-8eb00f9cf581",
                           "color" : {
                             "type" : "CIMRGBColor",
                             "values" : [
@@ -1508,7 +1510,7 @@
                       ],
                       "angleAlignment" : "Map"
                     },
-                    "primitiveName" : "e7b91483-0cd6-4397-8ae7-1abda98c4ce6"
+                    "primitiveName" : "912de51f-a0b5-4faa-9aba-e7d4b4a989d1"
                   },
                   {
                     "type" : "CIMMarkerGraphic",
@@ -1607,11 +1609,11 @@
                                 12.7799999999999994
                               ],
                               [
-                                9.1899999999999995,
+                                9.1799999999999997,
                                 12.42
                               ],
                               [
-                                8.4100000000000001,
+                                8.4000000000000004,
                                 12.32
                               ]
                             ]
@@ -1623,11 +1625,11 @@
                                 13.1099999999999994
                               ],
                               [
-                                6.7699999999999996,
+                                6.7599999999999998,
                                 13.17
                               ],
                               [
-                                5.9400000000000004,
+                                5.9299999999999997,
                                 12.4600000000000009
                               ]
                             ]
@@ -1635,7 +1637,7 @@
                           {
                             "b" : [
                               [
-                                5.9000000000000004,
+                                5.8899999999999997,
                                 13.7899999999999991
                               ],
                               [
@@ -1676,7 +1678,7 @@
                             {
                               "type" : "CIMGeometricEffectCut",
                               "beginCut" : 3.4015748031496065,
-                              "endCut" : 2.6957480314960631,
+                              "endCut" : 2.7014173228346459,
                               "invert" : true
                             }
                           ],
@@ -1709,12 +1711,12 @@
                       "paths" : [
                         [
                           [
-                            5.8959999999999999,
-                            13.8000000000000007
+                            5.8940000000000001,
+                            13.7989999999999995
                           ],
                           [
-                            5.8959999999999999,
-                            12.666
+                            5.8940000000000001,
+                            12.6649999999999991
                           ]
                         ]
                       ]
@@ -1884,6 +1886,13 @@
       },
       "scaleSymbols" : true,
       "snappable" : true
+    }
+  ],
+  "binaryReferences" : [
+    {
+      "type" : "CIMBinaryReference",
+      "uRI" : "CIMPATH=Metadata/4cfd8f16b2a35aafcbb38a7bf753d066.xml",
+      "data" : "<?xml version=\"1.0\"?>\r\n<metadata xml:lang=\"en\"><Esri><CreaDate>20251006</CreaDate><CreaTime>04083600</CreaTime><ArcGISFormat>1.0</ArcGISFormat><SyncOnce>TRUE</SyncOnce></Esri><dataIdInfo><idCitation><resTitle>GF4100_Rock_Outcrop_A</resTitle></idCitation><idAbs>GF4100_Rock_Outcrop_A</idAbs><idCredit></idCredit><idPurp></idPurp><resConst><Consts><useLimit></useLimit></Consts></resConst></dataIdInfo></metadata>\r\n"
     }
   ],
   "rGBColorProfile" : "sRGB IEC61966-2.1",

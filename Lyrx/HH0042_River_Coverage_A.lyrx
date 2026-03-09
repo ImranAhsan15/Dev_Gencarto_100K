@@ -3,16 +3,17 @@
   "version" : "3.5.0",
   "build" : 57366,
   "layers" : [
-    "CIMPATH=01_Gen10K1/HH0042_River_Coverage_A.json"
+    "CIMPATH=GenCarto100K/HH0042_River_Coverage_A.json"
   ],
   "layerDefinitions" : [
     {
       "type" : "CIMFeatureLayer",
       "name" : "HH0042_River_Coverage_A",
-      "uRI" : "CIMPATH=01_Gen10K1/HH0042_River_Coverage_A.json",
+      "uRI" : "CIMPATH=GenCarto100K/HH0042_River_Coverage_A.json",
       "sourceModifiedTime" : {
         "type" : "TimeInstant"
       },
+      "metadataURI" : "CIMPATH=Metadata/05cceec36a9bf3fcf8823dfd89a83de6.xml",
       "useSourceMetadata" : true,
       "description" : "HH0042_River_Coverage_A",
       "layerElevation" : {
@@ -59,7 +60,7 @@
         "dataConnection" : {
           "type" : "CIMFeatureDatasetDataConnection",
           "featureDataset" : "Topo",
-          "workspaceConnectionString" : "DATABASE=..\\GenCarto10K\\PDGK.gdb",
+          "workspaceConnectionString" : "DATABASE=..\\PDGK.gdb",
           "workspaceFactory" : "FileGDB",
           "dataset" : "HH0042_River_Coverage_A",
           "datasetType" : "esriDTFeatureClass"
@@ -303,7 +304,7 @@
               "type" : "CIMPrimitiveOverride",
               "primitiveName" : "1.0",
               "propertyName" : "Color",
-              "expression" : "[FNM]"
+              "expression" : "[FCD]"
             }
           ],
           "symbol" : {
@@ -332,6 +333,13 @@
       },
       "scaleSymbols" : true,
       "snappable" : true
+    }
+  ],
+  "binaryReferences" : [
+    {
+      "type" : "CIMBinaryReference",
+      "uRI" : "CIMPATH=Metadata/05cceec36a9bf3fcf8823dfd89a83de6.xml",
+      "data" : "<?xml version=\"1.0\"?>\r\n<metadata xml:lang=\"en\"><Esri><CreaDate>20251006</CreaDate><CreaTime>04083600</CreaTime><ArcGISFormat>1.0</ArcGISFormat><SyncOnce>TRUE</SyncOnce></Esri><dataIdInfo><idCitation><resTitle>HH0042_River_Coverage_A</resTitle></idCitation><idAbs>HH0042_River_Coverage_A</idAbs><idCredit></idCredit><idPurp></idPurp><resConst><Consts><useLimit></useLimit></Consts></resConst></dataIdInfo></metadata>\r\n"
     }
   ],
   "rGBColorProfile" : "sRGB IEC61966-2.1",

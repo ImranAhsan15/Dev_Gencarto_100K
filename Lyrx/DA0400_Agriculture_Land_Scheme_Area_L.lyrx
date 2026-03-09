@@ -3,16 +3,17 @@
   "version" : "3.5.0",
   "build" : 57366,
   "layers" : [
-    "CIMPATH=01_Gen10K1/DA0400_Agriculture_Land_Scheme_Area_L.json"
+    "CIMPATH=GenCarto100K/DA0400_Agriculture_Land_Scheme_Area_L.json"
   ],
   "layerDefinitions" : [
     {
       "type" : "CIMFeatureLayer",
       "name" : "DA0400_Agriculture_Land_Scheme_Area_L",
-      "uRI" : "CIMPATH=01_Gen10K1/DA0400_Agriculture_Land_Scheme_Area_L.json",
+      "uRI" : "CIMPATH=GenCarto100K/DA0400_Agriculture_Land_Scheme_Area_L.json",
       "sourceModifiedTime" : {
         "type" : "TimeInstant"
       },
+      "metadataURI" : "CIMPATH=Metadata/a29a220fd046c64cb162c722f1ca728a.xml",
       "useSourceMetadata" : true,
       "description" : "DA0400_Agriculture_Land_Scheme_Area_L",
       "layerElevation" : {
@@ -59,7 +60,7 @@
         "dataConnection" : {
           "type" : "CIMFeatureDatasetDataConnection",
           "featureDataset" : "Topo",
-          "workspaceConnectionString" : "DATABASE=..\\GenCarto10K\\PDGK.gdb",
+          "workspaceConnectionString" : "DATABASE=..\\PDGK.gdb",
           "workspaceFactory" : "FileGDB",
           "dataset" : "DA0400_Agriculture_Land_Scheme_Area_L",
           "datasetType" : "esriDTFeatureClass"
@@ -125,7 +126,7 @@
                 }
               ],
               "trimStackingSeparators" : true,
-              "preferToStackLongLabels" : false
+              "preferToStackLongLabels" : true
             },
             "lineFeatureType" : "General",
             "linePlacementMethod" : "OffsetStraightFromLine",
@@ -298,37 +299,53 @@
         "patch" : "Default",
         "symbol" : {
           "type" : "CIMSymbolReference",
-          "primitiveOverrides" : [
-            {
-              "type" : "CIMPrimitiveOverride",
-              "primitiveName" : "df99642b-1566-4005-906d-e13c6ae691fd",
-              "propertyName" : "Color",
-              "expression" : "[FNM]"
-            }
-          ],
           "symbol" : {
             "type" : "CIMLineSymbol",
             "symbolLayers" : [
               {
-                "type" : "CIMSolidStroke",
+                "type" : "CIMCharacterMarker",
                 "enable" : true,
-                "primitiveName" : "df99642b-1566-4005-906d-e13c6ae691fd",
-                "capStyle" : "Round",
-                "joinStyle" : "Round",
-                "lineStyle3D" : "Strip",
-                "miterLimit" : 10,
-                "width" : 1,
-                "height3D" : 1,
-                "anchor3D" : "Center",
-                "color" : {
-                  "type" : "CIMRGBColor",
-                  "values" : [
-                    153,
-                    0,
-                    153,
-                    100
+                "anchorPointUnits" : "Relative",
+                "dominantSizeAxis3D" : "Y",
+                "size" : 2.2677119999999995,
+                "billboardMode3D" : "FaceNearPlane",
+                "markerPlacement" : {
+                  "type" : "CIMMarkerPlacementAlongLineSameSize",
+                  "placePerPart" : true,
+                  "angleToLine" : true,
+                  "endings" : "NoConstraint",
+                  "offsetAlongLine" : 51,
+                  "placementTemplate" : [
+                    56,
+                    6
                   ]
-                }
+                },
+                "characterIndex" : 33,
+                "fontFamilyName" : "ESRI Default Marker",
+                "fontStyleName" : "Regular",
+                "fontType" : "Unspecified",
+                "scaleX" : 1,
+                "symbol" : {
+                  "type" : "CIMPolygonSymbol",
+                  "symbolLayers" : [
+                    {
+                      "type" : "CIMSolidFill",
+                      "enable" : true,
+                      "color" : {
+                        "type" : "CIMRGBColor",
+                        "values" : [
+                          0,
+                          0,
+                          0,
+                          100
+                        ]
+                      }
+                    }
+                  ],
+                  "angleAlignment" : "Map"
+                },
+                "scaleSymbolsProportionally" : true,
+                "respectFrame" : true
               }
             ]
           }
@@ -336,6 +353,13 @@
       },
       "scaleSymbols" : true,
       "snappable" : true
+    }
+  ],
+  "binaryReferences" : [
+    {
+      "type" : "CIMBinaryReference",
+      "uRI" : "CIMPATH=Metadata/a29a220fd046c64cb162c722f1ca728a.xml",
+      "data" : "<?xml version=\"1.0\"?>\r\n<metadata xml:lang=\"en\"><Esri><CreaDate>20251006</CreaDate><CreaTime>04083600</CreaTime><ArcGISFormat>1.0</ArcGISFormat><SyncOnce>TRUE</SyncOnce></Esri><dataIdInfo><idCitation><resTitle>DA0400_Agriculture_Land_Scheme_Area_L</resTitle></idCitation><idAbs>DA0400_Agriculture_Land_Scheme_Area_L</idAbs><idCredit></idCredit><idPurp></idPurp><resConst><Consts><useLimit></useLimit></Consts></resConst></dataIdInfo></metadata>\r\n"
     }
   ],
   "rGBColorProfile" : "sRGB IEC61966-2.1",

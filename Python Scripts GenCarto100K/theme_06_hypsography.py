@@ -253,11 +253,7 @@ def thin_cuttings_and_embankments(working_gdb, fc_list, distance, minimum_length
         # Feature layer creation, feature deleted from main fc and feature append
         area_field = arcpy.da.Describe(embankment_fc)["lengthFieldName"]
         expression = f"{area_field} > {minimum_length} AND ( INVISIBILITY = 0 OR INVISIBILITY IS NULL )"
-        arcpy.AddMessage(f"{area_field}")
-        arcpy.AddMessage(f"{minimum_length}")
-        arcpy.AddMessage(f"{expression}")
-
-
+       
         arcpy.AddMessage(f"Deleting features")
         embankment_lyr = arcpy.management.MakeFeatureLayer(embankment_simplified, 'embankment_lyr', expression)
         arcpy.management.DeleteFeatures(embankment_fc)
@@ -267,8 +263,7 @@ def thin_cuttings_and_embankments(working_gdb, fc_list, distance, minimum_length
         arcpy.management.DeleteFeatures(cutting_fc)
         arcpy.management.Append(cutting_lyr, cutting_fc, "NO_TEST")
 
-        cliff_precipitous_lyr = arcpy.management.MakeFeatureLayer(cliff_precipitous_simplified, 'cliff_precipitous_lyr',
-                                                                  expression)
+        cliff_precipitous_lyr = arcpy.management.MakeFeatureLayer(cliff_precipitous_simplified, 'cliff_precipitous_lyr',expression)
         arcpy.management.DeleteFeatures(cliff_precipitous)
         arcpy.management.Append(cliff_precipitous_lyr, cliff_precipitous, "NO_TEST")
         # end here of additional lines for 100k_TCE
@@ -382,7 +377,35 @@ def erase_veg_hypso(fc_list, working_gdb, hypso_compare_features, logger):
         error_message = f"Hypso erase vegetation error: {e}\nTraceback details:\n{tb}"
         arcpy.AddMessage(error_message)
         logger.error(error_message)
+
+def calculate_contoure_line_type(fc_list, working_gdb, logger, contour_l_fc = "RA0010_Contour_Line_L") -> None:
+    arcpy.env.overwriteOutput = True
+    arcpy.env.workspace = working_gdb
+    if(contour_l_fc):
+        contour_l_fc = [fc for fc in fc_list if contour_l_fc in fc][0]
+    lyr_name = "contours_lyr"
+        
+    # Make a feature layer (required for selection-based workflows)
+    arcpy.management.MakeFeatureLayer(contour_l_fc, lyr_name)
+    # 1) CLI = 0  -> CLT = 0
+    arcpy.management.SelectLayerByAttribute(lyr_name, "NEW_SELECTION", "CLI = 0")
+    arcpy.management.CalculateField(lyr_name, "CLT", 0, "PYTHON3")
+
+    # 2) CLI IN (1,2,3) -> CLT = 9
+    arcpy.management.SelectLayerByAttribute(lyr_name, "NEW_SELECTION", "CLI IN (1, 2, 3)")
+    arcpy.management.CalculateField(lyr_name, "CLT", 9, "PYTHON3")
+
     
+    # 3) CLI IN (4,5,6,7) -> CLT = 8
+    arcpy.management.SelectLayerByAttribute(lyr_name, "NEW_SELECTION", "CLI IN (4, 5, 6, 7)")
+    arcpy.management.CalculateField(lyr_name, "CLT", 8, "PYTHON3")
+
+    # Clear selection
+    arcpy.management.SelectLayerByAttribute(lyr_name, "CLEAR_SELECTION")
+
+    logger.info(f"Calculating Contour Line Type was successful for {contour_l_fc}")
+
+    return None
 
 def gen_hypsography(fc_list, hypso_compare_features, hypso_dissolved_field, hypso_dist, hypso_parallel_per, hypso_min_length, hypso_smoothing_tolerance, hypso_increase_factor, hypso_size_max, 
                             hypso_size_min, working_gdb, logger):
@@ -400,6 +423,8 @@ def gen_hypsography(fc_list, hypso_compare_features, hypso_dissolved_field, hyps
         dissolve_touching_polygons(fc_list, working_gdb, hypso_dissolved_field)
         # Erase vegetation hypso
         erase_veg_hypso(fc_list, working_gdb, hypso_compare_features, logger)
+        # # Calculate Countour Line Type from Contour Line Index
+        calculate_contoure_line_type(fc_list, working_gdb, logger)
       
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info() 

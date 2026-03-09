@@ -3,16 +3,17 @@
   "version" : "3.5.0",
   "build" : 57366,
   "layers" : [
-    "CIMPATH=01_Gen10K1/UB0180_Telecommunication_Tower_P.json"
+    "CIMPATH=GenCarto100K/UB0180_Telecommunication_Tower_P.json"
   ],
   "layerDefinitions" : [
     {
       "type" : "CIMFeatureLayer",
       "name" : "UB0180_Telecommunication_Tower_P",
-      "uRI" : "CIMPATH=01_Gen10K1/UB0180_Telecommunication_Tower_P.json",
+      "uRI" : "CIMPATH=GenCarto100K/UB0180_Telecommunication_Tower_P.json",
       "sourceModifiedTime" : {
         "type" : "TimeInstant"
       },
+      "metadataURI" : "CIMPATH=Metadata/e29345aaf5ff55227f35cbf3803efe93.xml",
       "useSourceMetadata" : true,
       "description" : "UB0180_Telecommunication_Tower_P",
       "layerElevation" : {
@@ -59,7 +60,7 @@
         "dataConnection" : {
           "type" : "CIMFeatureDatasetDataConnection",
           "featureDataset" : "Topo",
-          "workspaceConnectionString" : "DATABASE=..\\GenCarto10K\\PDGK.gdb",
+          "workspaceConnectionString" : "DATABASE=..\\GenCarto50K\\PDGK.gdb",
           "workspaceFactory" : "FileGDB",
           "dataset" : "UB0180_Telecommunication_Tower_P",
           "datasetType" : "esriDTFeatureClass"
@@ -301,12 +302,45 @@
           "primitiveOverrides" : [
             {
               "type" : "CIMPrimitiveOverride",
-              "primitiveName" : "5b51a72f-c489-4faf-be5c-beb8206b1770",
+              "primitiveName" : "77b4a5fe-89b3-4999-b4fb-c64bea34b52d",
               "propertyName" : "FillColor",
               "valueExpressionInfo" : {
                 "type" : "CIMExpressionInfo",
                 "title" : "Custom",
-                "expression" : "$feature.FNM",
+                "expression" : "$feature.FCD",
+                "returnType" : "Default"
+              }
+            },
+            {
+              "type" : "CIMPrimitiveOverride",
+              "primitiveName" : "77b4a5fe-89b3-4999-b4fb-c64bea34b52d",
+              "propertyName" : "StrokeColor",
+              "valueExpressionInfo" : {
+                "type" : "CIMExpressionInfo",
+                "title" : "Custom",
+                "expression" : "$feature.FCD",
+                "returnType" : "Default"
+              }
+            },
+            {
+              "type" : "CIMPrimitiveOverride",
+              "primitiveName" : "77b4a5fe-89b3-4999-b4fb-c64bea34b52d",
+              "propertyName" : "StrokeWidth",
+              "valueExpressionInfo" : {
+                "type" : "CIMExpressionInfo",
+                "title" : "Custom",
+                "expression" : "$feature.FCD",
+                "returnType" : "Default"
+              }
+            },
+            {
+              "type" : "CIMPrimitiveOverride",
+              "primitiveName" : "1.0",
+              "propertyName" : "Size",
+              "valueExpressionInfo" : {
+                "type" : "CIMExpressionInfo",
+                "title" : "Custom",
+                "expression" : "$feature.FCD",
                 "returnType" : "Default"
               }
             },
@@ -317,7 +351,7 @@
               "valueExpressionInfo" : {
                 "type" : "CIMExpressionInfo",
                 "title" : "Custom",
-                "expression" : "$feature.Orientation",
+                "expression" : "$feature.Orientation_Degree",
                 "returnType" : "Default"
               }
             }
@@ -351,11 +385,11 @@
                       "rings" : [
                         [
                           [
-                            -0.14000000000000001,
+                            -0.14999999999999999,
                             1.3300000000000001
                           ],
                           [
-                            -0.14000000000000001,
+                            -0.14999999999999999,
                             1.3300000000000001
                           ],
                           [
@@ -363,11 +397,11 @@
                             -3.1200000000000001
                           ],
                           [
-                            -1.5600000000000001,
+                            -1.5700000000000001,
                             -3.1200000000000001
                           ],
                           [
-                            -0.14000000000000001,
+                            -0.14999999999999999,
                             1.3300000000000001
                           ]
                         ]
@@ -400,7 +434,7 @@
                         {
                           "type" : "CIMSolidFill",
                           "enable" : true,
-                          "name" : "New_1a030af4-bbca-4f88-b503-19bc87ae4efa",
+                          "name" : "New_f673ba4b-d9ad-4e70-9bb6-6d3ee03108e4",
                           "color" : {
                             "type" : "CIMRGBColor",
                             "values" : [
@@ -414,7 +448,7 @@
                       ],
                       "angleAlignment" : "Map"
                     },
-                    "primitiveName" : "5b51a72f-c489-4faf-be5c-beb8206b1770"
+                    "primitiveName" : "77b4a5fe-89b3-4999-b4fb-c64bea34b52d"
                   },
                   {
                     "type" : "CIMMarkerGraphic",
@@ -422,43 +456,43 @@
                       "rings" : [
                         [
                           [
-                            -2.9710000000000001,
+                            -2.9780000000000002,
                             3.1110000000000002
                           ],
                           [
-                            -0.98699999999999999,
+                            -0.99399999999999999,
                             3.1110000000000002
                           ],
                           [
-                            -1.554,
+                            -1.5609999999999999,
                             2.2610000000000001
                           ],
                           [
-                            -0.70299999999999996,
+                            -0.70999999999999996,
                             2.2610000000000001
                           ],
                           [
-                            -0.70299999999999996,
+                            -0.70999999999999996,
                             1.694
                           ],
                           [
-                            -2.6880000000000002,
+                            -2.694,
                             1.694
                           ],
                           [
-                            -2.121,
+                            -2.1280000000000001,
                             2.5449999999999999
                           ],
                           [
-                            -2.9710000000000001,
+                            -2.9780000000000002,
                             2.5449999999999999
                           ],
                           [
-                            -2.9710000000000001,
+                            -2.9780000000000002,
                             3.1110000000000002
                           ],
                           [
-                            -2.9710000000000001,
+                            -2.9780000000000002,
                             3.1110000000000002
                           ]
                         ]
@@ -491,43 +525,43 @@
                       "rings" : [
                         [
                           [
-                            0.70299999999999996,
+                            0.70999999999999996,
                             3.117
                           ],
                           [
-                            2.6880000000000002,
+                            2.694,
                             3.117
                           ],
                           [
-                            2.121,
+                            2.1280000000000001,
                             2.266
                           ],
                           [
-                            2.9710000000000001,
+                            2.9780000000000002,
                             2.266
                           ],
                           [
-                            2.9710000000000001,
+                            2.9780000000000002,
                             1.6990000000000001
                           ],
                           [
-                            0.98699999999999999,
+                            0.99399999999999999,
                             1.6990000000000001
                           ],
                           [
-                            1.554,
+                            1.5609999999999999,
                             2.5499999999999998
                           ],
                           [
-                            0.70299999999999996,
+                            0.70999999999999996,
                             2.5499999999999998
                           ],
                           [
-                            0.70299999999999996,
+                            0.70999999999999996,
                             3.117
                           ],
                           [
-                            0.70299999999999996,
+                            0.70999999999999996,
                             3.117
                           ]
                         ]
@@ -567,6 +601,13 @@
       },
       "scaleSymbols" : true,
       "snappable" : true
+    }
+  ],
+  "binaryReferences" : [
+    {
+      "type" : "CIMBinaryReference",
+      "uRI" : "CIMPATH=Metadata/e29345aaf5ff55227f35cbf3803efe93.xml",
+      "data" : "<?xml version=\"1.0\"?>\r\n<metadata xml:lang=\"en\"><Esri><CreaDate>20251006</CreaDate><CreaTime>04083600</CreaTime><ArcGISFormat>1.0</ArcGISFormat><SyncOnce>TRUE</SyncOnce></Esri><dataIdInfo><idCitation><resTitle>UB0180_Telecommunication_Tower_P</resTitle></idCitation><idAbs>UB0180_Telecommunication_Tower_P</idAbs><idCredit></idCredit><idPurp></idPurp><resConst><Consts><useLimit></useLimit></Consts></resConst></dataIdInfo></metadata>\r\n"
     }
   ],
   "rGBColorProfile" : "sRGB IEC61966-2.1",

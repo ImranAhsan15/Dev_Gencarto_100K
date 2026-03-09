@@ -3,16 +3,17 @@
   "version" : "3.5.0",
   "build" : 57366,
   "layers" : [
-    "CIMPATH=01_Gen10K1/TA0140_Overhead_Crossing_L.json"
+    "CIMPATH=GenCarto100K/TA0140_Overhead_Crossing_L.json"
   ],
   "layerDefinitions" : [
     {
       "type" : "CIMFeatureLayer",
       "name" : "TA0140_Overhead_Crossing_L",
-      "uRI" : "CIMPATH=01_Gen10K1/TA0140_Overhead_Crossing_L.json",
+      "uRI" : "CIMPATH=GenCarto100K/TA0140_Overhead_Crossing_L.json",
       "sourceModifiedTime" : {
         "type" : "TimeInstant"
       },
+      "metadataURI" : "CIMPATH=Metadata/95e94ca20942d0b7b6a076594b5c9fd6.xml",
       "useSourceMetadata" : true,
       "description" : "TA0140_Overhead_Crossing_L",
       "layerElevation" : {
@@ -59,7 +60,7 @@
         "dataConnection" : {
           "type" : "CIMFeatureDatasetDataConnection",
           "featureDataset" : "Topo",
-          "workspaceConnectionString" : "DATABASE=..\\GenCarto10K\\PDGK.gdb",
+          "workspaceConnectionString" : "DATABASE=..\\GenCarto50K\\PDGK.gdb",
           "workspaceFactory" : "FileGDB",
           "dataset" : "TA0140_Overhead_Crossing_L",
           "datasetType" : "esriDTFeatureClass"
@@ -301,12 +302,23 @@
           "primitiveOverrides" : [
             {
               "type" : "CIMPrimitiveOverride",
-              "primitiveName" : "7.0",
+              "primitiveName" : "e93d5dd4-fe2b-4eda-aaee-4fcc0abcdc1f",
               "propertyName" : "Color",
               "valueExpressionInfo" : {
                 "type" : "CIMExpressionInfo",
                 "title" : "Custom",
-                "expression" : "$feature.FNM",
+                "expression" : "$feature.FCD",
+                "returnType" : "Default"
+              }
+            },
+            {
+              "type" : "CIMPrimitiveOverride",
+              "primitiveName" : "e93d5dd4-fe2b-4eda-aaee-4fcc0abcdc1f",
+              "propertyName" : "Width",
+              "valueExpressionInfo" : {
+                "type" : "CIMExpressionInfo",
+                "title" : "Custom",
+                "expression" : "$feature.FCD",
                 "returnType" : "Default"
               }
             }
@@ -316,93 +328,21 @@
             "symbolLayers" : [
               {
                 "type" : "CIMSolidStroke",
-                "effects" : [
-                  {
-                    "type" : "CIMGeometricEffectOffset",
-                    "primitiveName" : "8.0",
-                    "method" : "Square",
-                    "offset" : -1.1338582677165356,
-                    "option" : "Fast"
-                  },
-                  {
-                    "type" : "CIMGeometricEffectExtension",
-                    "primitiveName" : "1241.0",
-                    "deflection" : -90,
-                    "origin" : "EndOfLine",
-                    "length" : 1.7007874015748032
-                  },
-                  {
-                    "type" : "CIMGeometricEffectExtension",
-                    "primitiveName" : "1242.0",
-                    "deflection" : 90,
-                    "origin" : "BeginningOfLine",
-                    "length" : 1.7007874015748032
-                  }
-                ],
                 "enable" : true,
-                "name" : "New_5d41e889-8776-4481-9234-5b9e6101bfe7",
-                "colorLocked" : true,
-                "primitiveName" : "7.0",
-                "capStyle" : "Butt",
-                "joinStyle" : "Miter",
+                "primitiveName" : "e93d5dd4-fe2b-4eda-aaee-4fcc0abcdc1f",
+                "capStyle" : "Round",
+                "joinStyle" : "Round",
                 "lineStyle3D" : "Strip",
                 "miterLimit" : 10,
-                "width" : 0.56692913385826782,
+                "width" : 0.42519599999999996,
                 "height3D" : 1,
                 "anchor3D" : "Center",
                 "color" : {
-                  "type" : "CIMCMYKColor",
+                  "type" : "CIMRGBColor",
                   "values" : [
+                    230,
+                    152,
                     0,
-                    0,
-                    0,
-                    75,
-                    100
-                  ]
-                }
-              },
-              {
-                "type" : "CIMSolidStroke",
-                "effects" : [
-                  {
-                    "type" : "CIMGeometricEffectOffset",
-                    "primitiveName" : "5.0",
-                    "method" : "Square",
-                    "offset" : 1.1338582677165356,
-                    "option" : "Fast"
-                  },
-                  {
-                    "type" : "CIMGeometricEffectExtension",
-                    "primitiveName" : "1238.0",
-                    "deflection" : 90,
-                    "origin" : "EndOfLine",
-                    "length" : 1.7007874015748032
-                  },
-                  {
-                    "type" : "CIMGeometricEffectExtension",
-                    "primitiveName" : "1239.0",
-                    "deflection" : -90,
-                    "origin" : "BeginningOfLine",
-                    "length" : 1.7007874015748032
-                  }
-                ],
-                "enable" : true,
-                "colorLocked" : true,
-                "primitiveName" : "1.0",
-                "capStyle" : "Butt",
-                "joinStyle" : "Miter",
-                "lineStyle3D" : "Strip",
-                "miterLimit" : 10,
-                "width" : 0.56692913385826782,
-                "height3D" : 1,
-                "anchor3D" : "Center",
-                "color" : {
-                  "type" : "CIMCMYKColor",
-                  "values" : [
-                    0,
-                    0,
-                    0,
-                    75,
                     100
                   ]
                 }
@@ -413,6 +353,13 @@
       },
       "scaleSymbols" : true,
       "snappable" : true
+    }
+  ],
+  "binaryReferences" : [
+    {
+      "type" : "CIMBinaryReference",
+      "uRI" : "CIMPATH=Metadata/95e94ca20942d0b7b6a076594b5c9fd6.xml",
+      "data" : "<?xml version=\"1.0\"?>\r\n<metadata xml:lang=\"en\"><Esri><CreaDate>20251006</CreaDate><CreaTime>04083600</CreaTime><ArcGISFormat>1.0</ArcGISFormat><SyncOnce>TRUE</SyncOnce></Esri><dataIdInfo><idCitation><resTitle>TA0140_Overhead_Crossing_L</resTitle></idCitation><idAbs>TA0140_Overhead_Crossing_L</idAbs><idCredit></idCredit><idPurp></idPurp><resConst><Consts><useLimit></useLimit></Consts></resConst></dataIdInfo></metadata>\r\n"
     }
   ],
   "rGBColorProfile" : "sRGB IEC61966-2.1",

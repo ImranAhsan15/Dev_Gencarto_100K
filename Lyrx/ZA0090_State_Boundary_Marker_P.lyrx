@@ -1,18 +1,19 @@
 {
   "type" : "CIMLayerDocument",
-  "version" : "3.4.0",
-  "build" : 55405,
+  "version" : "3.5.0",
+  "build" : 57366,
   "layers" : [
-    "CIMPATH=01_Gen10K1/ZA0090_State_Boundary_Marker_P.json"
+    "CIMPATH=GenCarto100K/ZA0090_State_Boundary_Marker_P.json"
   ],
   "layerDefinitions" : [
     {
       "type" : "CIMFeatureLayer",
       "name" : "ZA0090_State_Boundary_Marker_P",
-      "uRI" : "CIMPATH=01_Gen10K1/ZA0090_State_Boundary_Marker_P.json",
+      "uRI" : "CIMPATH=GenCarto100K/ZA0090_State_Boundary_Marker_P.json",
       "sourceModifiedTime" : {
         "type" : "TimeInstant"
       },
+      "metadataURI" : "CIMPATH=Metadata/ae6c71e88e88aa4e6f4688ccd9ec7e67.xml",
       "useSourceMetadata" : true,
       "description" : "ZA0090_State_Boundary_Marker_P",
       "layerElevation" : {
@@ -59,7 +60,7 @@
         "dataConnection" : {
           "type" : "CIMFeatureDatasetDataConnection",
           "featureDataset" : "Topo",
-          "workspaceConnectionString" : "DATABASE=..\\GenCarto10K\\PDGK.gdb",
+          "workspaceConnectionString" : "DATABASE=..\\PDGK.gdb",
           "workspaceFactory" : "FileGDB",
           "dataset" : "ZA0090_State_Boundary_Marker_P",
           "datasetType" : "esriDTFeatureClass"
@@ -125,7 +126,8 @@
                   "splitAfter" : true
                 }
               ],
-              "trimStackingSeparators" : true
+              "trimStackingSeparators" : true,
+              "preferToStackLongLabels" : true
             },
             "lineFeatureType" : "General",
             "linePlacementMethod" : "OffsetCurvedFromLine",
@@ -292,57 +294,31 @@
         }
       ],
       "renderer" : {
-        "type" : "CIMSimpleRenderer",
+        "type" : "CIMUniqueValueRenderer",
         "sampleSize" : 10000,
-        "patch" : "Default",
-        "symbol" : {
+        "colorRamp" : {
+          "type" : "CIMRandomHSVColorRamp",
+          "colorSpace" : {
+            "type" : "CIMICCColorSpace",
+            "url" : "Default RGB"
+          },
+          "maxH" : 360,
+          "minS" : 15,
+          "maxS" : 30,
+          "minV" : 99,
+          "maxV" : 100,
+          "minAlpha" : 100,
+          "maxAlpha" : 100
+        },
+        "defaultLabel" : "<all other values>",
+        "defaultSymbol" : {
           "type" : "CIMSymbolReference",
-          "primitiveOverrides" : [
-            {
-              "type" : "CIMPrimitiveOverride",
-              "primitiveName" : "2e582b7f-ad96-4025-bbd1-a7da4b77e860",
-              "propertyName" : "FillColor",
-              "valueExpressionInfo" : {
-                "type" : "CIMExpressionInfo",
-                "title" : "Custom",
-                "expression" : "$feature.FNM",
-                "returnType" : "Default"
-              }
-            },
-            {
-              "type" : "CIMPrimitiveOverride",
-              "primitiveName" : "2e582b7f-ad96-4025-bbd1-a7da4b77e860",
-              "propertyName" : "StrokeColor",
-              "valueExpressionInfo" : {
-                "type" : "CIMExpressionInfo",
-                "title" : "Custom",
-                "expression" : "$feature.FNM",
-                "returnType" : "Default"
-              }
-            },
-            {
-              "type" : "CIMPrimitiveOverride",
-              "primitiveName" : "4da24e76-5fae-4db5-948a-e8a2c3e93a80",
-              "propertyName" : "Rotation",
-              "valueExpressionInfo" : {
-                "type" : "CIMExpressionInfo",
-                "title" : "Custom",
-                "expression" : "$feature.orientation",
-                "returnType" : "Default"
-              }
-            }
-          ],
           "symbol" : {
             "type" : "CIMPointSymbol",
             "symbolLayers" : [
               {
                 "type" : "CIMVectorMarker",
                 "enable" : true,
-                "primitiveName" : "4da24e76-5fae-4db5-948a-e8a2c3e93a80",
-                "anchorPoint" : {
-                  "x" : 0,
-                  "y" : 0
-                },
                 "anchorPointUnits" : "Relative",
                 "dominantSizeAxis3D" : "Z",
                 "size" : 4,
@@ -370,7 +346,7 @@
                                 2
                               ],
                               [
-                                6.6030623875207053e-16,
+                                2.2962127484012875e-16,
                                 0
                               ],
                               0,
@@ -409,17 +385,16 @@
                           "color" : {
                             "type" : "CIMRGBColor",
                             "values" : [
-                              36.469999999999999,
-                              98.739999999999995,
-                              140.25,
+                              130,
+                              130,
+                              130,
                               100
                             ]
                           }
                         }
                       ],
                       "angleAlignment" : "Map"
-                    },
-                    "primitiveName" : "2e582b7f-ad96-4025-bbd1-a7da4b77e860"
+                    }
                   }
                 ],
                 "scaleSymbolsProportionally" : true,
@@ -430,10 +405,343 @@
             "scaleX" : 1,
             "angleAlignment" : "Display"
           }
-        }
+        },
+        "defaultSymbolPatch" : "Default",
+        "fields" : [
+          "MKT_Int"
+        ],
+        "groups" : [
+          {
+            "type" : "CIMUniqueValueGroup",
+            "classes" : [
+              {
+                "type" : "CIMUniqueValueClass",
+                "editable" : true,
+                "label" : "Boundary Pillar",
+                "patch" : "Default",
+                "symbol" : {
+                  "type" : "CIMSymbolReference",
+                  "primitiveOverrides" : [
+                    {
+                      "type" : "CIMPrimitiveOverride",
+                      "primitiveName" : "3b8e2d28-e922-47dc-b8af-2d34bc63ba0c",
+                      "propertyName" : "FillColor",
+                      "valueExpressionInfo" : {
+                        "type" : "CIMExpressionInfo",
+                        "title" : "Custom",
+                        "expression" : "$feature.MKT_Int",
+                        "returnType" : "Default"
+                      }
+                    },
+                    {
+                      "type" : "CIMPrimitiveOverride",
+                      "primitiveName" : "3b8e2d28-e922-47dc-b8af-2d34bc63ba0c",
+                      "propertyName" : "StrokeColor",
+                      "valueExpressionInfo" : {
+                        "type" : "CIMExpressionInfo",
+                        "title" : "Custom",
+                        "expression" : "$feature.MKT_Int",
+                        "returnType" : "Default"
+                      }
+                    },
+                    {
+                      "type" : "CIMPrimitiveOverride",
+                      "primitiveName" : "1.0",
+                      "propertyName" : "Rotation",
+                      "valueExpressionInfo" : {
+                        "type" : "CIMExpressionInfo",
+                        "title" : "Custom",
+                        "expression" : "$feature.Orientation_Degree",
+                        "returnType" : "Default"
+                      }
+                    }
+                  ],
+                  "symbol" : {
+                    "type" : "CIMPointSymbol",
+                    "symbolLayers" : [
+                      {
+                        "type" : "CIMVectorMarker",
+                        "enable" : true,
+                        "colorLocked" : true,
+                        "primitiveName" : "1.0",
+                        "anchorPoint" : {
+                          "x" : 0,
+                          "y" : 0
+                        },
+                        "anchorPointUnits" : "Relative",
+                        "dominantSizeAxis3D" : "Z",
+                        "size" : 2.8346456692913389,
+                        "billboardMode3D" : "FaceNearPlane",
+                        "frame" : {
+                          "xmin" : -1.417,
+                          "ymin" : -1.417,
+                          "xmax" : 1.417,
+                          "ymax" : 1.417
+                        },
+                        "markerGraphics" : [
+                          {
+                            "type" : "CIMMarkerGraphic",
+                            "geometry" : {
+                              "rings" : [
+                                [
+                                  [
+                                    1.417,
+                                    -1.417
+                                  ],
+                                  [
+                                    -1.417,
+                                    -1.417
+                                  ],
+                                  [
+                                    -1.417,
+                                    1.417
+                                  ],
+                                  [
+                                    1.417,
+                                    1.417
+                                  ],
+                                  [
+                                    1.417,
+                                    -1.417
+                                  ]
+                                ]
+                              ]
+                            },
+                            "symbol" : {
+                              "type" : "CIMPolygonSymbol",
+                              "symbolLayers" : [
+                                {
+                                  "type" : "CIMSolidStroke",
+                                  "enable" : true,
+                                  "name" : "New_5cc76ae2-357a-411f-954a-15f57c3571ba",
+                                  "capStyle" : "Round",
+                                  "joinStyle" : "Round",
+                                  "lineStyle3D" : "Strip",
+                                  "miterLimit" : 4,
+                                  "width" : 0,
+                                  "height3D" : 1,
+                                  "anchor3D" : "Center",
+                                  "color" : {
+                                    "type" : "CIMRGBColor",
+                                    "values" : [
+                                      0,
+                                      0,
+                                      0,
+                                      100
+                                    ]
+                                  }
+                                },
+                                {
+                                  "type" : "CIMSolidFill",
+                                  "enable" : true,
+                                  "color" : {
+                                    "type" : "CIMCMYKColor",
+                                    "values" : [
+                                      0,
+                                      0,
+                                      0,
+                                      100,
+                                      100
+                                    ]
+                                  }
+                                }
+                              ],
+                              "angleAlignment" : "Map"
+                            },
+                            "primitiveName" : "3b8e2d28-e922-47dc-b8af-2d34bc63ba0c"
+                          }
+                        ],
+                        "scaleSymbolsProportionally" : true,
+                        "respectFrame" : true
+                      }
+                    ],
+                    "haloSize" : 1,
+                    "scaleX" : 1,
+                    "angleAlignment" : "Map"
+                  }
+                },
+                "values" : [
+                  {
+                    "type" : "CIMUniqueValue",
+                    "fieldValues" : [
+                      "1"
+                    ]
+                  }
+                ],
+                "visible" : true
+              },
+              {
+                "type" : "CIMUniqueValueClass",
+                "editable" : true,
+                "label" : "Boundary Pillar and Trig Station",
+                "patch" : "Default",
+                "symbol" : {
+                  "type" : "CIMSymbolReference",
+                  "primitiveOverrides" : [
+                    {
+                      "type" : "CIMPrimitiveOverride",
+                      "primitiveName" : "cb642229-c546-4e7d-b1c2-4a6cf805eedb",
+                      "propertyName" : "FillColor",
+                      "valueExpressionInfo" : {
+                        "type" : "CIMExpressionInfo",
+                        "title" : "Custom",
+                        "expression" : "$feature.MKT_Int",
+                        "returnType" : "Default"
+                      }
+                    },
+                    {
+                      "type" : "CIMPrimitiveOverride",
+                      "primitiveName" : "cb642229-c546-4e7d-b1c2-4a6cf805eedb",
+                      "propertyName" : "StrokeColor",
+                      "valueExpressionInfo" : {
+                        "type" : "CIMExpressionInfo",
+                        "title" : "Custom",
+                        "expression" : "$feature.MKT_Int",
+                        "returnType" : "Default"
+                      }
+                    },
+                    {
+                      "type" : "CIMPrimitiveOverride",
+                      "primitiveName" : "1.0",
+                      "propertyName" : "Rotation",
+                      "valueExpressionInfo" : {
+                        "type" : "CIMExpressionInfo",
+                        "title" : "Custom",
+                        "expression" : "$feature.Orientation_Degree",
+                        "returnType" : "Default"
+                      }
+                    }
+                  ],
+                  "symbol" : {
+                    "type" : "CIMPointSymbol",
+                    "symbolLayers" : [
+                      {
+                        "type" : "CIMVectorMarker",
+                        "enable" : true,
+                        "colorLocked" : true,
+                        "primitiveName" : "1.0",
+                        "anchorPoint" : {
+                          "x" : 0,
+                          "y" : 0
+                        },
+                        "anchorPointUnits" : "Relative",
+                        "dominantSizeAxis3D" : "Z",
+                        "size" : 4.2519685039370083,
+                        "billboardMode3D" : "FaceNearPlane",
+                        "frame" : {
+                          "xmin" : -2.1299999999999999,
+                          "ymin" : -2.1299999999999999,
+                          "xmax" : 2.1299999999999999,
+                          "ymax" : 2.1299999999999999
+                        },
+                        "markerGraphics" : [
+                          {
+                            "type" : "CIMMarkerGraphic",
+                            "geometry" : {
+                              "rings" : [
+                                [
+                                  [
+                                    0,
+                                    1.8400000000000001
+                                  ],
+                                  [
+                                    0,
+                                    1.8400000000000001
+                                  ],
+                                  [
+                                    2.1299999999999999,
+                                    -1.8400000000000001
+                                  ],
+                                  [
+                                    -2.1299999999999999,
+                                    -1.8400000000000001
+                                  ],
+                                  [
+                                    0,
+                                    1.8400000000000001
+                                  ]
+                                ]
+                              ]
+                            },
+                            "symbol" : {
+                              "type" : "CIMPolygonSymbol",
+                              "symbolLayers" : [
+                                {
+                                  "type" : "CIMSolidStroke",
+                                  "enable" : true,
+                                  "name" : "New_84055046-1e53-4020-9c05-20b6d15d1112",
+                                  "capStyle" : "Round",
+                                  "joinStyle" : "Round",
+                                  "lineStyle3D" : "Strip",
+                                  "miterLimit" : 4,
+                                  "width" : 0,
+                                  "height3D" : 1,
+                                  "anchor3D" : "Center",
+                                  "color" : {
+                                    "type" : "CIMRGBColor",
+                                    "values" : [
+                                      0,
+                                      0,
+                                      0,
+                                      100
+                                    ]
+                                  }
+                                },
+                                {
+                                  "type" : "CIMSolidFill",
+                                  "enable" : true,
+                                  "color" : {
+                                    "type" : "CIMCMYKColor",
+                                    "values" : [
+                                      0,
+                                      0,
+                                      0,
+                                      100,
+                                      100
+                                    ]
+                                  }
+                                }
+                              ],
+                              "angleAlignment" : "Map"
+                            },
+                            "primitiveName" : "cb642229-c546-4e7d-b1c2-4a6cf805eedb"
+                          }
+                        ],
+                        "scaleSymbolsProportionally" : true,
+                        "respectFrame" : true
+                      }
+                    ],
+                    "haloSize" : 1,
+                    "scaleX" : 1,
+                    "angleAlignment" : "Map"
+                  }
+                },
+                "values" : [
+                  {
+                    "type" : "CIMUniqueValue",
+                    "fieldValues" : [
+                      "2"
+                    ]
+                  }
+                ],
+                "visible" : true
+              }
+            ],
+            "heading" : "MKT_State_Bndy_Marker"
+          }
+        ],
+        "isDefaultSymbolVisible" : true,
+        "polygonSymbolColorTarget" : "Fill"
       },
       "scaleSymbols" : true,
       "snappable" : true
+    }
+  ],
+  "binaryReferences" : [
+    {
+      "type" : "CIMBinaryReference",
+      "uRI" : "CIMPATH=Metadata/ae6c71e88e88aa4e6f4688ccd9ec7e67.xml",
+      "data" : "<?xml version=\"1.0\"?>\r\n<metadata xml:lang=\"en\"><Esri><CreaDate>20251006</CreaDate><CreaTime>04083600</CreaTime><ArcGISFormat>1.0</ArcGISFormat><SyncOnce>TRUE</SyncOnce></Esri><dataIdInfo><idCitation><resTitle>ZA0090_State_Boundary_Marker_P</resTitle></idCitation><idAbs>ZA0090_State_Boundary_Marker_P</idAbs><idCredit></idCredit><idPurp></idPurp><resConst><Consts><useLimit></useLimit></Consts></resConst></dataIdInfo></metadata>\r\n"
     }
   ],
   "rGBColorProfile" : "sRGB IEC61966-2.1",

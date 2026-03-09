@@ -3,13 +3,13 @@
   "version" : "3.5.0",
   "build" : 57366,
   "layers" : [
-    "CIMPATH=01_Gen10K1/HJ0070_Tidal_Gate_L.json"
+    "CIMPATH=GenCarto100K/HJ0070_Tidal_Gate_L.json"
   ],
   "layerDefinitions" : [
     {
       "type" : "CIMFeatureLayer",
       "name" : "HJ0070_Tidal_Gate_L",
-      "uRI" : "CIMPATH=01_Gen10K1/HJ0070_Tidal_Gate_L.json",
+      "uRI" : "CIMPATH=GenCarto100K/HJ0070_Tidal_Gate_L.json",
       "sourceModifiedTime" : {
         "type" : "TimeInstant"
       },
@@ -59,7 +59,7 @@
         "dataConnection" : {
           "type" : "CIMFeatureDatasetDataConnection",
           "featureDataset" : "Topo",
-          "workspaceConnectionString" : "DATABASE=..\\GenCarto10K\\PDGK.gdb",
+          "workspaceConnectionString" : "DATABASE=..\\PDGK.gdb",
           "workspaceFactory" : "FileGDB",
           "dataset" : "HJ0070_Tidal_Gate_L",
           "datasetType" : "esriDTFeatureClass"
@@ -125,7 +125,7 @@
                 }
               ],
               "trimStackingSeparators" : true,
-              "preferToStackLongLabels" : false
+              "preferToStackLongLabels" : true
             },
             "lineFeatureType" : "General",
             "linePlacementMethod" : "OffsetStraightFromLine",
@@ -298,14 +298,6 @@
         "patch" : "Default",
         "symbol" : {
           "type" : "CIMSymbolReference",
-          "primitiveOverrides" : [
-            {
-              "type" : "CIMPrimitiveOverride",
-              "primitiveName" : "2.0",
-              "propertyName" : "Color",
-              "expression" : "[FNM]"
-            }
-          ],
           "symbol" : {
             "type" : "CIMLineSymbol",
             "symbolLayers" : [

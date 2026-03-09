@@ -57,7 +57,7 @@ def extract_and_replace_by_type(working_gdb, powerlineFC, powerlineBuffer, polyg
 
             if has_features(removedGeom2):
                 # Add the Clip features to the target feature class
-                if valid == "Yes":
+                if valid:
                     arcpy.AddMessage("Expanding features")
                     arcpy.management.Append(removedGeom, replacePolygonFC, "NO_TEST")
                 else:
@@ -376,6 +376,13 @@ def vegetation_under_powerlines(fc_list, utility_compare_features, utility_beffe
     argri_selected_excl = [fc for fc in agricultureFC if os.path.basename(fc) not in argri_selected_fc]
 
     try:
+        # start here of additional lines for 100k from below 100k_VUP
+        comp_fc = miscFC+agricultureFC+forestFC
+        for fc in comp_fc:
+            if has_features(fc):
+                arcpy.management.RepairGeometry(in_features=fc, delete_null=True,
+                                                           validation_method="ESRI")
+        # end here of additional lines for 100k_VUP
         # Replace all forest with grass
         extract_and_replace_by_type(working_gdb, powerlineFC, utility_beffer_dist, forestFC, False, Grass_A)
         # Misc types to replace with grass
@@ -431,13 +438,6 @@ def vegetation_under_powerlines_(fc_list, utility_compare_features, utility_beff
     argri_selected_excl = [fc for fc in agricultureFC if os.path.basename(fc) not in argri_selected_fc]
 
     try:
-        # start here of additional lines for 100k from below 100k_VUP
-        comp_fc = miscFC+agricultureFC+forestFC
-        for fc in comp_fc:
-            if has_features(fc):
-                arcpy.management.RepairGeometry(in_features=fc, delete_null=True,
-                                                           validation_method="ESRI")
-        # end here of additional lines for 100k_VUP
         # Replace all forest with grass
         extract_and_replace_by_type(working_gdb, powerlineFC, utility_beffer_dist, forestFC, False, Grass_A)
         # Misc types to replace with grass
@@ -512,14 +512,63 @@ def delete_small_util_sewerage(fc_list, working_gdb, utility_compare_features, u
         error_message = f"Delete small utility sewerage error: {e}\nTraceback details:\n{tb}"
         arcpy.AddMessage(error_message)
 
+def merge_clustered_utility_points(fc_list, aggregate_distance, will_be_point_inside, utility_merge_clusters, working_gdb):
+    arcpy.env.workspace = working_gdb
+    
+    try:
+        cluster_feature_classes = list(filter(str.strip, utility_merge_clusters))
+        existing_cluster_fcs = [fc for cfc in cluster_feature_classes for fc in fc_list if str(cfc) in fc]
+        for ecf in existing_cluster_fcs:
+            if has_features(ecf):
+                if(int(arcpy.management.GetCount(ecf)[0]) > 2):
+                    temp_aggrgt_point_fc = f"{working_gdb}\\TEMP_UTILITY_CLUSTERED_POINTS"
+                    temp_featpoint_fc = f"{working_gdb}\\TEMP_UTILITY_FEATUREPOINT"
+                    temp_spatial_joined_point_fc = f"{working_gdb}\\TEMP_UTILITY_SPATIALJOIN_FC"
+                    # arcpy.management.MakeFeatureLayer(ecf, "temp_ecf_input_layer")
+                    # arcpy.AddMessage(f"ecf: {ecf}, temp_aggrgt_point_fc: {temp_aggrgt_point_fc} and aggregate_distance: {aggregate_distance}; temp_ecf_input_layer: {arcpy.Describe(temp_ecf_input_layer).name}")
+                    aggregated_Tbl = arcpy.cartography.AggregatePoints(ecf, temp_aggrgt_point_fc, f"{aggregate_distance} meters")
+                    temp_input_efc_lyr = "temp_input_efc_lyr"
+                    arcpy.management.FeatureToPoint(temp_aggrgt_point_fc, temp_featpoint_fc, will_be_point_inside)
+                    arcpy.analysis.SpatialJoin(temp_featpoint_fc, ecf, temp_spatial_joined_point_fc, "JOIN_ONE_TO_ONE", join_type = "KEEP_ALL", match_option = "WITHIN_A_DISTANCE", search_radius = f"{aggregate_distance} meters")
+                    # arcpy.AddMessage(f"aggregated_Tbl: {f"{aggregated_Tbl}_Tbl"}")
+                    orig_utility_features_to_delete = []
+                    with arcpy.da.SearchCursor(f"{aggregated_Tbl}_Tbl", ['INPUT_FID']) as cur:
+                        for input_fid in cur:
+                            orig_utility_features_to_delete.append(input_fid[0])
+                            expression = arcpy.AddFieldDelimiters(temp_input_efc_lyr, "OBJECTID") + f" = {input_fid[0]}"
+                            # arcpy.AddMessage(f"expression: {expression}")
+                            arcpy.management.MakeFeatureLayer(ecf, temp_input_efc_lyr)
+                            arcpy.management.SelectLayerByAttribute(temp_input_efc_lyr, "NEW_SELECTION", expression)
+                            # arcpy.AddMessage(f"Deleting feature from {temp_input_efc_lyr}")
+                            arcpy.management.DeleteFeatures(temp_input_efc_lyr)
+                            
+                    arcpy.management.DeleteField(temp_spatial_joined_point_fc, ["Join_Count", "TARGET_FID", "JOIN_FID", "ORIG_FID"])
+                    # arcpy.AddMessage(f"Copying features into {ecf} from {temp_spatial_joined_point_fc}")
+                    arcpy.management.Append(temp_spatial_joined_point_fc, ecf, 'NO_TEST')
+                    # Cleaning Up Temporary Files
+                    arcpy.AddMessage("Cleaning up temporary files from merging clustered utility points...")
+                    if arcpy.Exists(temp_aggrgt_point_fc):
+                        arcpy.management.Delete(temp_aggrgt_point_fc, "FeatureClass")
+                    if arcpy.Exists(temp_featpoint_fc):
+                        arcpy.management.Delete(temp_featpoint_fc, "FeatureClass")
+                    if arcpy.Exists(temp_spatial_joined_point_fc):
+                        arcpy.management.Delete(temp_spatial_joined_point_fc, "FeatureClass")
+                else:
+                    arcpy.AddMessage(f"Not enough points for cluster in {ecf}. Skipping...")
+
+    except Exception as e:
+        tb = traceback.format_exc()
+        error_message = f"Merge Clustered Utility Points error: {e}\nTraceback details:\n{tb}"
+        arcpy.AddMessage(error_message)
+
 def gen_utility(fc_list, utility_area_features, utility_point_features, utility_compare_features, utility_min_size_sewerage, utility_min_size_building, utility_min_size, utility_beffer_dist, 
                 utility_dist, utility_dist_shorter, utility_addi_criteria_sewerage, utility_addi_criteria, utility_merge_field, working_gdb, unique_field, update,
-                utility_delete_input, utility_create_one_point,logger):
+                utility_delete_input, utility_create_one_point, utility_merge_clusters, logger):
     arcpy.AddMessage('Starting utility features generalization.....')
     arcpy.env.overwriteOutput = True
     try:
-        
-        # # Merge parallel powerlines
+        aggregate_distance = 100
+        ## Merge parallel powerlines
         merge_parallel_powerlines(fc_list, utility_dist, utility_dist_shorter, utility_merge_field, update, working_gdb)
         # # Vegetation under powerlines
         vegetation_under_powerlines(fc_list, utility_compare_features, utility_beffer_dist, working_gdb)
@@ -527,7 +576,8 @@ def gen_utility(fc_list, utility_area_features, utility_point_features, utility_
         building_to_point(fc_list, utility_area_features, utility_point_features, working_gdb, utility_min_size, utility_min_size_building, utility_addi_criteria, unique_field, utility_compare_features, utility_delete_input, utility_create_one_point)
         # # Delete small utility features
         delete_small_util_sewerage(fc_list, working_gdb, utility_compare_features, utility_min_size_sewerage, utility_addi_criteria_sewerage)
-
+        # # Merge Cluster of Utility Points (i.e. UC0100_Suction_Tank_P)
+        merge_clustered_utility_points(fc_list, aggregate_distance, False, utility_merge_clusters, working_gdb)
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         tb = traceback.format_exc()

@@ -21,7 +21,7 @@ def load_data_into_edb(in_workspace, aoi_sheet, out_workspace, version, working_
         # Get required features and data
         fc_name_list, in_fcs_dict = get_fcs_load_data(in_workspace, wksp_type)
         out_fc_name_list, out_fcs_dict = get_fcs_load_data(out_workspace, wksp_type)
-        split_list = split_fcs_load_data(in_workspace)
+        split_list = split_fcs_load_data(working_gdb)
         
         # Determine which feature classes from the input are also in the output
         for fc_name in fc_name_list:

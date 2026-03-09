@@ -55,14 +55,11 @@ def trans_delete_dangles(trans_lines, sql, compare_fcs, seg_length, working_gdb,
         if sql:
             where += " AND "  + "(" + sql + ")"
         arcpy.management.MakeFeatureLayer(trans_lines, "transport", where)
-        feature_count = int(arcpy.management.GetCount("transport")[0])
+        feature_count = count_features("transport")
         if feature_count >= 1:
             if recursive == "true":
-                count = 1
-                while feature_count >= 1:
-                    feature_count = delete_dangles("transport", dangles, seg_length, compare_fcs, working_gdb)
-                    arcpy.management.SelectLayerByAttribute("transport", "NEW_SELECTION", where)
-                    count += 1
+                delete_dangles("transport", dangles, seg_length, compare_fcs, working_gdb)
+                arcpy.management.SelectLayerByAttribute("transport", "NEW_SELECTION", where)
         else:
             delete_dangles("transport", dangles, seg_length, compare_fcs, working_gdb)
 
@@ -71,7 +68,7 @@ def trans_delete_dangles(trans_lines, sql, compare_fcs, seg_length, working_gdb,
 
     except Exception as e:
             tb = traceback.format_exc()
-            error_message = f"Delete dangles ain error: {e}\nTraceback details:\n{tb}"
+            error_message = f"Delete dangles error: {e}\nTraceback details:\n{tb}"
             arcpy.AddMessage(error_message)
 
 def thin_road_network(in_features, minimum_length_min, minimum_length_max, invisibility_field, hierarchy_field, ref_scale, carto_partition, working_gdb):
@@ -161,10 +158,82 @@ def grouping(input_line_list, group_sql_rd1, group_sql_rd2, group_sql_track):
         error_message = f"Transportation grouping error: {e}\nTraceback details:\n{tb}"
         arcpy.AddMessage(error_message)   
 
-def gen_transportation(feature_list, working_gdb, hierarchy_file, in_feature_loc, hierarchy_field, collapse_sql, collapse_size, carto_partition, seg_length, group_sql_rd1, group_sql_rd2, 
-                       minimum_length_min, minimum_length_max, invisibility_field, ref_scale, generalize_operations, simple_tolerance, smooth_tolerance, trans_common_express, min_size, delete_input, 
-                       one_point, unique_field, group_sql_track, minimum_length, minimum_width, additional_criteria, railway_sql, merge_field, merge_distance, update, change_road_type, 
-                       trans_build_up_buildings, trans_topology_features, logger):
+
+
+def remove_short_road_in_terrace_house(road_fc, bldg_fc, search_tolerance, working_gdb, length_tolerance, road_class_field, road_class_type, name_field, logger):
+    # Set environment variables
+    arcpy.env.overwriteOutput = True
+    arcpy.env.workspace = working_gdb
+    try:
+        arcpy.AddMessage("Applying remove back lane function") 
+        # Get length field
+        length_field = arcpy.da.Describe(road_fc)['lengthFieldName']
+        name_query = f"({name_field} = '' or {name_field} = ' ' or {name_field} IS NULL)"
+        # Create make feature layer for road and building
+        arcpy.management.MakeFeatureLayer(road_fc, "road_layer")
+        # Select building features with RET <= 3 (Terrace houses)
+        arcpy.management.SelectLayerByAttribute(in_layer_or_view=bldg_fc, selection_type="NEW_SELECTION", where_clause="RET <= 3")
+        # Dissolve selected building features
+        dissolved_terrace_bldg_lyr = arcpy.management.Dissolve(in_features=bldg_fc, out_feature_class=f"{working_gdb}\\dissolved_terrace_bldg_lyr")
+        arcpy.management.MakeFeatureLayer(dissolved_terrace_bldg_lyr, "dissolved_terrace_bldg_lyr")
+        # Select features within a distance
+        arcpy.management.SelectLayerByLocation(in_layer="road_layer", overlap_type="WITHIN_A_DISTANCE", select_features="dissolved_terrace_bldg_lyr", search_distance=f"{search_tolerance} Meters",
+            selection_type="NEW_SELECTION")
+        # Select feature by attribute
+        arcpy.management.SelectLayerByAttribute(in_layer_or_view="road_layer", selection_type="SUBSET_SELECTION", where_clause=f"{length_field} < {length_tolerance} And {road_class_field} = {road_class_type} And {name_query}")
+        # Delete features
+        arcpy.management.DeleteFeatures("road_layer")
+    except Exception as e:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        tb = traceback.format_exc()
+        error_message = f"Road feature remove in terrace area error: {e}\nTraceback details:\n{tb}"
+        logger.error(error_message)
+        simplified_msgs('Road feature remove in terrace area', f'{exc_value}\n')
+
+def resolve_segmented_symbology_fortransport(transport_layer, working_gdb, logger):
+    arcpy.env.overwriteOutput = True
+    arcpy.env.workspace = working_gdb
+    try:
+        rcs_values = []
+        with arcpy.da.SearchCursor(transport_layer, ["RCS"]) as cursor:
+            for row in cursor:
+                if row[0] is not None:
+                    rcs_values.append(row[0])
+        rcs_values = list(set(rcs_values))
+        for indv_rcs in rcs_values:
+            if indv_rcs == 4:
+                arcpy.management.CalculateField(in_table=transport_layer, field="Orientation_Degree", expression="2",
+                                                expression_type="PYTHON3",
+                                                code_block="", field_type="TEXT", enforce_domains="NO_ENFORCE_DOMAINS")
+                transport_layer=arcpy.management.SelectLayerByAttribute(in_layer_or_view=transport_layer, selection_type="NEW_SELECTION",
+                                                        where_clause=f"RCS = {indv_rcs}", invert_where_clause=None)
+                dangle_points = arcpy.management.FeatureVerticesToPoints(in_features=transport_layer,
+                                                                        out_feature_class=f"{working_gdb}\\dangle_points",
+                                                                        point_location="DANGLE")
+                transport_layer=arcpy.management.SelectLayerByLocation(in_layer=transport_layer, overlap_type="INTERSECT",
+                                                    select_features=dangle_points,
+                                                    search_distance=None, selection_type="SUBSET_SELECTION",
+                                                    invert_spatial_relationship="NOT_INVERT")
+                arcpy.management.CalculateField(in_table=transport_layer, field="Orientation_Degree", expression="0",
+                                                expression_type="PYTHON3",
+                                                code_block="", field_type="TEXT", enforce_domains="NO_ENFORCE_DOMAINS")
+                transport_layer=arcpy.management.SelectLayerByAttribute(in_layer_or_view=transport_layer, selection_type="NEW_SELECTION",
+                                                        where_clause=f"RCS = {indv_rcs} And Orientation_Degree = 2",
+                                                        invert_where_clause=None)
+                arcpy.management.CalculateField(in_table=transport_layer, field="Orientation_Degree", expression="1",
+                                                expression_type="PYTHON3",code_block="", field_type="TEXT", enforce_domains="NO_ENFORCE_DOMAINS")
+    except Exception as e:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        tb = traceback.format_exc()
+        error_message = f"Resolve segmented symbology for Transport error: {e}\nTraceback details:\n{tb}"
+        logger.error(error_message)
+        simplified_msgs('Resolve segmented symbology for Transport', f'{exc_value}\n')
+
+
+def gen_transportation(feature_list, working_gdb, hierarchy_file, in_feature_loc, hierarchy_field, collapse_sql, collapse_size, carto_partition, seg_length, group_sql_rd1, group_sql_rd2,
+                       minimum_length_min, minimum_length_max, invisibility_field, ref_scale, generalize_operations, simple_tolerance, smooth_tolerance, trans_common_express, min_size, delete_input,
+                       one_point, unique_field, group_sql_track, minimum_length, minimum_width, additional_criteria, railway_sql, merge_field, merge_distance, update, change_road_type,
+                       trans_build_up_buildings, trans_topology_features, remove_backlane_tolerance, remove_backlane_length, logger):
     
     arcpy.AddMessage('Starting transportation features generalization.....')
     # Set environment
@@ -192,40 +261,41 @@ def gen_transportation(feature_list, working_gdb, hierarchy_file, in_feature_loc
         # Road collapse and Replace
         collapse_replace(input_line_list, collapse_sql, collapse_size, carto_partition, working_gdb)
         # Delete dangles
-        delete_dngl_sql = "NAM IS NOT NULL AND NAM <> ''"
+        delete_dngl_sql = "NAM = '' Or NAM = ' ' Or NAM IS NULL"
         recursive = "true"
         for trans_lines in input_line_list:
-            if arcpy.da.Describe(trans_lines)['baseName'] == 'TA0060_Road_L':
+            if os.path.basename(trans_lines) == 'TA0060_Road_L':
                 compare_fcs_list.insert(0, input_line_list[1])
-            elif arcpy.da.Describe(trans_lines)['baseName'] == 'TA0110_Track_L':
+            elif os.path.basename(trans_lines) == 'TA0110_Track_L':
                 compare_fcs_list.insert(0, input_line_list[0])
             trans_delete_dangles(trans_lines, delete_dngl_sql, compare_fcs_list, seg_length, working_gdb, recursive)
         # Thin road network reducing
         thin_road_network(input_line_list, minimum_length_min, minimum_length_max, invisibility_field, hierarchy_field, ref_scale, carto_partition, working_gdb)
         # Smooth road
         # Insert main feature into topology fcs list
-        # Insert main feature into topology fcs list
         topology_fcs = list(filter(str.strip, trans_topology_features))
         topology_fcs = [fc for topo in topology_fcs for fc in feature_list if str(topo) in fc]
         for input_fc in input_line_list:
             if has_features(input_fc):
                 arcpy.SetProgressorLabel(f"Generalizing Shared Feature: {arcpy.da.Describe(input_fc)['baseName']}")
-                if arcpy.da.Describe(input_fc)['name'] == 'TA0060_Road_L':
+                if os.path.basename(input_fc) == 'TA0060_Road_L':
                     main_fc = arcpy.management.MakeFeatureLayer(input_fc, "main_fc", trans_common_express)
                     topology_fcs.insert(0, main_fc)
-                    selected_fc = arcpy.management.SelectLayerByAttribute(main_fc, "NEW_SELECTION", "RCS <> 5")
-                    if has_features(selected_fc):
-                        gen_shared_features(main_fc, generalize_operations, simple_tolerance, smooth_tolerance, working_gdb, topology_fcs)
-                    arcpy.management.SelectLayerByAttribute(main_fc, "SWITCH_SELECTION", "RCS <> 5")
-                    if has_features(main_fc):
-                        gen_shared_features(main_fc, generalize_operations, simple_tolerance, smooth_tolerance, working_gdb, topology_fcs)
+                    # selected_fc = arcpy.management.SelectLayerByAttribute(main_fc, "NEW_SELECTION", "RCS <> 5")
+                    # if has_features(selected_fc):
+                    track_fc = input_line_list[1]
+                    gen_shared_features(main_fc, generalize_operations, simple_tolerance, smooth_tolerance, working_gdb, topology_fcs, track_fc)
+                    # arcpy.management.SelectLayerByAttribute(main_fc, "SWITCH_SELECTION", "RCS <> 5")
+                    # if has_features(main_fc):
+                    #     gen_shared_features(main_fc, generalize_operations, simple_tolerance, smooth_tolerance, working_gdb, topology_fcs)
                     topology_fcs.remove(main_fc)
 
                 else:
                     main_fc = arcpy.management.MakeFeatureLayer(input_fc, "main_fc", trans_common_express)
+                    road_fc = input_line_list[0]
                     topology_fcs.insert(0, main_fc)
                     if has_features(main_fc):
-                        gen_shared_features(main_fc, generalize_operations, simple_tolerance, smooth_tolerance, working_gdb, topology_fcs)
+                        gen_shared_features(main_fc, generalize_operations, simple_tolerance, smooth_tolerance, working_gdb, topology_fcs, road_fc)
                     topology_fcs.remove(main_fc)
 
         # Grouping
@@ -249,7 +319,18 @@ def gen_transportation(feature_list, working_gdb, hierarchy_file, in_feature_loc
         rail = [fc for fc in feature_list if 'TA0010_Rail_Line_L' in fc][0]
         merge_parallel_roads(rail, railway_sql_3, merge_field, merge_distance, update, change_road_type[0], working_gdb)
         merge_parallel_roads(rail, railway_sql_1, merge_field, merge_distance, update, change_road_type[1], working_gdb)
-
+        # Applying remove back lane function
+        road_fc=[fc for fc in feature_list if 'TA0060_Road_L' in fc][0]
+        bldg_fc=[fc for fc in feature_list if 'BA0010_Residential_Building_A' in fc][0]
+        road_class_field="RCS"
+        road_class_type=4
+        name_field=unique_field
+        remove_short_road_in_terrace_house(road_fc, bldg_fc, remove_backlane_tolerance, working_gdb, remove_backlane_length, road_class_field, road_class_type, name_field, logger)
+        
+        # calculate orientation degree field for attribute driven symbology based on connected road and dangle road
+        road_fc=[fc for fc in feature_list if 'TA0060_Road_L' in fc][0]
+        resolve_segmented_symbology_fortransport(road_fc, working_gdb, logger)
+    
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         tb = traceback.format_exc()

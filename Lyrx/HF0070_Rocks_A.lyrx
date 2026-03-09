@@ -3,16 +3,17 @@
   "version" : "3.5.0",
   "build" : 57366,
   "layers" : [
-    "CIMPATH=01_Gen10K1/HF0070_Rocks_A.json"
+    "CIMPATH=GenCarto100K/HF0070_Rocks_A.json"
   ],
   "layerDefinitions" : [
     {
       "type" : "CIMFeatureLayer",
       "name" : "HF0070_Rocks_A",
-      "uRI" : "CIMPATH=01_Gen10K1/HF0070_Rocks_A.json",
+      "uRI" : "CIMPATH=GenCarto100K/HF0070_Rocks_A.json",
       "sourceModifiedTime" : {
         "type" : "TimeInstant"
       },
+      "metadataURI" : "CIMPATH=Metadata/26daafbeeba6ace65ba627df33c35a3e.xml",
       "useSourceMetadata" : true,
       "description" : "HF0070_Rocks_A",
       "layerElevation" : {
@@ -59,7 +60,7 @@
         "dataConnection" : {
           "type" : "CIMFeatureDatasetDataConnection",
           "featureDataset" : "Topo",
-          "workspaceConnectionString" : "DATABASE=..\\GenCarto10K\\PDGK.gdb",
+          "workspaceConnectionString" : "DATABASE=..\\PDGK.gdb",
           "workspaceFactory" : "FileGDB",
           "dataset" : "HF0070_Rocks_A",
           "datasetType" : "esriDTFeatureClass"
@@ -301,15 +302,15 @@
           "primitiveOverrides" : [
             {
               "type" : "CIMPrimitiveOverride",
-              "primitiveName" : "4bd78dc0-f826-49ea-8e6a-acf3faf10b77",
+              "primitiveName" : "a34043d1-04a9-4c83-9bbc-1d40573583ac",
               "propertyName" : "FillColor",
-              "expression" : "[FNM]"
+              "expression" : "[FCD]"
             },
             {
               "type" : "CIMPrimitiveOverride",
-              "primitiveName" : "4bd78dc0-f826-49ea-8e6a-acf3faf10b77",
+              "primitiveName" : "a34043d1-04a9-4c83-9bbc-1d40573583ac",
               "propertyName" : "StrokeColor",
-              "expression" : "[FNM]"
+              "expression" : "[FCD]"
             }
           ],
           "symbol" : {
@@ -411,7 +412,7 @@
                         {
                           "type" : "CIMSolidStroke",
                           "enable" : true,
-                          "name" : "New_1592501b-c6db-469d-a56e-c45945510299",
+                          "name" : "New_dcfe4537-4f8e-4905-8aa5-bb853d230210",
                           "capStyle" : "Round",
                           "joinStyle" : "Round",
                           "lineStyle3D" : "Strip",
@@ -446,7 +447,7 @@
                       ],
                       "angleAlignment" : "Map"
                     },
-                    "primitiveName" : "4bd78dc0-f826-49ea-8e6a-acf3faf10b77"
+                    "primitiveName" : "a34043d1-04a9-4c83-9bbc-1d40573583ac"
                   }
                 ],
                 "scaleSymbolsProportionally" : true,
@@ -459,6 +460,13 @@
       },
       "scaleSymbols" : true,
       "snappable" : true
+    }
+  ],
+  "binaryReferences" : [
+    {
+      "type" : "CIMBinaryReference",
+      "uRI" : "CIMPATH=Metadata/26daafbeeba6ace65ba627df33c35a3e.xml",
+      "data" : "<?xml version=\"1.0\"?>\r\n<metadata xml:lang=\"en\"><Esri><CreaDate>20251006</CreaDate><CreaTime>04083600</CreaTime><ArcGISFormat>1.0</ArcGISFormat><SyncOnce>TRUE</SyncOnce></Esri><dataIdInfo><idCitation><resTitle>HF0070_Rocks_A</resTitle></idCitation><idAbs>HF0070_Rocks_A</idAbs><idCredit></idCredit><idPurp></idPurp><resConst><Consts><useLimit></useLimit></Consts></resConst></dataIdInfo></metadata>\r\n"
     }
   ],
   "rGBColorProfile" : "sRGB IEC61966-2.1",

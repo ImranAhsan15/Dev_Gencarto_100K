@@ -3,11 +3,46 @@ import traceback
 import sys
 from common_utils import *
 
-def gen_vegetation(fc_list, vegetation_min_area, vegetation_eliminate_area, veg_lyrs_list, veg_field_values, working_gdb, logger):
+def transfer_features_with_dict(fc_list, veg_transfer_veg_features):
+    def resolve_fc(fc_name):
+         matches = [fc for fc in fc_list if fc_name in fc]
+         return matches[0] if matches else None
+    for source_name, target_name in veg_transfer_veg_features.items():
+        # Skip self-maps (optional, but usually sensible)
+        if source_name == target_name:
+            arcpy.AddMessage(f"Skipping '{source_name}' → '{target_name}' (same target).")
+            continue
+
+        source_fc = resolve_fc(source_name)
+        target_fc = resolve_fc(target_name)
+
+        if not source_fc:
+            arcpy.AddWarning(f"Source feature class not found in fc_list: {source_name}")
+            continue
+        if not target_fc:
+            arcpy.AddWarning(f"Target feature class not found in fc_list: {target_name}")
+            continue
+
+        try:
+            if has_features(source_fc) > 0:
+                arcpy.AddMessage(f"Transferring features from {source_name} to {target_name}")
+                arcpy.management.Append(source_fc, target_fc, "NO_TEST")
+                arcpy.management.DeleteFeatures(source_fc)
+                arcpy.AddMessage(f"Deleted features from {source_name}")
+            else:
+                arcpy.AddMessage(f"No features found to transfer from {source_name} to {target_name}")
+        except Exception as ex:
+            arcpy.AddError(f"Transfer failed for {source_name} → {target_name}: {ex}")
+            # decide whether to continue or raise; continuing is often nicer in batch runs
+            continue
+    return None
+
+def gen_vegetation(fc_list, vegetation_min_area, vegetation_eliminate_area, veg_lyrs_list, veg_transfer_veg_features, veg_field_values, working_gdb, logger):
     arcpy.AddMessage('Starting vegetation features generalization.....')
     arcpy.env.overwriteOutput = True
     try:
         input_fcs=[fc for a_lyr in veg_lyrs_list for fc in fc_list if str(a_lyr) in fc]
+        transfer_features_with_dict(fc_list, veg_transfer_veg_features)
         
         field_cal_expr = [
             ([fc for fc in input_fcs if 'VA1030_Coconut_A' in fc][0], "VA1030"),
@@ -15,7 +50,7 @@ def gen_vegetation(fc_list, vegetation_min_area, vegetation_eliminate_area, veg_
             ([fc for fc in input_fcs if 'VA9010_Sundry_Tree_A' in fc][0], "VA9010"),
             ([fc for fc in input_fcs if 'VA9020_Sundry_Non_Tree_A' in fc][0], "VA9020"),
             ([fc for fc in input_fcs if 'VA2060_Paddy_A' in fc][0], "VA2060"),
-            ([fc for fc in input_fcs if 'VA1040_Rubber_Trees_A' in fc][0], "VA1040"),
+            ([fc for fc in input_fcs if 'VB3020_Rubber_Trees_A' in fc][0], "VB3020"),
             ([fc for fc in input_fcs if 'VB0000_Forest_A' in fc][0], "VB0000"),
             ([fc for fc in input_fcs if 'VC1110_Grass_A' in fc][0], "VC1110"),
             ([fc for fc in input_fcs if 'VC1100_Riung_A' in fc][0], "VC1100"),
@@ -89,7 +124,7 @@ def gen_vegetation(fc_list, vegetation_min_area, vegetation_eliminate_area, veg_
             selected_dissolved_lyr = arcpy.management.SelectLayerByAttribute(in_layer_or_view=dissolve_feature,
                                                                              selection_type="NEW_SELECTION",
                                                                              where_clause=f"trace_fld = '{field_val}'")
-            if int(arcpy.management.GetCount(selected_dissolved_lyr)[0]) > 0:
+            if has_features(selected_dissolved_lyr):
                 veg_indiv_dissolve_layer = arcpy.management.MakeFeatureLayer(selected_dissolved_lyr, 'veg_indiv_dissolve_layer')
                 arcpy.management.Append(veg_indiv_dissolve_layer, fc, "NO_TEST")
 
@@ -102,16 +137,17 @@ def gen_vegetation(fc_list, vegetation_min_area, vegetation_eliminate_area, veg_
         # Erase vegetation overlap
         enlarge_fcs_1 = [fc for a_lyr in ['VC1110_Grass_A', 'VC1100_Riung_A', 'VC1090_Scrub_Shrub_A'] for fc in fc_list if str(a_lyr) in fc]
         erase_fcs_1 = [fc for a_lyr in ['VA1030_Coconut_A', 'VA1060_Oil_Palm_A', 'VA9010_Sundry_Tree_A',
-                                        'VA9020_Sundry_Non_Tree_A', 'VA2060_Paddy_A', 'VA1040_Rubber_Trees_A', 
+                                        'VA9020_Sundry_Non_Tree_A', 'VA2060_Paddy_A', 'VB3020_Rubber_Trees_A', 
                                         'VB0000_Forest_A'] for fc in fc_list if str(a_lyr) in fc]
         enlarge_fcs_2 = [fc for a_lyr in ['VA1030_Coconut_A', 'VA1060_Oil_Palm_A', 'VA9010_Sundry_Tree_A',
                                           'VA9020_Sundry_Non_Tree_A', 'VA2060_Paddy_A'] for fc in fc_list if str(a_lyr) in fc]
-        erase_fcs_2 = [fc for a_lyr in ['VA1040_Rubber_Trees_A', 'VB0000_Forest_A'] for fc in fc_list if str(a_lyr) in fc]
+        erase_fcs_2 = [fc for a_lyr in ['VB3020_Rubber_Trees_A', 'VB0000_Forest_A'] for fc in fc_list if str(a_lyr) in fc]
 
         for fc in enlarge_fcs_1:
             erase_polygons_by_replace(fc, erase_fcs_1, None, working_gdb)
         for fc in enlarge_fcs_2:
             erase_polygons_by_replace(fc, erase_fcs_2, None, working_gdb)
+
             
         # Delete temp files
         temp_file = [eliminate_layer, eliminate_part_feature, dissolve_feature]

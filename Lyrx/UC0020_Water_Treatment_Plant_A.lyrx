@@ -3,13 +3,13 @@
   "version" : "3.5.0",
   "build" : 57366,
   "layers" : [
-    "CIMPATH=01_Gen10K1/UC0020_Water_Treatment_Plant_A.json"
+    "CIMPATH=02_GenCarto50K/UC0020_Water_Treatment_Plant_A.json"
   ],
   "layerDefinitions" : [
     {
       "type" : "CIMFeatureLayer",
       "name" : "UC0020_Water_Treatment_Plant_A",
-      "uRI" : "CIMPATH=01_Gen10K1/UC0020_Water_Treatment_Plant_A.json",
+      "uRI" : "CIMPATH=02_GenCarto50K/UC0020_Water_Treatment_Plant_A.json",
       "sourceModifiedTime" : {
         "type" : "TimeInstant"
       },
@@ -59,7 +59,7 @@
         "dataConnection" : {
           "type" : "CIMFeatureDatasetDataConnection",
           "featureDataset" : "Topo",
-          "workspaceConnectionString" : "DATABASE=..\\GenCarto10K\\PDGK.gdb",
+          "workspaceConnectionString" : "DATABASE=..\\PDGK.gdb",
           "workspaceFactory" : "FileGDB",
           "dataset" : "UC0020_Water_Treatment_Plant_A",
           "datasetType" : "esriDTFeatureClass"
@@ -298,45 +298,9 @@
         "patch" : "Default",
         "symbol" : {
           "type" : "CIMSymbolReference",
-          "primitiveOverrides" : [
-            {
-              "type" : "CIMPrimitiveOverride",
-              "primitiveName" : "2.0",
-              "propertyName" : "Color",
-              "valueExpressionInfo" : {
-                "type" : "CIMExpressionInfo",
-                "title" : "Custom",
-                "expression" : "$feature.FNM",
-                "returnType" : "Default"
-              }
-            }
-          ],
           "symbol" : {
             "type" : "CIMPolygonSymbol",
             "symbolLayers" : [
-              {
-                "type" : "CIMSolidStroke",
-                "enable" : true,
-                "colorLocked" : true,
-                "primitiveName" : "2.0",
-                "capStyle" : "Butt",
-                "joinStyle" : "Miter",
-                "lineStyle3D" : "Strip",
-                "miterLimit" : 10,
-                "width" : 0.85039370078740162,
-                "height3D" : 1,
-                "anchor3D" : "Center",
-                "color" : {
-                  "type" : "CIMCMYKColor",
-                  "values" : [
-                    0,
-                    0,
-                    0,
-                    100,
-                    100
-                  ]
-                }
-              },
               {
                 "type" : "CIMSolidFill",
                 "enable" : true,
@@ -345,10 +309,10 @@
                 "color" : {
                   "type" : "CIMCMYKColor",
                   "values" : [
-                    30,
                     0,
                     0,
                     0,
+                    100,
                     100
                   ]
                 }

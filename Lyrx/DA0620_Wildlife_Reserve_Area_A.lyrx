@@ -3,16 +3,17 @@
   "version" : "3.5.0",
   "build" : 57366,
   "layers" : [
-    "CIMPATH=01_Gen10K1/DA0620_Wildlife_Reserve_Area_A.json"
+    "CIMPATH=GenCarto100K__PDGK_/DA0620_Wildlife_Reserve_Area_A.json"
   ],
   "layerDefinitions" : [
     {
       "type" : "CIMFeatureLayer",
       "name" : "DA0620_Wildlife_Reserve_Area_A",
-      "uRI" : "CIMPATH=01_Gen10K1/DA0620_Wildlife_Reserve_Area_A.json",
+      "uRI" : "CIMPATH=GenCarto100K__PDGK_/DA0620_Wildlife_Reserve_Area_A.json",
       "sourceModifiedTime" : {
         "type" : "TimeInstant"
       },
+      "metadataURI" : "CIMPATH=Metadata/f0833eeb3c7561ce1a674af0ceda2b8f.xml",
       "useSourceMetadata" : true,
       "description" : "DA0620_Wildlife_Reserve_Area_A",
       "layerElevation" : {
@@ -59,7 +60,7 @@
         "dataConnection" : {
           "type" : "CIMFeatureDatasetDataConnection",
           "featureDataset" : "Topo",
-          "workspaceConnectionString" : "DATABASE=..\\GenCarto10K\\PDGK.gdb",
+          "workspaceConnectionString" : "DATABASE=..\\PDGK.gdb",
           "workspaceFactory" : "FileGDB",
           "dataset" : "DA0620_Wildlife_Reserve_Area_A",
           "datasetType" : "esriDTFeatureClass"
@@ -301,15 +302,31 @@
           "primitiveOverrides" : [
             {
               "type" : "CIMPrimitiveOverride",
-              "primitiveName" : "91c17367-685c-42b6-87ea-6631748aab22",
+              "primitiveName" : "7317be49-c03a-4b4d-a892-ad474de47f21",
               "propertyName" : "Color",
-              "expression" : "[FNM]"
+              "expression" : "[FCD]"
             },
             {
               "type" : "CIMPrimitiveOverride",
-              "primitiveName" : "5ad37813-ecf5-4335-ada7-25442cab1d04",
+              "primitiveName" : "7317be49-c03a-4b4d-a892-ad474de47f21",
+              "propertyName" : "Width",
+              "valueExpressionInfo" : {
+                "type" : "CIMExpressionInfo",
+                "title" : "Custom",
+                "expression" : "$feature.FCD",
+                "returnType" : "Default"
+              }
+            },
+            {
+              "type" : "CIMPrimitiveOverride",
+              "primitiveName" : "abfe4709-fe19-454c-9cfd-daa2c63b1e9d",
               "propertyName" : "Color",
-              "expression" : "[FNM]"
+              "valueExpressionInfo" : {
+                "type" : "CIMExpressionInfo",
+                "title" : "Custom",
+                "expression" : "$feature.FCD",
+                "returnType" : "Default"
+              }
             }
           ],
           "symbol" : {
@@ -318,7 +335,7 @@
               {
                 "type" : "CIMSolidStroke",
                 "enable" : true,
-                "primitiveName" : "91c17367-685c-42b6-87ea-6631748aab22",
+                "primitiveName" : "7317be49-c03a-4b4d-a892-ad474de47f21",
                 "capStyle" : "Round",
                 "joinStyle" : "Round",
                 "lineStyle3D" : "Strip",
@@ -339,12 +356,12 @@
               {
                 "type" : "CIMSolidFill",
                 "enable" : true,
-                "primitiveName" : "5ad37813-ecf5-4335-ada7-25442cab1d04",
+                "primitiveName" : "abfe4709-fe19-454c-9cfd-daa2c63b1e9d",
                 "color" : {
                   "type" : "CIMRGBColor",
                   "values" : [
-                    199,
-                    211,
+                    198,
+                    184,
                     242,
                     100
                   ]
@@ -357,6 +374,13 @@
       },
       "scaleSymbols" : true,
       "snappable" : true
+    }
+  ],
+  "binaryReferences" : [
+    {
+      "type" : "CIMBinaryReference",
+      "uRI" : "CIMPATH=Metadata/f0833eeb3c7561ce1a674af0ceda2b8f.xml",
+      "data" : "<?xml version=\"1.0\"?>\r\n<metadata xml:lang=\"en\"><Esri><CreaDate>20250820</CreaDate><CreaTime>04540500</CreaTime><ArcGISFormat>1.0</ArcGISFormat><SyncOnce>TRUE</SyncOnce></Esri><dataIdInfo><idCitation><resTitle>DA0620_Wildlife_Reserve_Area_A</resTitle></idCitation><idAbs>DA0620_Wildlife_Reserve_Area_A</idAbs><idCredit></idCredit><idPurp></idPurp><resConst><Consts><useLimit></useLimit></Consts></resConst></dataIdInfo></metadata>\r\n"
     }
   ],
   "rGBColorProfile" : "sRGB IEC61966-2.1",

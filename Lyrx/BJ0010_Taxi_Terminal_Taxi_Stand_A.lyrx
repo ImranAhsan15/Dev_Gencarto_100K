@@ -1,18 +1,19 @@
 {
   "type" : "CIMLayerDocument",
-  "version" : "3.4.0",
-  "build" : 55405,
+  "version" : "3.5.0",
+  "build" : 57366,
   "layers" : [
-    "CIMPATH=01_Gen10K1/BJ0010_Taxi_Terminal_Taxi_Stand_A.json"
+    "CIMPATH=GenCarto100K/BJ0010_Taxi_Terminal_Taxi_Stand_A.json"
   ],
   "layerDefinitions" : [
     {
       "type" : "CIMFeatureLayer",
       "name" : "BJ0010_Taxi_Terminal_Taxi_Stand_A",
-      "uRI" : "CIMPATH=01_Gen10K1/BJ0010_Taxi_Terminal_Taxi_Stand_A.json",
+      "uRI" : "CIMPATH=GenCarto100K/BJ0010_Taxi_Terminal_Taxi_Stand_A.json",
       "sourceModifiedTime" : {
         "type" : "TimeInstant"
       },
+      "metadataURI" : "CIMPATH=Metadata/86ddbbb858feb5643d2e98e7f1569738.xml",
       "useSourceMetadata" : true,
       "description" : "BJ0010_Taxi_Terminal_Taxi_Stand_A",
       "layerElevation" : {
@@ -59,7 +60,7 @@
         "dataConnection" : {
           "type" : "CIMFeatureDatasetDataConnection",
           "featureDataset" : "Topo",
-          "workspaceConnectionString" : "DATABASE=..\\GenCarto10K\\PDGK.gdb",
+          "workspaceConnectionString" : "DATABASE=..\\PDGK.gdb",
           "workspaceFactory" : "FileGDB",
           "dataset" : "BJ0010_Taxi_Terminal_Taxi_Stand_A",
           "datasetType" : "esriDTFeatureClass"
@@ -124,7 +125,8 @@
                   "splitAfter" : true
                 }
               ],
-              "trimStackingSeparators" : true
+              "trimStackingSeparators" : true,
+              "preferToStackLongLabels" : true
             },
             "lineFeatureType" : "General",
             "linePlacementMethod" : "OffsetCurvedFromLine",
@@ -305,7 +307,7 @@
               "valueExpressionInfo" : {
                 "type" : "CIMExpressionInfo",
                 "title" : "Custom",
-                "expression" : "$feature.FNM",
+                "expression" : "$feature.FCD",
                 "returnType" : "Default"
               }
             }
@@ -324,7 +326,7 @@
                     0,
                     0,
                     0,
-                    50,
+                    100,
                     100
                   ]
                 }
@@ -336,6 +338,13 @@
       },
       "scaleSymbols" : true,
       "snappable" : true
+    }
+  ],
+  "binaryReferences" : [
+    {
+      "type" : "CIMBinaryReference",
+      "uRI" : "CIMPATH=Metadata/86ddbbb858feb5643d2e98e7f1569738.xml",
+      "data" : "<?xml version=\"1.0\"?>\r\n<metadata xml:lang=\"en\"><Esri><CreaDate>20251006</CreaDate><CreaTime>04083600</CreaTime><ArcGISFormat>1.0</ArcGISFormat><SyncOnce>TRUE</SyncOnce></Esri><dataIdInfo><idCitation><resTitle>BJ0010_Taxi_Terminal_Taxi_Stand_A</resTitle></idCitation><idAbs>BJ0010_Taxi_Terminal_Taxi_Stand_A</idAbs><idCredit></idCredit><idPurp></idPurp><resConst><Consts><useLimit></useLimit></Consts></resConst></dataIdInfo></metadata>\r\n"
     }
   ],
   "rGBColorProfile" : "sRGB IEC61966-2.1",

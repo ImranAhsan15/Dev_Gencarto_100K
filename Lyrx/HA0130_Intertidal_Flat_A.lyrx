@@ -3,16 +3,17 @@
   "version" : "3.5.0",
   "build" : 57366,
   "layers" : [
-    "CIMPATH=01_Gen10K1/HA0130_Intertidal_Flat_A.json"
+    "CIMPATH=GenCarto100K/HA0130_Intertidal_Flat_A.json"
   ],
   "layerDefinitions" : [
     {
       "type" : "CIMFeatureLayer",
       "name" : "HA0130_Intertidal_Flat_A",
-      "uRI" : "CIMPATH=01_Gen10K1/HA0130_Intertidal_Flat_A.json",
+      "uRI" : "CIMPATH=GenCarto100K/HA0130_Intertidal_Flat_A.json",
       "sourceModifiedTime" : {
         "type" : "TimeInstant"
       },
+      "metadataURI" : "CIMPATH=Metadata/941a3e1f2f1df82d6e192edf64ff4912.xml",
       "useSourceMetadata" : true,
       "description" : "HA0130_Intertidal_Flat_A",
       "layerElevation" : {
@@ -59,7 +60,7 @@
         "dataConnection" : {
           "type" : "CIMFeatureDatasetDataConnection",
           "featureDataset" : "Topo",
-          "workspaceConnectionString" : "DATABASE=..\\GenCarto10K\\PDGK.gdb",
+          "workspaceConnectionString" : "DATABASE=..\\PDGK.gdb",
           "workspaceFactory" : "FileGDB",
           "dataset" : "HA0130_Intertidal_Flat_A",
           "datasetType" : "esriDTFeatureClass"
@@ -301,15 +302,15 @@
           "primitiveOverrides" : [
             {
               "type" : "CIMPrimitiveOverride",
-              "primitiveName" : "78dc1a09-5d1c-4f3a-bcf0-d00f5f04b5fc",
+              "primitiveName" : "952a096e-a97d-46b0-b4f2-be15aea6af01",
               "propertyName" : "FillColor",
-              "expression" : "[FNM]"
+              "expression" : "[FCD]"
             },
             {
               "type" : "CIMPrimitiveOverride",
-              "primitiveName" : "78dc1a09-5d1c-4f3a-bcf0-d00f5f04b5fc",
+              "primitiveName" : "952a096e-a97d-46b0-b4f2-be15aea6af01",
               "propertyName" : "StrokeColor",
-              "expression" : "[FNM]"
+              "expression" : "[FCD]"
             }
           ],
           "symbol" : {
@@ -427,7 +428,7 @@
                         {
                           "type" : "CIMSolidStroke",
                           "enable" : true,
-                          "name" : "New_bca08cd7-cb4f-4b01-b5b4-94bf833c1f73",
+                          "name" : "New_5c1e36c8-5d69-4205-aa2c-0f107be29cf0",
                           "capStyle" : "Round",
                           "joinStyle" : "Round",
                           "lineStyle3D" : "Strip",
@@ -462,7 +463,7 @@
                       ],
                       "angleAlignment" : "Map"
                     },
-                    "primitiveName" : "78dc1a09-5d1c-4f3a-bcf0-d00f5f04b5fc"
+                    "primitiveName" : "952a096e-a97d-46b0-b4f2-be15aea6af01"
                   }
                 ],
                 "scaleSymbolsProportionally" : true,
@@ -475,6 +476,13 @@
       },
       "scaleSymbols" : true,
       "snappable" : true
+    }
+  ],
+  "binaryReferences" : [
+    {
+      "type" : "CIMBinaryReference",
+      "uRI" : "CIMPATH=Metadata/941a3e1f2f1df82d6e192edf64ff4912.xml",
+      "data" : "<?xml version=\"1.0\"?>\r\n<metadata xml:lang=\"en\"><Esri><CreaDate>20251006</CreaDate><CreaTime>04083600</CreaTime><ArcGISFormat>1.0</ArcGISFormat><SyncOnce>TRUE</SyncOnce></Esri><dataIdInfo><idCitation><resTitle>HA0130_Intertidal_Flat_A</resTitle></idCitation><idAbs>HA0130_Intertidal_Flat_A</idAbs><idCredit></idCredit><idPurp></idPurp><resConst><Consts><useLimit></useLimit></Consts></resConst></dataIdInfo></metadata>\r\n"
     }
   ],
   "rGBColorProfile" : "sRGB IEC61966-2.1",

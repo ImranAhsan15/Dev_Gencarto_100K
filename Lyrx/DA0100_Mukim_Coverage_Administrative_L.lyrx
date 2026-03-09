@@ -3,16 +3,17 @@
   "version" : "3.5.0",
   "build" : 57366,
   "layers" : [
-    "CIMPATH=01_Gen10K1/DA0100_Mukim_Coverage_Administrative_L.json"
+    "CIMPATH=GenCarto100K/DA0100_Mukim_Coverage_Administrative_L.json"
   ],
   "layerDefinitions" : [
     {
       "type" : "CIMFeatureLayer",
       "name" : "DA0100_Mukim_Coverage_Administrative_L",
-      "uRI" : "CIMPATH=01_Gen10K1/DA0100_Mukim_Coverage_Administrative_L.json",
+      "uRI" : "CIMPATH=GenCarto100K/DA0100_Mukim_Coverage_Administrative_L.json",
       "sourceModifiedTime" : {
         "type" : "TimeInstant"
       },
+      "metadataURI" : "CIMPATH=Metadata/42c10617c981a34a7380da4f83db5bd3.xml",
       "useSourceMetadata" : true,
       "description" : "DA0100_Mukim_Coverage_Administrative_L",
       "layerElevation" : {
@@ -59,7 +60,7 @@
         "dataConnection" : {
           "type" : "CIMFeatureDatasetDataConnection",
           "featureDataset" : "Topo",
-          "workspaceConnectionString" : "DATABASE=..\\GenCarto10K\\PDGK.gdb",
+          "workspaceConnectionString" : "DATABASE=..\\PDGK.gdb",
           "workspaceFactory" : "FileGDB",
           "dataset" : "DA0100_Mukim_Coverage_Administrative_L",
           "datasetType" : "esriDTFeatureClass"
@@ -125,7 +126,7 @@
                 }
               ],
               "trimStackingSeparators" : true,
-              "preferToStackLongLabels" : false
+              "preferToStackLongLabels" : true
             },
             "lineFeatureType" : "General",
             "linePlacementMethod" : "OffsetStraightFromLine",
@@ -296,18 +297,144 @@
         "type" : "CIMUniqueValueRenderer",
         "sampleSize" : 10000,
         "colorRamp" : {
-          "type" : "CIMRandomHSVColorRamp",
+          "type" : "CIMFixedColorRamp",
           "colorSpace" : {
             "type" : "CIMICCColorSpace",
             "url" : "Default RGB"
           },
-          "maxH" : 360,
-          "minS" : 15,
-          "maxS" : 30,
-          "minV" : 99,
-          "maxV" : 100,
-          "minAlpha" : 100,
-          "maxAlpha" : 100
+          "colors" : [
+            {
+              "type" : "CIMRGBColor",
+              "colorSpace" : {
+                "type" : "CIMICCColorSpace",
+                "url" : "Default RGB"
+              },
+              "values" : [
+                237,
+                81,
+                81,
+                100
+              ]
+            },
+            {
+              "type" : "CIMRGBColor",
+              "colorSpace" : {
+                "type" : "CIMICCColorSpace",
+                "url" : "Default RGB"
+              },
+              "values" : [
+                20,
+                158,
+                206,
+                100
+              ]
+            },
+            {
+              "type" : "CIMRGBColor",
+              "colorSpace" : {
+                "type" : "CIMICCColorSpace",
+                "url" : "Default RGB"
+              },
+              "values" : [
+                167,
+                198,
+                54,
+                100
+              ]
+            },
+            {
+              "type" : "CIMRGBColor",
+              "colorSpace" : {
+                "type" : "CIMICCColorSpace",
+                "url" : "Default RGB"
+              },
+              "values" : [
+                158,
+                85,
+                156,
+                100
+              ]
+            },
+            {
+              "type" : "CIMRGBColor",
+              "colorSpace" : {
+                "type" : "CIMICCColorSpace",
+                "url" : "Default RGB"
+              },
+              "values" : [
+                252,
+                146,
+                31,
+                100
+              ]
+            },
+            {
+              "type" : "CIMRGBColor",
+              "colorSpace" : {
+                "type" : "CIMICCColorSpace",
+                "url" : "Default RGB"
+              },
+              "values" : [
+                255,
+                222,
+                62,
+                100
+              ]
+            },
+            {
+              "type" : "CIMRGBColor",
+              "colorSpace" : {
+                "type" : "CIMICCColorSpace",
+                "url" : "Default RGB"
+              },
+              "values" : [
+                247,
+                137,
+                216,
+                100
+              ]
+            },
+            {
+              "type" : "CIMRGBColor",
+              "colorSpace" : {
+                "type" : "CIMICCColorSpace",
+                "url" : "Default RGB"
+              },
+              "values" : [
+                183,
+                129,
+                74,
+                100
+              ]
+            },
+            {
+              "type" : "CIMRGBColor",
+              "colorSpace" : {
+                "type" : "CIMICCColorSpace",
+                "url" : "Default RGB"
+              },
+              "values" : [
+                60,
+                175,
+                153,
+                100
+              ]
+            },
+            {
+              "type" : "CIMRGBColor",
+              "colorSpace" : {
+                "type" : "CIMICCColorSpace",
+                "url" : "Default RGB"
+              },
+              "values" : [
+                107,
+                107,
+                214,
+                100
+              ]
+            }
+          ],
+          "arrangement" : "Default"
         },
         "defaultLabel" : "<all other values>",
         "defaultSymbol" : {
@@ -348,21 +475,68 @@
             "classes" : [
               {
                 "type" : "CIMUniqueValueClass",
-                "label" : "Unknown",
-                "patch" : "Default",
+                "editable" : true,
+                "label" : "Mukim",
+                "patch" : "LineHorizontal",
                 "symbol" : {
                   "type" : "CIMSymbolReference",
+                  "primitiveOverrides" : [
+                    {
+                      "type" : "CIMPrimitiveOverride",
+                      "primitiveName" : "785c4d26-9f74-49c4-9921-bf1f06f26423",
+                      "propertyName" : "FillColor",
+                      "valueExpressionInfo" : {
+                        "type" : "CIMExpressionInfo",
+                        "title" : "Custom",
+                        "expression" : "$feature.Along_River",
+                        "returnType" : "Default"
+                      }
+                    },
+                    {
+                      "type" : "CIMPrimitiveOverride",
+                      "primitiveName" : "785c4d26-9f74-49c4-9921-bf1f06f26423",
+                      "propertyName" : "StrokeColor",
+                      "valueExpressionInfo" : {
+                        "type" : "CIMExpressionInfo",
+                        "title" : "Custom",
+                        "expression" : "$feature.Along_River",
+                        "returnType" : "Default"
+                      }
+                    },
+                    {
+                      "type" : "CIMPrimitiveOverride",
+                      "primitiveName" : "2.0",
+                      "propertyName" : "Color",
+                      "valueExpressionInfo" : {
+                        "type" : "CIMExpressionInfo",
+                        "title" : "Custom",
+                        "expression" : "$feature.Along_River",
+                        "returnType" : "Default"
+                      }
+                    },
+                    {
+                      "type" : "CIMPrimitiveOverride",
+                      "primitiveName" : "2.0",
+                      "propertyName" : "Width",
+                      "valueExpressionInfo" : {
+                        "type" : "CIMExpressionInfo",
+                        "title" : "Custom",
+                        "expression" : "$feature.Along_River",
+                        "returnType" : "Default"
+                      }
+                    }
+                  ],
                   "symbol" : {
                     "type" : "CIMLineSymbol",
                     "symbolLayers" : [
                       {
                         "type" : "CIMVectorMarker",
                         "enable" : true,
-                        "name" : "New_f308220a-5eff-4a92-a09d-58414c71d849",
+                        "name" : "New_78c558da-c676-44a4-9714-8f671f903c2e",
                         "colorLocked" : true,
                         "primitiveName" : "3.0",
                         "anchorPoint" : {
-                          "x" : 0.00070621468926553911,
+                          "x" : 0.0011294203808328142,
                           "y" : 0
                         },
                         "anchorPointUnits" : "Relative",
@@ -381,10 +555,10 @@
                           ]
                         },
                         "frame" : {
-                          "xmin" : -0.34000000000000002,
-                          "ymin" : -0.34000000000000002,
-                          "xmax" : 0.34000000000000002,
-                          "ymax" : 0.34000000000000002
+                          "xmin" : -0.21299999999999999,
+                          "ymin" : -0.21299999999999999,
+                          "xmax" : 0.21199999999999999,
+                          "ymax" : 0.21299999999999999
                         },
                         "markerGraphics" : [
                           {
@@ -393,266 +567,70 @@
                               "curveRings" : [
                                 [
                                   [
-                                    0.33900000000000002,
-                                    0
-                                  ],
-                                  [
-                                    0.33900000000000002,
-                                    0
+                                    0,
+                                    0.21299999999999999
                                   ],
                                   {
                                     "b" : [
                                       [
-                                        0.313,
-                                        -0.13300000000000001
-                                      ],
-                                      [
-                                        0.33900000000000002,
-                                        -0.048000000000000001
-                                      ],
-                                      [
-                                        0.33000000000000002,
-                                        -0.091999999999999998
-                                      ]
-                                    ]
-                                  },
-                                  {
-                                    "b" : [
-                                      [
-                                        0.23999999999999999,
-                                        -0.24099999999999999
-                                      ],
-                                      [
-                                        0.29499999999999998,
-                                        -0.17299999999999999
-                                      ],
-                                      [
-                                        0.27100000000000002,
-                                        -0.20899999999999999
-                                      ]
-                                    ]
-                                  },
-                                  {
-                                    "b" : [
-                                      [
-                                        0.13100000000000001,
-                                        -0.314
-                                      ],
-                                      [
-                                        0.20799999999999999,
-                                        -0.27200000000000002
-                                      ],
-                                      [
-                                        0.17199999999999999,
-                                        -0.29599999999999999
-                                      ]
-                                    ]
-                                  },
-                                  {
-                                    "b" : [
-                                      [
-                                        -0.001,
-                                        -0.34000000000000002
-                                      ],
-                                      [
-                                        0.089999999999999997,
-                                        -0.33100000000000002
-                                      ],
-                                      [
-                                        0.045999999999999999,
-                                        -0.34000000000000002
-                                      ]
-                                    ]
-                                  },
-                                  {
-                                    "b" : [
-                                      [
-                                        -0.13400000000000001,
-                                        -0.314
-                                      ],
-                                      [
-                                        -0.049000000000000002,
-                                        -0.34000000000000002
-                                      ],
-                                      [
-                                        -0.092999999999999999,
-                                        -0.33100000000000002
-                                      ]
-                                    ]
-                                  },
-                                  {
-                                    "b" : [
-                                      [
-                                        -0.24099999999999999,
-                                        -0.24099999999999999
-                                      ],
-                                      [
-                                        -0.17399999999999999,
-                                        -0.29599999999999999
-                                      ],
-                                      [
-                                        -0.20999999999999999,
-                                        -0.27200000000000002
-                                      ]
-                                    ]
-                                  },
-                                  {
-                                    "b" : [
-                                      [
-                                        -0.314,
-                                        -0.13300000000000001
-                                      ],
-                                      [
-                                        -0.27200000000000002,
-                                        -0.20899999999999999
-                                      ],
-                                      [
-                                        -0.29599999999999999,
-                                        -0.17299999999999999
-                                      ]
-                                    ]
-                                  },
-                                  {
-                                    "b" : [
-                                      [
-                                        -0.34000000000000002,
+                                        0.21199999999999999,
                                         0
                                       ],
                                       [
-                                        -0.33100000000000002,
-                                        -0.091999999999999998
+                                        0.11700000000000001,
+                                        0.21299999999999999
                                       ],
                                       [
-                                        -0.34000000000000002,
-                                        -0.048000000000000001
+                                        0.21199999999999999,
+                                        0.11700000000000001
                                       ]
                                     ]
                                   },
                                   {
                                     "b" : [
                                       [
-                                        -0.314,
-                                        0.13200000000000001
+                                        0,
+                                        -0.21299999999999999
                                       ],
                                       [
-                                        -0.34000000000000002,
-                                        0.047
+                                        0.21199999999999999,
+                                        -0.11700000000000001
                                       ],
                                       [
-                                        -0.33100000000000002,
-                                        0.090999999999999998
+                                        0.11700000000000001,
+                                        -0.21299999999999999
                                       ]
                                     ]
                                   },
                                   {
                                     "b" : [
                                       [
-                                        -0.24099999999999999,
-                                        0.24099999999999999
-                                      ],
-                                      [
-                                        -0.29599999999999999,
-                                        0.17299999999999999
-                                      ],
-                                      [
-                                        -0.27200000000000002,
-                                        0.20899999999999999
-                                      ]
-                                    ]
-                                  },
-                                  {
-                                    "b" : [
-                                      [
-                                        -0.13400000000000001,
-                                        0.314
-                                      ],
-                                      [
-                                        -0.20999999999999999,
-                                        0.27100000000000002
-                                      ],
-                                      [
-                                        -0.17399999999999999,
-                                        0.29599999999999999
-                                      ]
-                                    ]
-                                  },
-                                  {
-                                    "b" : [
-                                      [
-                                        -0.001,
-                                        0.34000000000000002
-                                      ],
-                                      [
-                                        -0.092999999999999999,
-                                        0.33100000000000002
-                                      ],
-                                      [
-                                        -0.049000000000000002,
-                                        0.34000000000000002
-                                      ]
-                                    ]
-                                  },
-                                  {
-                                    "b" : [
-                                      [
-                                        0.13100000000000001,
-                                        0.314
-                                      ],
-                                      [
-                                        0.045999999999999999,
-                                        0.34000000000000002
-                                      ],
-                                      [
-                                        0.089999999999999997,
-                                        0.33100000000000002
-                                      ]
-                                    ]
-                                  },
-                                  {
-                                    "b" : [
-                                      [
-                                        0.23999999999999999,
-                                        0.24099999999999999
-                                      ],
-                                      [
-                                        0.17199999999999999,
-                                        0.29599999999999999
-                                      ],
-                                      [
-                                        0.20799999999999999,
-                                        0.27100000000000002
-                                      ]
-                                    ]
-                                  },
-                                  {
-                                    "b" : [
-                                      [
-                                        0.313,
-                                        0.13200000000000001
-                                      ],
-                                      [
-                                        0.27100000000000002,
-                                        0.20899999999999999
-                                      ],
-                                      [
-                                        0.29499999999999998,
-                                        0.17299999999999999
-                                      ]
-                                    ]
-                                  },
-                                  {
-                                    "b" : [
-                                      [
-                                        0.33900000000000002,
+                                        -0.21299999999999999,
                                         0
                                       ],
                                       [
-                                        0.33000000000000002,
-                                        0.090999999999999998
+                                        -0.11799999999999999,
+                                        -0.21299999999999999
                                       ],
                                       [
-                                        0.33900000000000002,
-                                        0.047
+                                        -0.21299999999999999,
+                                        -0.11700000000000001
+                                      ]
+                                    ]
+                                  },
+                                  {
+                                    "b" : [
+                                      [
+                                        0,
+                                        0.21299999999999999
+                                      ],
+                                      [
+                                        -0.21299999999999999,
+                                        0.11700000000000001
+                                      ],
+                                      [
+                                        -0.11799999999999999,
+                                        0.21299999999999999
                                       ]
                                     ]
                                   }
@@ -662,6 +640,27 @@
                             "symbol" : {
                               "type" : "CIMPolygonSymbol",
                               "symbolLayers" : [
+                                {
+                                  "type" : "CIMSolidStroke",
+                                  "enable" : true,
+                                  "name" : "New_d47314a5-ba7f-48b1-baf2-1b360cecb50b",
+                                  "capStyle" : "Round",
+                                  "joinStyle" : "Round",
+                                  "lineStyle3D" : "Strip",
+                                  "miterLimit" : 4,
+                                  "width" : 0,
+                                  "height3D" : 1,
+                                  "anchor3D" : "Center",
+                                  "color" : {
+                                    "type" : "CIMRGBColor",
+                                    "values" : [
+                                      0,
+                                      0,
+                                      0,
+                                      100
+                                    ]
+                                  }
+                                },
                                 {
                                   "type" : "CIMSolidFill",
                                   "enable" : true,
@@ -678,7 +677,8 @@
                                 }
                               ],
                               "angleAlignment" : "Map"
-                            }
+                            },
+                            "primitiveName" : "785c4d26-9f74-49c4-9921-bf1f06f26423"
                           }
                         ],
                         "scaleSymbolsProportionally" : true,
@@ -707,7 +707,7 @@
                         "joinStyle" : "Round",
                         "lineStyle3D" : "Strip",
                         "miterLimit" : 10,
-                        "width" : 0.42519685039370081,
+                        "width" : 0.70866141732283472,
                         "height3D" : 1,
                         "anchor3D" : "Center",
                         "color" : {
@@ -727,7 +727,7 @@
                   {
                     "type" : "CIMUniqueValue",
                     "fieldValues" : [
-                      "0"
+                      "2"
                     ]
                   }
                 ],
@@ -735,34 +735,99 @@
               },
               {
                 "type" : "CIMUniqueValueClass",
-                "label" : "Sempadan Mengikut Sungai",
-                "patch" : "Default",
+                "editable" : true,
+                "label" : "Along River",
+                "patch" : "LineHorizontal",
                 "symbol" : {
                   "type" : "CIMSymbolReference",
                   "primitiveOverrides" : [
                     {
                       "type" : "CIMPrimitiveOverride",
-                      "primitiveName" : "0320143a-9577-4cda-a35b-2e3f7e1a905b",
+                      "primitiveName" : "b3ff20af-c89e-4e67-8a53-cc0a13b1ad27",
                       "propertyName" : "FillColor",
-                      "expression" : "[FNM]"
+                      "valueExpressionInfo" : {
+                        "type" : "CIMExpressionInfo",
+                        "title" : "Custom",
+                        "expression" : "$feature.Along_River",
+                        "returnType" : "Default"
+                      }
+                    },
+                    {
+                      "type" : "CIMPrimitiveOverride",
+                      "primitiveName" : "b3ff20af-c89e-4e67-8a53-cc0a13b1ad27",
+                      "propertyName" : "StrokeColor",
+                      "valueExpressionInfo" : {
+                        "type" : "CIMExpressionInfo",
+                        "title" : "Custom",
+                        "expression" : "$feature.Along_River",
+                        "returnType" : "Default"
+                      }
                     },
                     {
                       "type" : "CIMPrimitiveOverride",
                       "primitiveName" : "11.0",
                       "propertyName" : "Color",
-                      "expression" : "[FNM]"
+                      "valueExpressionInfo" : {
+                        "type" : "CIMExpressionInfo",
+                        "title" : "Custom",
+                        "expression" : "$feature.Along_River",
+                        "returnType" : "Default"
+                      }
                     },
                     {
                       "type" : "CIMPrimitiveOverride",
-                      "primitiveName" : "3401e007-64c2-4856-a50f-e101c53b1e4b",
+                      "primitiveName" : "11.0",
+                      "propertyName" : "Width",
+                      "valueExpressionInfo" : {
+                        "type" : "CIMExpressionInfo",
+                        "title" : "Custom",
+                        "expression" : "$feature.Along_River",
+                        "returnType" : "Default"
+                      }
+                    },
+                    {
+                      "type" : "CIMPrimitiveOverride",
+                      "primitiveName" : "17ad628e-79c5-4b85-92b8-6248ed52540b",
                       "propertyName" : "FillColor",
-                      "expression" : "[FNM]"
+                      "valueExpressionInfo" : {
+                        "type" : "CIMExpressionInfo",
+                        "title" : "Custom",
+                        "expression" : "$feature.Along_River",
+                        "returnType" : "Default"
+                      }
+                    },
+                    {
+                      "type" : "CIMPrimitiveOverride",
+                      "primitiveName" : "17ad628e-79c5-4b85-92b8-6248ed52540b",
+                      "propertyName" : "StrokeColor",
+                      "valueExpressionInfo" : {
+                        "type" : "CIMExpressionInfo",
+                        "title" : "Custom",
+                        "expression" : "$feature.Along_River",
+                        "returnType" : "Default"
+                      }
                     },
                     {
                       "type" : "CIMPrimitiveOverride",
                       "primitiveName" : "2.0",
                       "propertyName" : "Color",
-                      "expression" : "[FNM]"
+                      "valueExpressionInfo" : {
+                        "type" : "CIMExpressionInfo",
+                        "title" : "Custom",
+                        "expression" : "$feature.Along_River",
+                        "returnType" : "Default"
+                      }
+                    },
+                    {
+                      "type" : "CIMPrimitiveOverride",
+                      "primitiveName" : "2.0",
+                      "propertyName" : "Width",
+                      "valueExpressionInfo" : {
+                        "type" : "CIMExpressionInfo",
+                        "title" : "Custom",
+                        "expression" : "$feature.Along_River",
+                        "returnType" : "Default"
+                      }
                     }
                   ],
                   "symbol" : {
@@ -771,12 +836,12 @@
                       {
                         "type" : "CIMVectorMarker",
                         "enable" : true,
-                        "name" : "New_128e5a29-cde9-4c0a-97b8-4702fcc9c4fa",
+                        "name" : "New_0f963af5-2464-47e3-937c-075b77313294",
                         "colorLocked" : true,
                         "primitiveName" : "23.0",
                         "anchorPoint" : {
                           "x" : 0,
-                          "y" : -2.331363998567558
+                          "y" : -2.6698570209015449
                         },
                         "anchorPointUnits" : "Relative",
                         "dominantSizeAxis3D" : "Z",
@@ -795,9 +860,9 @@
                         },
                         "frame" : {
                           "xmin" : -0.21299999999999999,
-                          "ymin" : 0.77900000000000003,
+                          "ymin" : 0.92300000000000004,
                           "xmax" : 0.21299999999999999,
-                          "ymax" : 1.204
+                          "ymax" : 1.3480000000000001
                         },
                         "markerGraphics" : [
                           {
@@ -807,21 +872,21 @@
                                 [
                                   [
                                     0,
-                                    1.204
+                                    1.3480000000000001
                                   ],
                                   {
                                     "b" : [
                                       [
                                         0.21299999999999999,
-                                        0.99099999999999999
+                                        1.135
                                       ],
                                       [
                                         0.11700000000000001,
-                                        1.204
+                                        1.3480000000000001
                                       ],
                                       [
                                         0.21299999999999999,
-                                        1.109
+                                        1.2529999999999999
                                       ]
                                     ]
                                   },
@@ -829,15 +894,15 @@
                                     "b" : [
                                       [
                                         0,
-                                        0.77900000000000003
+                                        0.92300000000000004
                                       ],
                                       [
                                         0.21299999999999999,
-                                        0.874
+                                        1.018
                                       ],
                                       [
                                         0.11700000000000001,
-                                        0.77900000000000003
+                                        0.92300000000000004
                                       ]
                                     ]
                                   },
@@ -845,15 +910,15 @@
                                     "b" : [
                                       [
                                         -0.21299999999999999,
-                                        0.99099999999999999
+                                        1.135
                                       ],
                                       [
                                         -0.11700000000000001,
-                                        0.77900000000000003
+                                        0.92300000000000004
                                       ],
                                       [
                                         -0.21299999999999999,
-                                        0.874
+                                        1.018
                                       ]
                                     ]
                                   },
@@ -861,15 +926,15 @@
                                     "b" : [
                                       [
                                         0,
-                                        1.204
+                                        1.3480000000000001
                                       ],
                                       [
                                         -0.21299999999999999,
-                                        1.109
+                                        1.2529999999999999
                                       ],
                                       [
                                         -0.11700000000000001,
-                                        1.204
+                                        1.3480000000000001
                                       ]
                                     ]
                                   }
@@ -879,6 +944,27 @@
                             "symbol" : {
                               "type" : "CIMPolygonSymbol",
                               "symbolLayers" : [
+                                {
+                                  "type" : "CIMSolidStroke",
+                                  "enable" : true,
+                                  "name" : "New_50681efb-b452-4d52-9c75-9e0689fcfe59",
+                                  "capStyle" : "Round",
+                                  "joinStyle" : "Round",
+                                  "lineStyle3D" : "Strip",
+                                  "miterLimit" : 4,
+                                  "width" : 0,
+                                  "height3D" : 1,
+                                  "anchor3D" : "Center",
+                                  "color" : {
+                                    "type" : "CIMRGBColor",
+                                    "values" : [
+                                      0,
+                                      0,
+                                      0,
+                                      100
+                                    ]
+                                  }
+                                },
                                 {
                                   "type" : "CIMSolidFill",
                                   "enable" : true,
@@ -896,7 +982,7 @@
                               ],
                               "angleAlignment" : "Map"
                             },
-                            "primitiveName" : "0320143a-9577-4cda-a35b-2e3f7e1a905b"
+                            "primitiveName" : "b3ff20af-c89e-4e67-8a53-cc0a13b1ad27"
                           }
                         ],
                         "scaleSymbolsProportionally" : true,
@@ -909,7 +995,7 @@
                             "type" : "CIMGeometricEffectOffset",
                             "primitiveName" : "6.0",
                             "method" : "Mitered",
-                            "offset" : 0.99212598425196852,
+                            "offset" : 1.1338582677165356,
                             "option" : "Accurate"
                           },
                           {
@@ -925,14 +1011,14 @@
                           }
                         ],
                         "enable" : true,
-                        "name" : "New_39d80a08-ab74-4c81-a154-4408b53a5dcc",
+                        "name" : "New_e0f4b879-753b-4756-a65a-4d2286b3b980",
                         "colorLocked" : true,
                         "primitiveName" : "11.0",
                         "capStyle" : "Butt",
                         "joinStyle" : "Miter",
                         "lineStyle3D" : "Strip",
                         "miterLimit" : 10,
-                        "width" : 0.42519685039370081,
+                        "width" : 0.70866141732283472,
                         "height3D" : 1,
                         "anchor3D" : "Center",
                         "color" : {
@@ -949,12 +1035,12 @@
                       {
                         "type" : "CIMVectorMarker",
                         "enable" : true,
-                        "name" : "New_36949225-6adb-4833-a17b-74ed2f530337",
+                        "name" : "New_16262758-96ee-4898-b20e-3ace4c3d61a6",
                         "colorLocked" : true,
                         "primitiveName" : "21.0",
                         "anchorPoint" : {
                           "x" : 0,
-                          "y" : 2.3359119439433069
+                          "y" : 2.6698480240205544
                         },
                         "anchorPointUnits" : "Relative",
                         "dominantSizeAxis3D" : "Z",
@@ -973,9 +1059,9 @@
                         },
                         "frame" : {
                           "xmin" : -0.21299999999999999,
-                          "ymin" : -1.206,
+                          "ymin" : -1.3480000000000001,
                           "xmax" : 0.21299999999999999,
-                          "ymax" : -0.78100000000000003
+                          "ymax" : -0.92300000000000004
                         },
                         "markerGraphics" : [
                           {
@@ -985,21 +1071,21 @@
                                 [
                                   [
                                     0,
-                                    -0.78100000000000003
+                                    -0.92300000000000004
                                   ],
                                   {
                                     "b" : [
                                       [
                                         0.21299999999999999,
-                                        -0.99299999999999999
+                                        -1.135
                                       ],
                                       [
                                         0.11700000000000001,
-                                        -0.78100000000000003
+                                        -0.92300000000000004
                                       ],
                                       [
                                         0.21299999999999999,
-                                        -0.876
+                                        -1.018
                                       ]
                                     ]
                                   },
@@ -1007,15 +1093,15 @@
                                     "b" : [
                                       [
                                         0,
-                                        -1.206
+                                        -1.3480000000000001
                                       ],
                                       [
                                         0.21299999999999999,
-                                        -1.111
+                                        -1.2529999999999999
                                       ],
                                       [
                                         0.11700000000000001,
-                                        -1.206
+                                        -1.3480000000000001
                                       ]
                                     ]
                                   },
@@ -1023,15 +1109,15 @@
                                     "b" : [
                                       [
                                         -0.21299999999999999,
-                                        -0.99299999999999999
+                                        -1.135
                                       ],
                                       [
                                         -0.11700000000000001,
-                                        -1.206
+                                        -1.3480000000000001
                                       ],
                                       [
                                         -0.21299999999999999,
-                                        -1.111
+                                        -1.2529999999999999
                                       ]
                                     ]
                                   },
@@ -1039,15 +1125,15 @@
                                     "b" : [
                                       [
                                         0,
-                                        -0.78100000000000003
+                                        -0.92300000000000004
                                       ],
                                       [
                                         -0.21299999999999999,
-                                        -0.876
+                                        -1.018
                                       ],
                                       [
                                         -0.11700000000000001,
-                                        -0.78100000000000003
+                                        -0.92300000000000004
                                       ]
                                     ]
                                   }
@@ -1057,6 +1143,27 @@
                             "symbol" : {
                               "type" : "CIMPolygonSymbol",
                               "symbolLayers" : [
+                                {
+                                  "type" : "CIMSolidStroke",
+                                  "enable" : true,
+                                  "name" : "New_0d32dd67-c9c4-413e-ad80-2a3913c59269",
+                                  "capStyle" : "Round",
+                                  "joinStyle" : "Round",
+                                  "lineStyle3D" : "Strip",
+                                  "miterLimit" : 4,
+                                  "width" : 0,
+                                  "height3D" : 1,
+                                  "anchor3D" : "Center",
+                                  "color" : {
+                                    "type" : "CIMRGBColor",
+                                    "values" : [
+                                      0,
+                                      0,
+                                      0,
+                                      100
+                                    ]
+                                  }
+                                },
                                 {
                                   "type" : "CIMSolidFill",
                                   "enable" : true,
@@ -1074,7 +1181,7 @@
                               ],
                               "angleAlignment" : "Map"
                             },
-                            "primitiveName" : "3401e007-64c2-4856-a50f-e101c53b1e4b"
+                            "primitiveName" : "17ad628e-79c5-4b85-92b8-6248ed52540b"
                           }
                         ],
                         "scaleSymbolsProportionally" : true,
@@ -1087,7 +1194,7 @@
                             "type" : "CIMGeometricEffectOffset",
                             "primitiveName" : "4.0",
                             "method" : "Mitered",
-                            "offset" : -0.99212598425196852,
+                            "offset" : -1.1338582677165356,
                             "option" : "Accurate"
                           },
                           {
@@ -1109,7 +1216,7 @@
                         "joinStyle" : "Miter",
                         "lineStyle3D" : "Strip",
                         "miterLimit" : 10,
-                        "width" : 0.42519685039370081,
+                        "width" : 0.70866141732283472,
                         "height3D" : 1,
                         "anchor3D" : "Center",
                         "color" : {
@@ -1135,408 +1242,6 @@
                   }
                 ],
                 "visible" : true
-              },
-              {
-                "type" : "CIMUniqueValueClass",
-                "label" : "Sempadan Pada Kedudukan Sebenar",
-                "patch" : "Default",
-                "symbol" : {
-                  "type" : "CIMSymbolReference",
-                  "primitiveOverrides" : [
-                    {
-                      "type" : "CIMPrimitiveOverride",
-                      "primitiveName" : "d611cdc1-62b8-4b9b-a3d3-4818b962ba23",
-                      "propertyName" : "FillColor",
-                      "expression" : "[FNM]"
-                    },
-                    {
-                      "type" : "CIMPrimitiveOverride",
-                      "primitiveName" : "2.0",
-                      "propertyName" : "Color",
-                      "expression" : "[FNM]"
-                    }
-                  ],
-                  "symbol" : {
-                    "type" : "CIMLineSymbol",
-                    "symbolLayers" : [
-                      {
-                        "type" : "CIMVectorMarker",
-                        "enable" : true,
-                        "name" : "New_f6e87301-9528-4ae7-99e0-bf3cb93498dd",
-                        "colorLocked" : true,
-                        "primitiveName" : "3.0",
-                        "anchorPoint" : {
-                          "x" : 0.00070621468926553911,
-                          "y" : 0
-                        },
-                        "anchorPointUnits" : "Relative",
-                        "dominantSizeAxis3D" : "Z",
-                        "size" : 0.42519685039370081,
-                        "billboardMode3D" : "FaceNearPlane",
-                        "markerPlacement" : {
-                          "type" : "CIMMarkerPlacementAlongLineSameSize",
-                          "primitiveName" : "4.1",
-                          "placePerPart" : true,
-                          "angleToLine" : true,
-                          "endings" : "NoConstraint",
-                          "offsetAlongLine" : -13.464566929133859,
-                          "placementTemplate" : [
-                            14.1732
-                          ]
-                        },
-                        "frame" : {
-                          "xmin" : -0.34000000000000002,
-                          "ymin" : -0.34000000000000002,
-                          "xmax" : 0.34000000000000002,
-                          "ymax" : 0.34000000000000002
-                        },
-                        "markerGraphics" : [
-                          {
-                            "type" : "CIMMarkerGraphic",
-                            "geometry" : {
-                              "curveRings" : [
-                                [
-                                  [
-                                    0.33900000000000002,
-                                    0
-                                  ],
-                                  [
-                                    0.33900000000000002,
-                                    0
-                                  ],
-                                  {
-                                    "b" : [
-                                      [
-                                        0.313,
-                                        -0.13300000000000001
-                                      ],
-                                      [
-                                        0.33900000000000002,
-                                        -0.048000000000000001
-                                      ],
-                                      [
-                                        0.33000000000000002,
-                                        -0.091999999999999998
-                                      ]
-                                    ]
-                                  },
-                                  {
-                                    "b" : [
-                                      [
-                                        0.23999999999999999,
-                                        -0.24099999999999999
-                                      ],
-                                      [
-                                        0.29499999999999998,
-                                        -0.17299999999999999
-                                      ],
-                                      [
-                                        0.27100000000000002,
-                                        -0.20899999999999999
-                                      ]
-                                    ]
-                                  },
-                                  {
-                                    "b" : [
-                                      [
-                                        0.13100000000000001,
-                                        -0.314
-                                      ],
-                                      [
-                                        0.20799999999999999,
-                                        -0.27200000000000002
-                                      ],
-                                      [
-                                        0.17199999999999999,
-                                        -0.29599999999999999
-                                      ]
-                                    ]
-                                  },
-                                  {
-                                    "b" : [
-                                      [
-                                        -0.001,
-                                        -0.34000000000000002
-                                      ],
-                                      [
-                                        0.089999999999999997,
-                                        -0.33100000000000002
-                                      ],
-                                      [
-                                        0.045999999999999999,
-                                        -0.34000000000000002
-                                      ]
-                                    ]
-                                  },
-                                  {
-                                    "b" : [
-                                      [
-                                        -0.13400000000000001,
-                                        -0.314
-                                      ],
-                                      [
-                                        -0.049000000000000002,
-                                        -0.34000000000000002
-                                      ],
-                                      [
-                                        -0.092999999999999999,
-                                        -0.33100000000000002
-                                      ]
-                                    ]
-                                  },
-                                  {
-                                    "b" : [
-                                      [
-                                        -0.24099999999999999,
-                                        -0.24099999999999999
-                                      ],
-                                      [
-                                        -0.17399999999999999,
-                                        -0.29599999999999999
-                                      ],
-                                      [
-                                        -0.20999999999999999,
-                                        -0.27200000000000002
-                                      ]
-                                    ]
-                                  },
-                                  {
-                                    "b" : [
-                                      [
-                                        -0.314,
-                                        -0.13300000000000001
-                                      ],
-                                      [
-                                        -0.27200000000000002,
-                                        -0.20899999999999999
-                                      ],
-                                      [
-                                        -0.29599999999999999,
-                                        -0.17299999999999999
-                                      ]
-                                    ]
-                                  },
-                                  {
-                                    "b" : [
-                                      [
-                                        -0.34000000000000002,
-                                        0
-                                      ],
-                                      [
-                                        -0.33100000000000002,
-                                        -0.091999999999999998
-                                      ],
-                                      [
-                                        -0.34000000000000002,
-                                        -0.048000000000000001
-                                      ]
-                                    ]
-                                  },
-                                  {
-                                    "b" : [
-                                      [
-                                        -0.314,
-                                        0.13200000000000001
-                                      ],
-                                      [
-                                        -0.34000000000000002,
-                                        0.047
-                                      ],
-                                      [
-                                        -0.33100000000000002,
-                                        0.090999999999999998
-                                      ]
-                                    ]
-                                  },
-                                  {
-                                    "b" : [
-                                      [
-                                        -0.24099999999999999,
-                                        0.24099999999999999
-                                      ],
-                                      [
-                                        -0.29599999999999999,
-                                        0.17299999999999999
-                                      ],
-                                      [
-                                        -0.27200000000000002,
-                                        0.20899999999999999
-                                      ]
-                                    ]
-                                  },
-                                  {
-                                    "b" : [
-                                      [
-                                        -0.13400000000000001,
-                                        0.314
-                                      ],
-                                      [
-                                        -0.20999999999999999,
-                                        0.27100000000000002
-                                      ],
-                                      [
-                                        -0.17399999999999999,
-                                        0.29599999999999999
-                                      ]
-                                    ]
-                                  },
-                                  {
-                                    "b" : [
-                                      [
-                                        -0.001,
-                                        0.34000000000000002
-                                      ],
-                                      [
-                                        -0.092999999999999999,
-                                        0.33100000000000002
-                                      ],
-                                      [
-                                        -0.049000000000000002,
-                                        0.34000000000000002
-                                      ]
-                                    ]
-                                  },
-                                  {
-                                    "b" : [
-                                      [
-                                        0.13100000000000001,
-                                        0.314
-                                      ],
-                                      [
-                                        0.045999999999999999,
-                                        0.34000000000000002
-                                      ],
-                                      [
-                                        0.089999999999999997,
-                                        0.33100000000000002
-                                      ]
-                                    ]
-                                  },
-                                  {
-                                    "b" : [
-                                      [
-                                        0.23999999999999999,
-                                        0.24099999999999999
-                                      ],
-                                      [
-                                        0.17199999999999999,
-                                        0.29599999999999999
-                                      ],
-                                      [
-                                        0.20799999999999999,
-                                        0.27100000000000002
-                                      ]
-                                    ]
-                                  },
-                                  {
-                                    "b" : [
-                                      [
-                                        0.313,
-                                        0.13200000000000001
-                                      ],
-                                      [
-                                        0.27100000000000002,
-                                        0.20899999999999999
-                                      ],
-                                      [
-                                        0.29499999999999998,
-                                        0.17299999999999999
-                                      ]
-                                    ]
-                                  },
-                                  {
-                                    "b" : [
-                                      [
-                                        0.33900000000000002,
-                                        0
-                                      ],
-                                      [
-                                        0.33000000000000002,
-                                        0.090999999999999998
-                                      ],
-                                      [
-                                        0.33900000000000002,
-                                        0.047
-                                      ]
-                                    ]
-                                  }
-                                ]
-                              ]
-                            },
-                            "symbol" : {
-                              "type" : "CIMPolygonSymbol",
-                              "symbolLayers" : [
-                                {
-                                  "type" : "CIMSolidFill",
-                                  "enable" : true,
-                                  "color" : {
-                                    "type" : "CIMCMYKColor",
-                                    "values" : [
-                                      0,
-                                      0,
-                                      0,
-                                      100,
-                                      100
-                                    ]
-                                  }
-                                }
-                              ],
-                              "angleAlignment" : "Map"
-                            },
-                            "primitiveName" : "d611cdc1-62b8-4b9b-a3d3-4818b962ba23"
-                          }
-                        ],
-                        "scaleSymbolsProportionally" : true,
-                        "respectFrame" : true
-                      },
-                      {
-                        "type" : "CIMSolidStroke",
-                        "effects" : [
-                          {
-                            "type" : "CIMGeometricEffectDashes",
-                            "primitiveName" : "1.0",
-                            "customEndingOffset" : 7.0866100000000003,
-                            "dashTemplate" : [
-                              7.0866100000000003,
-                              7.0866100000000003
-                            ],
-                            "lineDashEnding" : "NoConstraint",
-                            "offsetAlongLine" : -2.8346456692913389,
-                            "controlPointEnding" : "NoConstraint"
-                          }
-                        ],
-                        "enable" : true,
-                        "colorLocked" : true,
-                        "primitiveName" : "2.0",
-                        "capStyle" : "Butt",
-                        "joinStyle" : "Round",
-                        "lineStyle3D" : "Strip",
-                        "miterLimit" : 10,
-                        "width" : 0.42519685039370081,
-                        "height3D" : 1,
-                        "anchor3D" : "Center",
-                        "color" : {
-                          "type" : "CIMRGBColor",
-                          "values" : [
-                            0,
-                            0,
-                            0,
-                            100
-                          ]
-                        }
-                      }
-                    ]
-                  }
-                },
-                "values" : [
-                  {
-                    "type" : "CIMUniqueValue",
-                    "fieldValues" : [
-                      "2"
-                    ]
-                  }
-                ],
-                "visible" : true
               }
             ],
             "heading" : "Along River"
@@ -1547,6 +1252,13 @@
       },
       "scaleSymbols" : true,
       "snappable" : true
+    }
+  ],
+  "binaryReferences" : [
+    {
+      "type" : "CIMBinaryReference",
+      "uRI" : "CIMPATH=Metadata/42c10617c981a34a7380da4f83db5bd3.xml",
+      "data" : "<?xml version=\"1.0\"?>\r\n<metadata xml:lang=\"en\"><Esri><CreaDate>20251006</CreaDate><CreaTime>04083600</CreaTime><ArcGISFormat>1.0</ArcGISFormat><SyncOnce>TRUE</SyncOnce></Esri><dataIdInfo><idCitation><resTitle>DA0100_Mukim_Coverage_Administrative_L</resTitle></idCitation><idAbs>DA0100_Mukim_Coverage_Administrative_L</idAbs><idCredit></idCredit><idPurp></idPurp><resConst><Consts><useLimit></useLimit></Consts></resConst></dataIdInfo></metadata>\r\n"
     }
   ],
   "rGBColorProfile" : "sRGB IEC61966-2.1",

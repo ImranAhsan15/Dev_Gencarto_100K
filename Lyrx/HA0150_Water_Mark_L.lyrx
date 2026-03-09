@@ -3,16 +3,17 @@
   "version" : "3.5.0",
   "build" : 57366,
   "layers" : [
-    "CIMPATH=01_Gen10K1/HA0150_Water_Mark_L.json"
+    "CIMPATH=GenCarto100K/HA0150_Water_Mark_L.json"
   ],
   "layerDefinitions" : [
     {
       "type" : "CIMFeatureLayer",
       "name" : "HA0150_Water_Mark_L",
-      "uRI" : "CIMPATH=01_Gen10K1/HA0150_Water_Mark_L.json",
+      "uRI" : "CIMPATH=GenCarto100K/HA0150_Water_Mark_L.json",
       "sourceModifiedTime" : {
         "type" : "TimeInstant"
       },
+      "metadataURI" : "CIMPATH=Metadata/b3df21be232cac7ad26344fa0bfedd6e.xml",
       "useSourceMetadata" : true,
       "description" : "HA0150_Water_Mark_L",
       "layerElevation" : {
@@ -59,7 +60,7 @@
         "dataConnection" : {
           "type" : "CIMFeatureDatasetDataConnection",
           "featureDataset" : "Topo",
-          "workspaceConnectionString" : "DATABASE=..\\GenCarto10K\\PDGK.gdb",
+          "workspaceConnectionString" : "DATABASE=..\\PDGK.gdb",
           "workspaceFactory" : "FileGDB",
           "dataset" : "HA0150_Water_Mark_L",
           "datasetType" : "esriDTFeatureClass"
@@ -125,7 +126,7 @@
                 }
               ],
               "trimStackingSeparators" : true,
-              "preferToStackLongLabels" : false
+              "preferToStackLongLabels" : true
             },
             "lineFeatureType" : "General",
             "linePlacementMethod" : "OffsetStraightFromLine",
@@ -301,15 +302,20 @@
           "primitiveOverrides" : [
             {
               "type" : "CIMPrimitiveOverride",
-              "primitiveName" : "7f7871d8-33e7-42d2-b86c-999b7b2040d6",
+              "primitiveName" : "a5699694-daa1-4eb1-be32-c5ed89ab3dcb",
               "propertyName" : "FillColor",
-              "expression" : "[FNM]"
+              "expression" : "[FCD]"
             },
             {
               "type" : "CIMPrimitiveOverride",
-              "primitiveName" : "7f7871d8-33e7-42d2-b86c-999b7b2040d6",
+              "primitiveName" : "a5699694-daa1-4eb1-be32-c5ed89ab3dcb",
               "propertyName" : "StrokeColor",
-              "expression" : "[FNM]"
+              "valueExpressionInfo" : {
+                "type" : "CIMExpressionInfo",
+                "title" : "Custom",
+                "expression" : "$feature.FCD",
+                "returnType" : "Default"
+              }
             }
           ],
           "symbol" : {
@@ -335,7 +341,7 @@
                   "angleToLine" : true,
                   "endings" : "NoConstraint",
                   "placementTemplate" : [
-                    4.2519685039370101
+                    4.2519685039370083
                   ]
                 },
                 "frame" : {
@@ -419,7 +425,7 @@
                         {
                           "type" : "CIMSolidStroke",
                           "enable" : true,
-                          "name" : "New_47798f0b-2b20-41e5-93d4-1d9138f77e74",
+                          "name" : "New_cabc89b3-4b1d-4dba-a3b5-a09c59f0d235",
                           "capStyle" : "Round",
                           "joinStyle" : "Round",
                           "lineStyle3D" : "Strip",
@@ -454,7 +460,7 @@
                       ],
                       "angleAlignment" : "Map"
                     },
-                    "primitiveName" : "7f7871d8-33e7-42d2-b86c-999b7b2040d6"
+                    "primitiveName" : "a5699694-daa1-4eb1-be32-c5ed89ab3dcb"
                   }
                 ],
                 "scaleSymbolsProportionally" : true,
@@ -466,6 +472,13 @@
       },
       "scaleSymbols" : true,
       "snappable" : true
+    }
+  ],
+  "binaryReferences" : [
+    {
+      "type" : "CIMBinaryReference",
+      "uRI" : "CIMPATH=Metadata/b3df21be232cac7ad26344fa0bfedd6e.xml",
+      "data" : "<?xml version=\"1.0\"?>\r\n<metadata xml:lang=\"en\"><Esri><CreaDate>20251006</CreaDate><CreaTime>04083600</CreaTime><ArcGISFormat>1.0</ArcGISFormat><SyncOnce>TRUE</SyncOnce></Esri><dataIdInfo><idCitation><resTitle>HA0150_Water_Mark_L</resTitle></idCitation><idAbs>HA0150_Water_Mark_L</idAbs><idCredit></idCredit><idPurp></idPurp><resConst><Consts><useLimit></useLimit></Consts></resConst></dataIdInfo></metadata>\r\n"
     }
   ],
   "rGBColorProfile" : "sRGB IEC61966-2.1",

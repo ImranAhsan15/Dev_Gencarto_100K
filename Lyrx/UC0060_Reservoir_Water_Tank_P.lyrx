@@ -3,16 +3,17 @@
   "version" : "3.5.0",
   "build" : 57366,
   "layers" : [
-    "CIMPATH=01_Gen10K1/UC0060_Reservoir_Water_Tank_P.json"
+    "CIMPATH=GenCarto100K/UC0060_Reservoir_Water_Tank_P.json"
   ],
   "layerDefinitions" : [
     {
       "type" : "CIMFeatureLayer",
       "name" : "UC0060_Reservoir_Water_Tank_P",
-      "uRI" : "CIMPATH=01_Gen10K1/UC0060_Reservoir_Water_Tank_P.json",
+      "uRI" : "CIMPATH=GenCarto100K/UC0060_Reservoir_Water_Tank_P.json",
       "sourceModifiedTime" : {
         "type" : "TimeInstant"
       },
+      "metadataURI" : "CIMPATH=Metadata/871d1d4f1773404346720139bbe9ff64.xml",
       "useSourceMetadata" : true,
       "description" : "UC0060_Reservoir_Water_Tank_P",
       "layerElevation" : {
@@ -59,7 +60,7 @@
         "dataConnection" : {
           "type" : "CIMFeatureDatasetDataConnection",
           "featureDataset" : "Topo",
-          "workspaceConnectionString" : "DATABASE=..\\GenCarto10K\\PDGK.gdb",
+          "workspaceConnectionString" : "DATABASE=..\\GenCarto50K\\PDGK.gdb",
           "workspaceFactory" : "FileGDB",
           "dataset" : "UC0060_Reservoir_Water_Tank_P",
           "datasetType" : "esriDTFeatureClass"
@@ -301,23 +302,56 @@
           "primitiveOverrides" : [
             {
               "type" : "CIMPrimitiveOverride",
-              "primitiveName" : "4af9bfa7-ec87-4ac7-9bd0-f57044e3745a",
+              "primitiveName" : "384d0c93-ba1d-4652-a0bf-bfb32b99f17f",
               "propertyName" : "FillColor",
               "valueExpressionInfo" : {
                 "type" : "CIMExpressionInfo",
                 "title" : "Custom",
-                "expression" : "$feature.FNM",
+                "expression" : "$feature.FCD",
                 "returnType" : "Default"
               }
             },
             {
               "type" : "CIMPrimitiveOverride",
-              "primitiveName" : "4821f46f-0157-4d17-8c27-b83fd299a7a1",
+              "primitiveName" : "384d0c93-ba1d-4652-a0bf-bfb32b99f17f",
+              "propertyName" : "StrokeColor",
+              "valueExpressionInfo" : {
+                "type" : "CIMExpressionInfo",
+                "title" : "Custom",
+                "expression" : "$feature.FCD",
+                "returnType" : "Default"
+              }
+            },
+            {
+              "type" : "CIMPrimitiveOverride",
+              "primitiveName" : "384d0c93-ba1d-4652-a0bf-bfb32b99f17f",
+              "propertyName" : "StrokeWidth",
+              "valueExpressionInfo" : {
+                "type" : "CIMExpressionInfo",
+                "title" : "Custom",
+                "expression" : "$feature.FCD",
+                "returnType" : "Default"
+              }
+            },
+            {
+              "type" : "CIMPrimitiveOverride",
+              "primitiveName" : "1.0",
+              "propertyName" : "Size",
+              "valueExpressionInfo" : {
+                "type" : "CIMExpressionInfo",
+                "title" : "Custom",
+                "expression" : "$feature.FCD",
+                "returnType" : "Default"
+              }
+            },
+            {
+              "type" : "CIMPrimitiveOverride",
+              "primitiveName" : "1.0",
               "propertyName" : "Rotation",
               "valueExpressionInfo" : {
                 "type" : "CIMExpressionInfo",
                 "title" : "Custom",
-                "expression" : "$feature.Orientation",
+                "expression" : "$feature.Orientation_Degree",
                 "returnType" : "Default"
               }
             }
@@ -328,20 +362,21 @@
               {
                 "type" : "CIMVectorMarker",
                 "enable" : true,
-                "primitiveName" : "4821f46f-0157-4d17-8c27-b83fd299a7a1",
+                "colorLocked" : true,
+                "primitiveName" : "1.0",
                 "anchorPoint" : {
                   "x" : 0,
-                  "y" : 0
+                  "y" : -0.0029959461615439564
                 },
                 "anchorPointUnits" : "Relative",
                 "dominantSizeAxis3D" : "Z",
-                "size" : 4,
+                "size" : 6.5196850393700787,
                 "billboardMode3D" : "FaceNearPlane",
                 "frame" : {
-                  "xmin" : -2,
-                  "ymin" : -2,
-                  "xmax" : 2,
-                  "ymax" : 2
+                  "xmin" : -3.2799999999999998,
+                  "ymin" : -3.2599999999999998,
+                  "xmax" : 3.2799999999999998,
+                  "ymax" : 3.2999999999999998
                 },
                 "markerGraphics" : [
                   {
@@ -350,21 +385,71 @@
                       "curveRings" : [
                         [
                           [
-                            1.2246467991473532e-16,
-                            2
+                            0,
+                            2.8300000000000001
                           ],
                           {
-                            "a" : [
+                            "b" : [
                               [
-                                1.2246467991473532e-16,
-                                2
-                              ],
-                              [
-                                2.2962127484012875e-16,
+                                2.8300000000000001,
                                 0
                               ],
-                              0,
-                              1
+                              [
+                                1.5700000000000001,
+                                2.8300000000000001
+                              ],
+                              [
+                                2.8300000000000001,
+                                1.5700000000000001
+                              ]
+                            ]
+                          },
+                          {
+                            "b" : [
+                              [
+                                0,
+                                -2.8300000000000001
+                              ],
+                              [
+                                2.8300000000000001,
+                                -1.5700000000000001
+                              ],
+                              [
+                                1.5700000000000001,
+                                -2.8300000000000001
+                              ]
+                            ]
+                          },
+                          {
+                            "b" : [
+                              [
+                                -2.8300000000000001,
+                                0
+                              ],
+                              [
+                                -1.5700000000000001,
+                                -2.8300000000000001
+                              ],
+                              [
+                                -2.8300000000000001,
+                                -1.5700000000000001
+                              ]
+                            ]
+                          },
+                          {
+                            "b" : [
+                              [
+                                0,
+                                2.8300000000000001
+                              ],
+                              [
+                                -2.8300000000000001,
+                                1.5700000000000001
+                              ],
+                              [
+                                -1.5700000000000001,
+                                2.8300000000000001
+                              ]
                             ]
                           }
                         ]
@@ -380,15 +465,16 @@
                           "joinStyle" : "Round",
                           "lineStyle3D" : "Strip",
                           "miterLimit" : 10,
-                          "width" : 0.69999999999999996,
+                          "width" : 0.85039370078740162,
                           "height3D" : 1,
                           "anchor3D" : "Center",
                           "color" : {
-                            "type" : "CIMRGBColor",
+                            "type" : "CIMCMYKColor",
                             "values" : [
                               0,
                               0,
                               0,
+                              100,
                               100
                             ]
                           }
@@ -397,11 +483,12 @@
                           "type" : "CIMSolidFill",
                           "enable" : true,
                           "color" : {
-                            "type" : "CIMRGBColor",
+                            "type" : "CIMCMYKColor",
                             "values" : [
-                              118.91,
-                              73.469999999999999,
-                              170.84999999999999,
+                              30,
+                              0,
+                              0,
+                              0,
                               100
                             ]
                           }
@@ -409,7 +496,7 @@
                       ],
                       "angleAlignment" : "Map"
                     },
-                    "primitiveName" : "4af9bfa7-ec87-4ac7-9bd0-f57044e3745a"
+                    "primitiveName" : "384d0c93-ba1d-4652-a0bf-bfb32b99f17f"
                   }
                 ],
                 "scaleSymbolsProportionally" : true,
@@ -418,12 +505,19 @@
             ],
             "haloSize" : 1,
             "scaleX" : 1,
-            "angleAlignment" : "Display"
+            "angleAlignment" : "Map"
           }
         }
       },
       "scaleSymbols" : true,
       "snappable" : true
+    }
+  ],
+  "binaryReferences" : [
+    {
+      "type" : "CIMBinaryReference",
+      "uRI" : "CIMPATH=Metadata/871d1d4f1773404346720139bbe9ff64.xml",
+      "data" : "<?xml version=\"1.0\"?>\r\n<metadata xml:lang=\"en\"><Esri><CreaDate>20251006</CreaDate><CreaTime>04083600</CreaTime><ArcGISFormat>1.0</ArcGISFormat><SyncOnce>TRUE</SyncOnce></Esri><dataIdInfo><idCitation><resTitle>UC0060_Reservoir_Water_Tank_P</resTitle></idCitation><idAbs>UC0060_Reservoir_Water_Tank_P</idAbs><idCredit></idCredit><idPurp></idPurp><resConst><Consts><useLimit></useLimit></Consts></resConst></dataIdInfo></metadata>\r\n"
     }
   ],
   "rGBColorProfile" : "sRGB IEC61966-2.1",

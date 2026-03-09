@@ -3,16 +3,17 @@
   "version" : "3.5.0",
   "build" : 57366,
   "layers" : [
-    "CIMPATH=01_Gen10K1/UA0010_Powerline_L.json"
+    "CIMPATH=GenCarto100K/UA0010_Powerline_L.json"
   ],
   "layerDefinitions" : [
     {
       "type" : "CIMFeatureLayer",
       "name" : "UA0010_Powerline_L",
-      "uRI" : "CIMPATH=01_Gen10K1/UA0010_Powerline_L.json",
+      "uRI" : "CIMPATH=GenCarto100K/UA0010_Powerline_L.json",
       "sourceModifiedTime" : {
         "type" : "TimeInstant"
       },
+      "metadataURI" : "CIMPATH=Metadata/09bced728d594285d8be8be5c946af84.xml",
       "useSourceMetadata" : true,
       "description" : "UA0010_Powerline_L",
       "layerElevation" : {
@@ -41,7 +42,7 @@
       },
       "layerType" : "Operational",
       "showLegends" : true,
-      "visibility" : true,
+      "visibility" : false,
       "displayCacheType" : "Permanent",
       "maxDisplayCacheAge" : 5,
       "showPopups" : true,
@@ -59,7 +60,7 @@
         "dataConnection" : {
           "type" : "CIMFeatureDatasetDataConnection",
           "featureDataset" : "Topo",
-          "workspaceConnectionString" : "DATABASE=..\\GenCarto10K\\PDGK.gdb",
+          "workspaceConnectionString" : "DATABASE=..\\GenCarto50K\\PDGK.gdb",
           "workspaceFactory" : "FileGDB",
           "dataset" : "UA0010_Powerline_L",
           "datasetType" : "esriDTFeatureClass"
@@ -301,23 +302,89 @@
           "primitiveOverrides" : [
             {
               "type" : "CIMPrimitiveOverride",
-              "primitiveName" : "0c8b12de-11a6-4820-8c90-a9a49269a129",
+              "primitiveName" : "baf47cfa-0ed4-4f26-a249-1cb2290e4296",
               "propertyName" : "FillColor",
               "valueExpressionInfo" : {
                 "type" : "CIMExpressionInfo",
                 "title" : "Custom",
-                "expression" : "$feature.FNM",
+                "expression" : "$feature.FCD",
                 "returnType" : "Default"
               }
             },
             {
               "type" : "CIMPrimitiveOverride",
-              "primitiveName" : "c2987ee1-4090-4929-bf64-212a5acc16cd",
+              "primitiveName" : "baf47cfa-0ed4-4f26-a249-1cb2290e4296",
+              "propertyName" : "StrokeColor",
+              "valueExpressionInfo" : {
+                "type" : "CIMExpressionInfo",
+                "title" : "Custom",
+                "expression" : "$feature.FCD",
+                "returnType" : "Default"
+              }
+            },
+            {
+              "type" : "CIMPrimitiveOverride",
+              "primitiveName" : "baf47cfa-0ed4-4f26-a249-1cb2290e4296",
+              "propertyName" : "StrokeWidth",
+              "valueExpressionInfo" : {
+                "type" : "CIMExpressionInfo",
+                "title" : "Custom",
+                "expression" : "$feature.FCD",
+                "returnType" : "Default"
+              }
+            },
+            {
+              "type" : "CIMPrimitiveOverride",
+              "primitiveName" : "5.0",
+              "propertyName" : "Size",
+              "valueExpressionInfo" : {
+                "type" : "CIMExpressionInfo",
+                "title" : "Custom",
+                "expression" : "$feature.FCD",
+                "returnType" : "Default"
+              }
+            },
+            {
+              "type" : "CIMPrimitiveOverride",
+              "primitiveName" : "2.0",
+              "propertyName" : "Size",
+              "valueExpressionInfo" : {
+                "type" : "CIMExpressionInfo",
+                "title" : "Custom",
+                "expression" : "$feature.FCD",
+                "returnType" : "Default"
+              }
+            },
+            {
+              "type" : "CIMPrimitiveOverride",
+              "primitiveName" : "fc45c97e-1cd6-41a4-9974-07a2a11589ab",
               "propertyName" : "FillColor",
               "valueExpressionInfo" : {
                 "type" : "CIMExpressionInfo",
                 "title" : "Custom",
-                "expression" : "$feature.FNM",
+                "expression" : "$feature.FCD",
+                "returnType" : "Default"
+              }
+            },
+            {
+              "type" : "CIMPrimitiveOverride",
+              "primitiveName" : "fc45c97e-1cd6-41a4-9974-07a2a11589ab",
+              "propertyName" : "StrokeColor",
+              "valueExpressionInfo" : {
+                "type" : "CIMExpressionInfo",
+                "title" : "Custom",
+                "expression" : "$feature.FCD",
+                "returnType" : "Default"
+              }
+            },
+            {
+              "type" : "CIMPrimitiveOverride",
+              "primitiveName" : "fc45c97e-1cd6-41a4-9974-07a2a11589ab",
+              "propertyName" : "StrokeWidth",
+              "valueExpressionInfo" : {
+                "type" : "CIMExpressionInfo",
+                "title" : "Custom",
+                "expression" : "$feature.FCD",
                 "returnType" : "Default"
               }
             },
@@ -328,7 +395,18 @@
               "valueExpressionInfo" : {
                 "type" : "CIMExpressionInfo",
                 "title" : "Custom",
-                "expression" : "$feature.FNM",
+                "expression" : "$feature.FCD",
+                "returnType" : "Default"
+              }
+            },
+            {
+              "type" : "CIMPrimitiveOverride",
+              "primitiveName" : "1.0",
+              "propertyName" : "Width",
+              "valueExpressionInfo" : {
+                "type" : "CIMExpressionInfo",
+                "title" : "Custom",
+                "expression" : "$feature.FCD",
                 "returnType" : "Default"
               }
             }
@@ -341,22 +419,23 @@
                 "effects" : [
                   {
                     "type" : "CIMGeometricEffectDashes",
-                    "primitiveName" : "14.0",
+                    "primitiveName" : "12.0",
                     "dashTemplate" : [
                       8.5039400000000001,
                       8.5039400000000001
                     ],
                     "lineDashEnding" : "NoConstraint",
+                    "offsetAlongLine" : -8.5039370078740166,
                     "controlPointEnding" : "NoConstraint"
                   }
                 ],
                 "enable" : true,
-                "name" : "New_9fc8cd3d-4fac-4bec-a0c3-58264fc69564",
+                "name" : "New_9871de57-061c-4e2a-809f-dbe3f4a0fb6d",
                 "colorLocked" : true,
                 "primitiveName" : "5.0",
                 "anchorPoint" : {
-                  "x" : -0.00014394765539803736,
-                  "y" : 0.50126016430921072
+                  "x" : 3.3571029554141624e-17,
+                  "y" : 0.50047046722867894
                 },
                 "anchorPointUnits" : "Relative",
                 "dominantSizeAxis3D" : "Z",
@@ -375,9 +454,9 @@
                 },
                 "frame" : {
                   "xmin" : -1.24,
-                  "ymin" : -2.4830000000000001,
-                  "xmax" : 1.2410000000000001,
-                  "ymax" : -0.0030000000000000001
+                  "ymin" : -2.4809999999999999,
+                  "xmax" : 1.24,
+                  "ymax" : -0.001
                 },
                 "markerGraphics" : [
                   {
@@ -386,24 +465,24 @@
                       "rings" : [
                         [
                           [
-                            -0.14099999999999999,
-                            -0.0030000000000000001
+                            -0.14199999999999999,
+                            -0.001
                           ],
                           [
                             0.14199999999999999,
-                            -0.0030000000000000001
+                            -0.001
                           ],
                           [
                             0.14199999999999999,
-                            -2.4830000000000001
+                            -2.4809999999999999
                           ],
                           [
-                            -0.14099999999999999,
-                            -2.4830000000000001
+                            -0.14199999999999999,
+                            -2.4809999999999999
                           ],
                           [
-                            -0.14099999999999999,
-                            -0.0030000000000000001
+                            -0.14199999999999999,
+                            -0.001
                           ]
                         ]
                       ]
@@ -411,6 +490,27 @@
                     "symbol" : {
                       "type" : "CIMPolygonSymbol",
                       "symbolLayers" : [
+                        {
+                          "type" : "CIMSolidStroke",
+                          "enable" : true,
+                          "name" : "New_a89c90a2-d635-43c3-80f1-d86e4d17d981",
+                          "capStyle" : "Round",
+                          "joinStyle" : "Round",
+                          "lineStyle3D" : "Strip",
+                          "miterLimit" : 4,
+                          "width" : 0,
+                          "height3D" : 1,
+                          "anchor3D" : "Center",
+                          "color" : {
+                            "type" : "CIMRGBColor",
+                            "values" : [
+                              0,
+                              0,
+                              0,
+                              100
+                            ]
+                          }
+                        },
                         {
                           "type" : "CIMSolidFill",
                           "enable" : true,
@@ -420,7 +520,7 @@
                               0,
                               0,
                               0,
-                              75,
+                              100,
                               100
                             ]
                           }
@@ -428,7 +528,7 @@
                       ],
                       "angleAlignment" : "Map"
                     },
-                    "primitiveName" : "0c8b12de-11a6-4820-8c90-a9a49269a129"
+                    "primitiveName" : "baf47cfa-0ed4-4f26-a249-1cb2290e4296"
                   }
                 ],
                 "scaleSymbolsProportionally" : true,
@@ -439,23 +539,22 @@
                 "effects" : [
                   {
                     "type" : "CIMGeometricEffectDashes",
-                    "primitiveName" : "13.0",
+                    "primitiveName" : "11.0",
                     "dashTemplate" : [
                       8.5039400000000001,
                       8.5039400000000001
                     ],
                     "lineDashEnding" : "NoConstraint",
-                    "offsetAlongLine" : -8.5039370078740166,
                     "controlPointEnding" : "NoConstraint"
                   }
                 ],
                 "enable" : true,
-                "name" : "New_2ea3cd2e-003f-41c9-951f-68d97c06bc3e",
+                "name" : "New_729393e4-17ca-4add-b70e-9b6bbcc8cf61",
                 "colorLocked" : true,
                 "primitiveName" : "2.0",
                 "anchorPoint" : {
-                  "x" : 0.001055616139585611,
-                  "y" : -0.5012601643092105
+                  "x" : 0,
+                  "y" : -0.50045682913400669
                 },
                 "anchorPointUnits" : "Relative",
                 "dominantSizeAxis3D" : "Z",
@@ -473,10 +572,10 @@
                   ]
                 },
                 "frame" : {
-                  "xmin" : -1.2430000000000001,
-                  "ymin" : 0.0030000000000000001,
-                  "xmax" : 1.238,
-                  "ymax" : 2.4830000000000001
+                  "xmin" : -1.24,
+                  "ymin" : 0.001,
+                  "xmax" : 1.24,
+                  "ymax" : 2.4809999999999999
                 },
                 "markerGraphics" : [
                   {
@@ -485,24 +584,24 @@
                       "rings" : [
                         [
                           [
-                            -0.14399999999999999,
-                            2.4830000000000001
+                            -0.14199999999999999,
+                            2.4809999999999999
                           ],
                           [
-                            0.13900000000000001,
-                            2.4830000000000001
+                            0.14199999999999999,
+                            2.4809999999999999
                           ],
                           [
-                            0.13900000000000001,
-                            0.0030000000000000001
+                            0.14199999999999999,
+                            0.001
                           ],
                           [
-                            -0.14399999999999999,
-                            0.0030000000000000001
+                            -0.14199999999999999,
+                            0.001
                           ],
                           [
-                            -0.14399999999999999,
-                            2.4830000000000001
+                            -0.14199999999999999,
+                            2.4809999999999999
                           ]
                         ]
                       ]
@@ -510,6 +609,27 @@
                     "symbol" : {
                       "type" : "CIMPolygonSymbol",
                       "symbolLayers" : [
+                        {
+                          "type" : "CIMSolidStroke",
+                          "enable" : true,
+                          "name" : "New_c731d0ac-6b84-4f10-9c13-871357a298c4",
+                          "capStyle" : "Round",
+                          "joinStyle" : "Round",
+                          "lineStyle3D" : "Strip",
+                          "miterLimit" : 4,
+                          "width" : 0,
+                          "height3D" : 1,
+                          "anchor3D" : "Center",
+                          "color" : {
+                            "type" : "CIMRGBColor",
+                            "values" : [
+                              0,
+                              0,
+                              0,
+                              100
+                            ]
+                          }
+                        },
                         {
                           "type" : "CIMSolidFill",
                           "enable" : true,
@@ -519,7 +639,7 @@
                               0,
                               0,
                               0,
-                              75,
+                              100,
                               100
                             ]
                           }
@@ -527,7 +647,7 @@
                       ],
                       "angleAlignment" : "Map"
                     },
-                    "primitiveName" : "c2987ee1-4090-4929-bf64-212a5acc16cd"
+                    "primitiveName" : "fc45c97e-1cd6-41a4-9974-07a2a11589ab"
                   }
                 ],
                 "scaleSymbolsProportionally" : true,
@@ -551,7 +671,7 @@
                     0,
                     0,
                     0,
-                    75,
+                    100,
                     100
                   ]
                 }
@@ -562,6 +682,13 @@
       },
       "scaleSymbols" : true,
       "snappable" : true
+    }
+  ],
+  "binaryReferences" : [
+    {
+      "type" : "CIMBinaryReference",
+      "uRI" : "CIMPATH=Metadata/09bced728d594285d8be8be5c946af84.xml",
+      "data" : "<?xml version=\"1.0\"?>\r\n<metadata xml:lang=\"en\"><Esri><CreaDate>20251006</CreaDate><CreaTime>04083600</CreaTime><ArcGISFormat>1.0</ArcGISFormat><SyncOnce>TRUE</SyncOnce></Esri><dataIdInfo><idCitation><resTitle>UA0010_Powerline_L</resTitle></idCitation><idAbs>UA0010_Powerline_L</idAbs><idCredit></idCredit><idPurp></idPurp><resConst><Consts><useLimit></useLimit></Consts></resConst></dataIdInfo></metadata>\r\n"
     }
   ],
   "rGBColorProfile" : "sRGB IEC61966-2.1",

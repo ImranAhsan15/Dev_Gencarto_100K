@@ -1,6 +1,8 @@
 import arcpy
 import traceback
 import sys
+import os
+import datetime as _dt
 from common_utils import *
 
 def has_features(fc):
@@ -200,6 +202,977 @@ def generalised_buildings(fc_list):
         error_message = f"Generalised building error: {e}\nTraceback details:\n{tb}"
         arcpy.AddMessage(error_message)
 
+def resolve_fence(pond, fence, scratch_gdb, distance="17 Meters", map_name = "04 Built-Up Generalization"):
+    arcpy.env.overwriteOutput = 1
+    arcpy.AddMessage("Starting Resolving Fence")
+    try:
+        pond_base_name = os.path.basename(pond)
+        fence_base_name = os.path.basename(fence)
+        pond_layer = get_feature_layer_by_feature_class(os.path.basename(pond), map_name)[0]
+        fence_layer = get_feature_layer_by_feature_class(os.path.basename(fence), map_name)[0]
+        if has_features(pond) and has_features(fence):
+            fence_line_to_move = arcpy.management.SelectLayerByLocation(
+                in_layer=fence_layer,
+                overlap_type="INTERSECT",
+                select_features=pond_layer,
+                search_distance=distance,
+                selection_type="NEW_SELECTION",
+                invert_spatial_relationship="NOT_INVERT"
+            )
+
+            pond_buffer = arcpy.analysis.Buffer(
+                in_features=pond_layer,
+                out_feature_class=f"{scratch_gdb}\\{pond_base_name}_Buffer",
+                buffer_distance_or_field=distance,
+                line_side="FULL",
+                line_end_type="ROUND",
+                method="PLANAR"
+            )
+            
+            fence_vertices = arcpy.management.FeatureVerticesToPoints(
+                in_features=fence_layer,
+                out_feature_class=f"{scratch_gdb}\\{fence_base_name}_FeatureVertice",
+                point_location="ALL"
+            )
+
+            pond_buffer_line = arcpy.management.FeatureToLine(
+                in_features=pond_buffer,
+                out_feature_class=f"{scratch_gdb}\\{pond_base_name}_Buff_Line",
+                cluster_tolerance=None,
+                attributes="ATTRIBUTES"
+            )
+
+            arcpy.analysis.Near(
+                in_features=fence_vertices,
+                near_features=pond_buffer_line,
+                search_radius=None,
+                location="LOCATION",
+                angle="NO_ANGLE",
+                method="PLANAR",
+                distance_unit="",
+                match_fields=None
+            )
+
+            arcpy.management.SelectLayerByAttribute(
+                in_layer_or_view=fence_vertices,
+                selection_type="NEW_SELECTION",
+                where_clause="NEAR_DIST <> -1",
+                invert_where_clause=None
+            )
+
+            new_fence_points = arcpy.management.XYTableToPoint(
+                in_table=fence_vertices,
+                out_feature_class=f"{scratch_gdb}\\{fence_base_name}_FeatureVertice_XYTableToPoint",
+                x_field="NEAR_X",
+                y_field="NEAR_Y",
+                coordinate_system='PROJCS["GDM_2000_MRSO_Peninsular_Malaysia",GEOGCS["GCS_GDM_2000",DATUM["D_GDM_2000",SPHEROID["GRS_1980",6378137.0,298.257222101]],PRIMEM["Greenwich",0.0],UNIT["Degree",0.0174532925199433]],PROJECTION["Rectified_Skew_Orthomorphic_Natural_Origin"],PARAMETER["False_Easting",804671.0],PARAMETER["False_Northing",0.0],PARAMETER["Scale_Factor",0.99984],PARAMETER["Azimuth",323.0257964666666],PARAMETER["Longitude_Of_Center",102.25],PARAMETER["Latitude_Of_Center",4.0],PARAMETER["XY_Plane_Rotation",-36.86989764584402],UNIT["Meter",1.0]];-30656400 -28732700 10000;-100000 10000;-100000 10000;0.001;0.001;0.001;IsHighPrecision'
+            )
+            modified_fence_line = arcpy.management.PointsToLine(
+                Input_Features=new_fence_points,
+                Output_Feature_Class=f"{scratch_gdb}\\{fence_base_name}_FeatureVertice_XYTableToPoint_PointsToLine",
+                Line_Field="ORIG_FID",
+                Sort_Field="NEAR_FID",
+                Close_Line="NO_CLOSE",
+                Line_Construction_Method="CONTINUOUS",
+                Attribute_Source="NONE",
+                Transfer_Fields=None
+            )
+            
+            modified_fence_line_fields = [fld.name for fld in arcpy.ListFields(modified_fence_line) if fld.name not in ["OBJECTID", "Shape", "Shape_Length"]]
+            modified_joined_fence_line = arcpy.analysis.SpatialJoin(
+                target_features=modified_fence_line,
+                join_features=f"{fence_layer} Join_Count",
+                out_feature_class=f"{scratch_gdb}\\{fence_base_name}_F_SpatialJoin",
+                join_operation="JOIN_ONE_TO_ONE",
+                join_type="KEEP_ALL",
+                match_option="WITHIN_A_DISTANCE",
+                search_radius=distance,
+                distance_field_name="",
+                match_fields=None
+            )
+
+            arcpy.management.DeleteField(
+                in_table=modified_joined_fence_line,
+                drop_field=modified_fence_line_fields,
+                method="DELETE_FIELDS"
+            )
+            # Clearing Selection
+            arcpy.management.SelectLayerByAttribute(fence_layer, "CLEAR_SELECTION")
+            arcpy.management.SelectLayerByLocation(
+                in_layer=fence_layer,
+                overlap_type="INTERSECT",
+                select_features=pond_layer,
+                search_distance=distance,
+                selection_type="NEW_SELECTION",
+                invert_spatial_relationship="NOT_INVERT"
+            )
+            arcpy.management.DeleteRows(
+                in_rows=fence_line_to_move
+            )
+            arcpy.management.Append(
+                inputs = [modified_joined_fence_line], 
+                target= fence, 
+                schema_type="NO_TEST"
+            )
+            arcpy.AddMessage(f"Resolving conflict between {pond} and {fence} are successful.")
+        else:
+            arcpy.AddMessage(f"Data could not be found in either {pond} or {fence} feature classes.")
+    except Exception as e:
+        tb = traceback.format_exc()
+        error_message = f"resolve_fence error: {e}\nTraceback details:\n{tb}"
+        arcpy.AddMessage(error_message)
+
+def get_xy(pt_or_geom):
+    """
+    Returns X and Y as a point geometry
+    Author: Shahmin Aurnov
+    """
+    if hasattr(pt_or_geom, "firstPoint") and pt_or_geom.firstPoint:
+        p = pt_or_geom.firstPoint
+        return p.X, p.Y
+    else:
+        return pt_or_geom.X, pt_or_geom.Y
+
+def assign_distance(fc, class_field, rules_dict):
+    """
+    Assigns distance values based on class field
+    Author: Shahmin Aurnov
+    """
+    if "DIST_M" not in [f.name for f in arcpy.ListFields(fc)]:
+        arcpy.management.AddField(fc, "DIST_M", "DOUBLE")
+    
+    with arcpy.da.UpdateCursor(fc, [class_field, "DIST_M"]) as cur:
+        for cls, dist_m in cur:
+            try:
+                cls_code = int(cls)
+                new_dist = rules_dict.get(cls_code)
+            except (TypeError, ValueError):
+                new_dist = None
+            cur.updateRow((cls, new_dist))
+
+def adjust_based_on_distance(road_fc, track_fc, target_fc, road_class_field, track_class_field,
+                                    road_distance_rules, track_distance_rules, working_gdb):
+    """
+    Adjusts fence geometries based on proximity to roads and tracks, applying distance rules.
+    Author: Shahmin Aurnov
+    """
+    arcpy.env.workspace = working_gdb
+    arcpy.env.overwriteOutput = True
+
+    ### Step-1: Preparing Datasets for conflict resolution between fence and road/track
+    # Temporary feature classes for roads and tracks
+    road_tmp = fr"{working_gdb}\roads_tmp"
+    track_tmp = fr"{working_gdb}\tracks_tmp"
+
+
+    # Copying features for roads and tracks
+    arcpy.conversion.ExportFeatures(road_fc, road_tmp)
+    arcpy.conversion.ExportFeatures(track_fc, track_tmp)
+
+    # Assigning distances
+    assign_distance(road_tmp, road_class_field, road_distance_rules)
+    assign_distance(track_tmp, track_class_field, track_distance_rules)
+
+    # Merging road and track features into one base layer
+    base_all_fc = fr"{working_gdb}\base_all"
+    arcpy.management.Merge([road_tmp, track_tmp], base_all_fc)
+
+    # Copying target fences to avoid modifying the originals
+    out_layer = fr"{working_gdb}\BJ0400_Fence_L_moved"
+    arcpy.conversion.ExportFeatures(target_fc, out_layer)
+
+    ### Step-2: Starting work to identify the side and position of fences along road and track lines
+    # Running Near analysis between fences and merged base features
+    search_radius = max(max(road_distance_rules.values()), max(track_distance_rules.values()))
+    arcpy.analysis.Near(out_layer, base_all_fc, search_radius=search_radius)
+
+    # Extracting base feature geometries and their distance rules into a dictionary
+    base_oid_field = arcpy.Describe(base_all_fc).oidFieldName
+    base_geom_dict = {
+        oid: (geom, dist_m)
+        for oid, geom, dist_m in arcpy.da.SearchCursor(base_all_fc, [base_oid_field, "SHAPE@", "DIST_M"])
+    }
+
+    ### Step-3: Updating fence geometries based on proximity to base features
+    fields = ["OID@", "SHAPE@", "NEAR_FID", "NEAR_DIST"]
+    moved, skipped_no_road, skipped_degenerate, skipped_no_rule = 0, 0, 0, 0
+
+    with arcpy.da.UpdateCursor(out_layer, fields) as cur:
+        for oid, geom, near_fid, near_dist in cur:
+            if near_fid == -1 or geom is None:
+                skipped_no_road += 1
+                continue
+
+            base_info = base_geom_dict.get(near_fid)
+            if not base_info:
+                skipped_no_road += 1
+                continue
+
+            base_geom, move_distance = base_info
+            if move_distance is None:
+                skipped_no_rule += 1
+                continue
+
+            # Calculating fence axis and normalization
+            fp = geom.firstPoint
+            lp = geom.lastPoint
+            vx, vy = lp.X - fp.X, lp.Y - fp.Y
+            axis_len = math.hypot(vx, vy)
+            if axis_len == 0:
+                ext = geom.extent
+                vx, vy = ext.XMax - ext.XMin, ext.YMax - ext.YMin
+                axis_len = math.hypot(vx, vy)
+                if axis_len == 0:
+                    skipped_degenerate += 1
+                    continue
+
+            vx, vy = vx / axis_len, vy / axis_len
+            nLx, nLy, nRx, nRy = -vy, vx, vy, -vx
+
+            # Getting the base point for the fence
+            ref_pt_geom = geom.labelPoint
+            try:
+                base_pt_geom, _, _, _ = base_geom.queryPointAndDistance(ref_pt_geom)
+            except SystemError:
+                base_pt_geom = base_geom.centroid
+
+            rx, ry = get_xy(base_pt_geom)
+
+            # Determining which side of the fence to adjust
+            ox, oy = fp.X, fp.Y
+            vrx, vry = rx - ox, ry - oy
+            cross = vx * vry - vy * vrx
+            nx, ny = (nRx, nRy) if cross > 0 else (nLx, nLy)
+
+            # Calculating the required translation offset
+            offset = move_distance - near_dist
+            if offset <= 0:
+                continue
+
+            tx, ty = nx * offset, ny * offset
+
+            # Applying translation to fence vertices
+            new_parts = []
+            for part in geom:
+                arr = arcpy.Array()
+                for pt in part:
+                    if pt:
+                        arr.add(arcpy.Point(pt.X + tx, pt.Y + ty, pt.Z, pt.M))
+                    else:
+                        arr.add(pt)
+                new_parts.append(arr)
+
+            new_geom = arcpy.Polyline(arcpy.Array(new_parts), geom.spatialReference)
+            cur.updateRow((oid, new_geom, near_fid, near_dist))
+            moved += 1
+
+    ### Step-4: Cleaning up output by deleting unwanted fields
+    reference_fields = [f.name for f in arcpy.ListFields(target_fc)]
+    output_fields = [f.name for f in arcpy.ListFields(out_layer)]
+    fields_to_delete = [f.name for f in arcpy.ListFields(out_layer) if f.name not in reference_fields and not f.required]
+    if fields_to_delete:
+        arcpy.management.DeleteField(out_layer, fields_to_delete)
+
+    ### Step-5: Appending the adjusted fences back to the original target feature class
+    arcpy.management.DeleteRows(target_fc)
+    arcpy.management.Append(inputs=[out_layer], target=target_fc, schema_type="NO_TEST")
+
+    return {
+        "moved": moved,
+        "skipped_no_road": skipped_no_road,
+        "skipped_degenerate": skipped_degenerate,
+        "skipped_no_rule": skipped_no_rule,
+        "output_fc": target_fc
+    }
+
+
+def layer_from_map(layer_name, map_name):
+    aprx = arcpy.mp.ArcGISProject("CURRENT")
+    m = next(mp for mp in aprx.listMaps() if mp.name == map_name)
+
+    lyr = next(
+        lyr for lyr in m.listLayers()
+        if lyr.isFeatureLayer and lyr.name == layer_name
+    )
+    return lyr.dataSource
+
+
+def fix_wall_fence_conflict_with_road(road_fc, track_fc, target_fc, road_distance_rules, 
+                                      track_distance_rules, working_gdb, logger, 
+                                      road_class_field='RCS', track_class_field='TCS'):
+    try:
+        map_name = "04 Built-Up Generalization"
+        road_layer = layer_from_map(os.path.basename(road_fc), map_name)
+        track_layer = layer_from_map(os.path.basename(track_fc), map_name)
+        target_layer = layer_from_map(os.path.basename(target_fc), map_name)
+
+        result = adjust_based_on_distance(
+                    road_fc=road_layer,
+                    track_fc=track_layer,
+                    target_fc=target_layer,
+                    road_class_field=road_class_field, 
+                    track_class_field=track_class_field,
+                    road_distance_rules=road_distance_rules,
+                    track_distance_rules=track_distance_rules,
+                    working_gdb=working_gdb
+                )
+        return result
+
+    except Exception as e:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        tb = traceback.format_exc()
+        error_message = f"Built-Up Area Generalisation error: {e}\nTraceback details:\n{tb}"
+        logger.error(error_message)
+        simplified_msgs('Built-Up Area Generalisation', f'{exc_value}\n')
+
+
+def merge_buildings_too_closed_between_building_and_street(in_fc_name, building_fc_name, fc_list, working_gdb, logger, area_threshold = 100000):
+    arcpy.env.workspace = working_gdb
+    count_overlap_output = f"{working_gdb}\\{building_fc_name}_CountOverlap"
+    backup_fc = f"{working_gdb}\\{building_fc_name}_backup"
+    in_feature = None
+    building_feature = None
+    in_feature_list = [fc for fc in fc_list if in_fc_name in fc]
+    building_feature_list = [fc for fc in fc_list if building_fc_name in fc]
+    if(in_feature_list):
+        in_feature = in_feature_list[0]
+    if(building_feature_list):
+        building_feature = building_feature_list[0]
+
+    arcpy.AddMessage(f"in_feature: {in_feature} and building_feature: {building_feature}")
+    in_feature_to_polygon = f"{working_gdb}\\{in_fc_name}_FeatureToPolygon"
+    # # Convert Line to Polygon
+    arcpy.management.FeatureToPolygon(in_feature, in_feature_to_polygon, None, "ATTRIBUTES")
+    arcpy.management.MakeFeatureLayer(in_feature_to_polygon, "in_feature_to_poly_layer")
+    # # Delete polygons > area threshold
+    arcpy.management.SelectLayerByAttribute("in_feature_to_poly_layer", "NEW_SELECTION", f"Shape_Area > {area_threshold}")
+    arcpy.management.DeleteFeatures("in_feature_to_poly_layer")
+    # # Delete polygons that intersect buildings
+    arcpy.management.SelectLayerByLocation(
+        "in_feature_to_poly_layer", "INTERSECT", building_feature, selection_type="NEW_SELECTION", invert_spatial_relationship="INVERT"
+    )
+    arcpy.management.DeleteFeatures("in_feature_to_poly_layer")
+    # # Count overlapping buildings
+    arcpy.analysis.CountOverlappingFeatures(building_feature, count_overlap_output, 1)
+    arcpy.management.MakeFeatureLayer(count_overlap_output, "count_overlap_lyr")
+    # # Select buildings with Count_ > 1
+    arcpy.management.SelectLayerByAttribute("count_overlap_lyr", "NEW_SELECTION", "Count_ > 1")
+    # # Delete polygons intersecting overlapping buildings
+    arcpy.management.SelectLayerByLocation(
+        "in_feature_to_poly_layer", "INTERSECT", "count_overlap_lyr", selection_type="NEW_SELECTION", invert_spatial_relationship="INVERT"
+    )
+    arcpy.management.DeleteFeatures("in_feature_to_poly_layer")
+    if not arcpy.Exists(backup_fc):
+        arcpy.management.CopyFeatures(building_feature, backup_fc)
+        logger.info(f"Backup created: {backup_fc}")
+    else:
+        logger.info(f"Backup already exists: {backup_fc}")
+    # # Delete buildings that intersect cleaned polygons
+    arcpy.management.MakeFeatureLayer(building_feature, "building_lyr")
+    arcpy.management.SelectLayerByLocation("building_lyr", "INTERSECT", "in_feature_to_poly_layer")
+    arcpy.management.DeleteFeatures("building_lyr")
+    logger.info("Deleted buildings intersecting polygons")
+    arcpy.management.Append("in_feature_to_poly_layer", building_feature, "NO_TEST")
+    logger.info("Polygons appended into building feature class")
+    return None
+
+
+def align_feature_with_reference_fc(align_fc, referenece_fc, fc_list, working_gdb, logger):
+    align_feature = None
+    reference_feature = None
+    if(align_fc):
+        # Check If Align FC exists in Feature Class List
+        align_feature_list = [fc for fc in fc_list if align_fc in fc]
+        if(align_feature_list):
+          align_feature =  align_feature_list[0]
+    if(referenece_fc):
+        # Check If Align FC exists in Feature Class List
+        reference_feature_list = [fc for fc in fc_list if referenece_fc in fc]
+        if(reference_feature_list):
+          reference_feature =  reference_feature_list[0]
+    ref_fc_buffer=arcpy.analysis.PairwiseBuffer(
+        in_features=reference_feature,
+        out_feature_class=rf"{working_gdb}\\ref_fc_buffer",
+        buffer_distance_or_field="30 Meters",
+        dissolve_option="ALL",
+        dissolve_field=None,
+        method="PLANAR",
+        max_deviation="0 Meters"
+    )
+    logger.info(f"The buffer for {reference_feature} has been created")
+    ref_fc_buffer_toline=arcpy.management.FeatureToLine(
+        in_features=ref_fc_buffer,
+        out_feature_class=rf"{working_gdb}\\ref_fc_buffer_toline",
+        cluster_tolerance=None,
+        attributes="NO_ATTRIBUTES"
+    )
+    arcpy.edit.AlignFeatures(
+        in_features=align_feature,
+        target_features=ref_fc_buffer_toline,
+        search_distance="50 Meters",
+        match_fields=None
+    )
+    logger.info(f"The {align_fc} has been aligned with {referenece_fc} successfully.")
+
+
+def move_feature_1_around_feature_2_to_specific_distance(fc_list, ref_fc_classes: list, to_move_fc_classes : list, working_gdb, logger, min_distance = "12.5") -> None:
+    arcpy.env.overwriteOutput = True
+    arcpy.env.workspace = working_gdb
+    logger.info(f"Starting moving {to_move_fc_classes} around {ref_fc_classes} to {min_distance} meters distance")
+    
+    ref_original_fcs = []
+    to_move_original_fcs = []
+    if(fc_list == None or ref_fc_classes == None):
+        logger.error("No feature class list was provided. Exiting move_feature_1_around_feature_2_to_specific_distance..")
+        return None
+    
+    # Validate Inputs
+    for fc in ref_fc_classes + to_move_fc_classes:
+        if fc not in [os.path.basename(fc_name) for fc_name in fc_list]:
+            raise ValueError(f"Feature class not found in fc_list: {fc}")
+        else:
+            for temp_fc in fc_list:
+                if fc == os.path.basename(temp_fc)  and fc in ref_fc_classes:
+                    ref_original_fcs.append(temp_fc)
+                if fc == os.path.basename(temp_fc) and fc in to_move_fc_classes:
+                    to_move_original_fcs.append(temp_fc)
+    logger.info("Creating working copies")
+    arcpy.AddMessage(f"ref_original_fcs: {(ref_original_fcs)}")
+    arcpy.AddMessage(f"to_move_original_fcs: {(to_move_original_fcs)}")
+    ref_wrk = []
+    move_wrk = []
+    for fc in to_move_original_fcs:
+        add_source_tracking(fc)
+    
+    # Create Working Copies (Preserve Attributes)
+    for fc in ref_original_fcs:
+        if(has_features(fc)):
+            out_fc = os.path.join(working_gdb, f"{os.path.basename(fc)}_wrk")
+            arcpy.management.CopyFeatures(fc, out_fc)
+            ref_wrk.append(out_fc)
+
+    for fc in to_move_original_fcs:
+        if(has_features(fc)):
+            out_fc = os.path.join(working_gdb, f"{os.path.basename(fc)}_wrk")
+            arcpy.management.CopyFeatures(fc, out_fc)
+            move_wrk.append(out_fc)
+
+    # Merge Reference Features
+    logger.info("Merging reference feature classes")
+
+    ref_merged = os.path.join(working_gdb, "ref_merged")
+    if(len(ref_wrk) < 1):
+        logger.warning(f"No feature could be found for reference feature classes {ref_fc_classes}. Skipping...")
+        return None
+    arcpy.management.Merge(ref_wrk, ref_merged)
+    
+    
+    # Create Buffer at Required Distance
+    logger.info(f"Creating buffer at {min_distance}")
+
+    ref_buffer = os.path.join(working_gdb, "ref_buffer")
+    arcpy.analysis.Buffer(
+        ref_merged,
+        ref_buffer,
+        min_distance,
+        dissolve_option="ALL"
+    )
+
+    # Convert Buffer to Boundary Line
+    logger.info("Extracting buffer boundary")
+
+    buffer_boundary = os.path.join(working_gdb, "buffer_boundary")
+    arcpy.management.PolygonToLine(ref_buffer, buffer_boundary)
+
+    # Merge Move Feature Classes
+    logger.info("Merging features to move")
+
+    move_merged = os.path.join(working_gdb, "move_merged")
+    arcpy.management.Merge(move_wrk, move_merged)
+
+    # Select Only Features Violating Distance
+    logger.info("Selecting features inside buffer")
+
+    arcpy.management.MakeFeatureLayer(move_merged, "move_lyr")
+
+    arcpy.management.SelectLayerByLocation(
+        "move_lyr",
+        "INTERSECT",
+        ref_buffer
+    )
+    # Near Analysis to Buffer Boundary
+    logger.info("Running Near analysis")
+
+    arcpy.analysis.Near(
+        "move_lyr",
+        buffer_boundary,
+        location="LOCATION"
+    )
+
+    # Move Features (Preserve Geometry)
+    logger.info("Moving geometries")
+
+    with arcpy.da.UpdateCursor(
+        "move_lyr",
+        ["OID@", "SHAPE@", "NEAR_X", "NEAR_Y"]
+    ) as cursor:
+
+        for oid, shape, nx, ny in cursor:
+            if nx is None or ny is None:
+                continue
+
+            if shape.type == "polygon":
+                ref_pt = shape.centroid
+            else:
+                ref_pt = shape
+
+            dx = nx - ref_pt.X
+            dy = ny - ref_pt.Y
+
+            new_shape = shape.move(dx, dy)
+            cursor.updateRow([oid, new_shape, nx, ny])
+
+    # Split Moved Results by Geometry Type
+    logger.info("Separating moved features by geometry")
+
+    moved_geom_dict = {}
+    with arcpy.da.SearchCursor(
+        move_merged,
+        ["SRC_FC", "SRC_OID", "SHAPE@"]
+    ) as cursor:
+        for src_fc, src_oid, geom in cursor:
+            moved_geom_dict[(src_fc, src_oid)] = geom
+
+    # Replace Geometry in Original Feature Classes
+    logger.info("Updating original feature classes")
+
+    for fc in to_move_original_fcs:
+        desc = arcpy.Describe(fc)
+        fc_name = desc.baseName
+        with arcpy.da.UpdateCursor(fc, ["OID@", "SHAPE@"]) as uc:
+            for oid, shape in uc:
+                key = (fc_name, oid)
+                if key in moved_geom_dict:
+                    uc.updateRow([oid, moved_geom_dict[key]])
+    return None
+
+
+def extend_cemetery_with_road_river(
+    cemetery,              # Cemetery layer that needs to be fixed
+    road,       # extend layer with which to fix cemetery
+    gdb):
+
+    arcpy.env.overwriteOutput = True
+    
+    distance_m=20.0
+    prefix_base="BH0010_fix"
+    # ----------------------------
+    # Inputs (dynamic)
+    # ----------------------------
+    dist_txt = f"{distance_m} Meters"
+
+    # Unique suffix so repeated runs do not collide
+    ts = _dt.datetime.now().strftime("%Y%m%d_%H%M%S")
+    prefix = f"{prefix_base}_{ts}"
+
+    # ----------------------------
+    # Output / intermediate paths
+    # ----------------------------
+    road_buffer_fc = os.path.join(gdb, f"{prefix}_Road_Buffer")
+
+    # Working copies 
+    cem_work_fc = os.path.join(gdb, f"{prefix}_Cemetery_WORK")  # copy of entire cemetery
+    cem_sel_fc = os.path.join(gdb, f"{prefix}_Cemetery_SEL")    # selected (within buffer) copy
+    cem_line_fc = os.path.join(gdb, f"{prefix}_Cemeter_FeatureToLine")
+    cem_poly_fc = os.path.join(gdb, f"{prefix}_Cemeter_FeatureToPoly")
+    sj_fc = os.path.join(gdb, f"{prefix}_Cemeter_SpatialJoin")
+    merge_fc = os.path.join(gdb, f"{prefix}_Cemeter_Merge_FINAL")
+
+    # Backup 
+    cem_backup_fc = os.path.join(gdb, f"{prefix}_Cemetery_BACKUP")
+
+    arcpy.AddMessage("Starting safe run...")
+    arcpy.AddMessage("Creating backup copy of cemetery...")
+    arcpy.management.CopyFeatures(cemetery, cem_backup_fc)
+
+    arcpy.AddMessage("Creating full working copy of cemetery...")
+    arcpy.management.CopyFeatures(cemetery, cem_work_fc)
+
+    # ----------------------------
+    # STEP 1: Buffer road
+    # ----------------------------
+    arcpy.analysis.Buffer(
+        in_features=road,
+        out_feature_class=road_buffer_fc,
+        buffer_distance_or_field=dist_txt,
+        line_side="FULL",
+        line_end_type="ROUND",
+        dissolve_option="NONE",
+        dissolve_field=None,
+        method="PLANAR"
+    )
+    arcpy.AddMessage(f"Layer buffer created: {road_buffer_fc}")
+
+    # ----------------------------
+    # STEP 2: Select cemetery within buffer
+    # ----------------------------
+    cem_lyr = arcpy.management.MakeFeatureLayer(cemetery, f"{prefix}_cem_lyr")
+    arcpy.management.SelectLayerByLocation(
+        in_layer=cem_lyr,
+        overlap_type="INTERSECT",
+        select_features=road_buffer_fc,
+        search_distance=None,
+        selection_type="NEW_SELECTION",
+        invert_spatial_relationship="NOT_INVERT"
+    )
+    sel_count = int(arcpy.management.GetCount(cem_lyr)[0])
+    arcpy.AddMessage(f"Cemetery selected within {dist_txt}: {sel_count}")
+
+    if sel_count>0:
+        # Copy selected to a separate FC (so downstream tools are bounded to only what you intended)
+        arcpy.management.CopyFeatures(cem_lyr, cem_sel_fc)
+
+        # ----------------------------
+        # STEP 3: Snap selected cemetery (on selected copy, not on original)
+        # ----------------------------
+
+        snap_env = [
+        [road, "VERTEX", dist_txt], 
+        [road, "EDGE", dist_txt]
+        ]
+        arcpy.edit.Snap(cem_sel_fc, snap_env)
+        arcpy.AddMessage("Selected cemetery snapped")
+
+        # ----------------------------
+        # STEP 4: FeatureToLine (from selected copy)
+        # ----------------------------
+        arcpy.management.FeatureToLine(
+            in_features=cem_sel_fc,
+            out_feature_class=cem_line_fc,
+            cluster_tolerance=None,
+            attributes="ATTRIBUTES"
+        )
+        arcpy.AddMessage(f"Selected cemetery converted to line: {cem_line_fc}")
+
+        # ----------------------------
+        # STEP 5: AlignFeatures 
+        # ----------------------------
+        arcpy.edit.AlignFeatures(
+            in_features=cem_line_fc,
+            target_features=road,
+            search_distance=dist_txt,
+            match_fields=None
+        )
+        arcpy.AddMessage("Line cemetery aligned to extending layer")
+
+        # ----------------------------
+        # STEP 6: FeatureToPolygon
+        # ----------------------------
+        arcpy.management.FeatureToPolygon(
+            in_features=cem_line_fc,
+            out_feature_class=cem_poly_fc,
+            cluster_tolerance=None,
+            attributes="ATTRIBUTES",
+            label_features=None
+        )
+        arcpy.AddMessage(f"Line converted to polygon: {cem_poly_fc}")
+
+        # ----------------------------
+        # STEP 7: Snap polygon again (vertex)
+        # ----------------------------
+        snap_env_poly = [
+        [road, "VERTEX", dist_txt]
+        ]
+
+        arcpy.edit.Snap(cem_poly_fc, snap_env_poly)
+        arcpy.AddMessage("Polygon snapped again to extending layer")
+
+        # ----------------------------
+        # STEP 8: SpatialJoin 
+        # ----------------------------
+        arcpy.analysis.SpatialJoin(
+            target_features=cem_poly_fc,
+            join_features=cem_sel_fc,  # join from selected original subset 
+            out_feature_class=sj_fc,
+            join_operation="JOIN_ONE_TO_ONE",
+            join_type="KEEP_ALL",
+            match_option="HAVE_THEIR_CENTER_IN",
+            search_radius=None,
+            distance_field_name="",
+            match_fields=None
+        )
+        arcpy.AddMessage(f"Spatial join done: {sj_fc}")
+
+        # Safety check (non-destructive): ensure the join actually matched
+        # If Join_Count is 0 for any row, attributes can become NULL/Unknown.
+        zero_join = 0
+        with arcpy.da.SearchCursor(sj_fc, ["Join_Count"]) as cur:
+            for (jc,) in cur:
+                if jc == 0:
+                    zero_join += 1
+        arcpy.AddMessage(f"SpatialJoin Join_Count=0 rows: {zero_join}")
+
+        # Now delete extra fields added by SpatialJoin
+        arcpy.management.DeleteField(
+            in_table=sj_fc,
+            drop_field="Join_Count;TARGET_FID",
+            method="DELETE_FIELDS"
+        )
+        arcpy.AddMessage("Extra fields deleted from SpatialJoin output")
+
+        # ----------------------------
+        # STEP 9: Delete matching features from WORKING cemetery copy (not the original)
+        # This preserves your process, but avoids destructive edits on the real layer mid-run.
+        # ----------------------------
+        cem_work_lyr = arcpy.management.MakeFeatureLayer(cem_work_fc, f"{prefix}_cem_work_lyr")
+
+        arcpy.management.SelectLayerByLocation(
+            in_layer=cem_work_lyr,
+            overlap_type="HAVE_THEIR_CENTER_IN",
+            select_features=sj_fc,
+            search_distance=None,
+            selection_type="NEW_SELECTION",
+            invert_spatial_relationship="NOT_INVERT"
+        )
+        del_count = int(arcpy.management.GetCount(cem_work_lyr)[0])
+        arcpy.AddMessage(f"Features to delete from WORK copy: {del_count}")
+
+        arcpy.management.DeleteFeatures(cem_work_lyr)
+        arcpy.AddMessage("Deleted selected features from WORK copy")
+
+        arcpy.management.SelectLayerByAttribute(
+            in_layer_or_view=cem_work_lyr,
+            selection_type="CLEAR_SELECTION"
+        )
+        arcpy.AddMessage("Selection cleared for WORK copy")
+
+        # ----------------------------
+        # STEP 10: Merge WORK remainder + SpatialJoin output 
+        # ----------------------------
+        arcpy.management.Merge(
+            inputs=f"{cem_work_fc};{sj_fc}",
+            output=merge_fc,
+            field_mappings=None,
+            add_source="NO_SOURCE_INFO",
+            field_match_mode="USE_FIRST_SCHEMA"
+        )
+        arcpy.AddMessage(f"Merged into final output: {merge_fc}")
+
+        # ----------------------------
+        # STEP 11: Update the ORIGINAL cemetery layer at the very end, inside a transaction
+        # If anything fails here, edits are rolled back.
+        # ----------------------------
+        arcpy.AddMessage("Updating original cemetery layer inside a single edit transaction...")
+
+        editor = arcpy.da.Editor(gdb)
+        editor.startEditing(False, True)  # False=not multiuser mode; True=with undo (works well for file gdb)
+        editor.startOperation()
+
+        try:
+            # Delete all from original cemetery layer 
+            arcpy.management.DeleteFeatures(cemetery)
+
+            # Append merged output back to original cemetery layer
+            arcpy.management.Append(
+                inputs=merge_fc,
+                target=cemetery,
+                schema_type="NO_TEST",
+                field_mapping=None,
+                subtype="",
+                expression="",
+                match_fields=None,
+                update_geometry="NOT_UPDATE_GEOMETRY",
+                enforce_domains="NO_ENFORCE_DOMAINS",
+                feature_service_mode="USE_FEATURE_SERVICE_MODE"
+            )
+
+            editor.stopOperation()
+            editor.stopEditing(True)  # commit
+            arcpy.AddMessage("Append completed. Process finished safely.")
+
+        except Exception as ex:
+            # Rollback in-transaction edits
+            editor.abortOperation()
+            editor.stopEditing(False)  # discard
+            arcpy.AddMessage("ERROR occurred; all edits were rolled back. Original layer remains unchanged.")
+            arcpy.AddMessage(f"Exception: {ex}")
+            raise
+
+        arcpy.AddMessage(f"Backup created at: {cem_backup_fc}")
+        arcpy.AddMessage(f"Final merged output: {merge_fc}")
+
+    else:
+        arcpy.AddMessage(f"No cemetery features found within {dist_txt} meter of the road. Skipping the process and going to next step...")
+
+
+def calculate_poly_angle(p1, p2, p3):
+    v1 = (p1.X - p2.X, p1.Y - p2.Y)
+    v2 = (p3.X - p2.X, p3.Y - p2.Y)
+
+    dot = v1[0] * v2[0] + v1[1] * v2[1]
+    mag1 = math.hypot(v1[0], v1[1])
+    mag2 = math.hypot(v2[0], v2[1])
+
+    cosang = dot / (mag1 * mag2)
+    cosang = max(-1, min(1, cosang))
+    return math.degrees(math.acos(cosang))
+
+
+def count_true_angles(points, tolerance=5):
+    """
+    tolerance = degrees from 180 considered 'straight'
+    """
+    true_angles = 0
+
+    for i in range(len(points)):
+        p1 = points[i - 1]
+        p2 = points[i]
+        p3 = points[(i + 1) % len(points)]
+
+        ang = calculate_poly_angle(p1, p2, p3)
+
+        # ignore nearly straight angles
+        if abs(ang - 180) > tolerance:
+            true_angles += 1
+
+    return true_angles
+
+
+def get_polygon_oids_with_four_angles(fc):
+    four_angle_oids = set()
+    with arcpy.da.SearchCursor(fc, ["OID@", "SHAPE@"]) as cursor:
+        for oid, geom in cursor:
+            for part in geom:
+                points = [p for p in part if p]
+
+                # remove closing point
+                if points[0].equals(points[-1]):
+                    points = points[:-1]
+
+                angle_count = count_true_angles(points)
+
+                if angle_count == 4:
+                    four_angle_oids.add(oid)
+    four_angle_oids = f"({','.join(map(str, four_angle_oids))})"
+    return four_angle_oids
+# end function for identify_polygon_oids_with_four_angles
+
+
+# function for enlarge polygon from all side
+def get_edge_lengths(polygon):
+    lengths = []
+    for part in polygon:
+        for i in range(len(part) - 1):
+            p1 = part[i]
+            p2 = part[i + 1]
+            if p1 and p2:
+                length = math.hypot(p2.X - p1.X, p2.Y - p1.Y)
+                lengths.append(length)
+    return lengths
+
+
+def enlarge_polygon_side(fc, TARGET_LENGTH):
+    with arcpy.da.UpdateCursor(fc, ["SHAPE@"]) as cursor:
+        for row in cursor:
+            geom = row[0]
+
+            # Get all edge lengths
+            edge_lengths = get_edge_lengths(geom)
+
+            if not edge_lengths:
+                continue
+
+            shortest_edge = min(edge_lengths)
+            # Only scale if under 35 meters
+            if shortest_edge < TARGET_LENGTH:
+                scale_ratio = TARGET_LENGTH / shortest_edge
+                center = geom.centroid
+                scaled_geom = geom.scale(center, scale_ratio, scale_ratio)
+                row[0] = scaled_geom
+                cursor.updateRow(row)
+    arcpy.management.RepairGeometry(in_features=fc, delete_null="DELETE_NULL", validation_method="ESRI")
+
+
+# end of function for enlarge polygon from all side
+
+def main_enlarge_building_polygon_side(primary_polygon_fc, tolerance, working_gdb):
+    simplify_building_polygons = arcpy.cartography.SimplifyBuilding(in_features=primary_polygon_fc,out_feature_class=rf"{working_gdb}\SimplifyBuild",simplification_tolerance=f"{tolerance} Meters",
+                                                                    minimum_area="0 SquareMeters",conflict_option="NO_CHECK",in_barriers=None,collapsed_point_option="NO_KEEP")
+    arcpy.management.DeleteFeatures(primary_polygon_fc)
+    arcpy.management.Append(simplify_building_polygons, primary_polygon_fc, "NO_TEST")
+    polygon_ids = get_polygon_oids_with_four_angles(primary_polygon_fc)
+    if len(polygon_ids) != 0:
+        # for exact 4 angles polygon
+        polygon_with_four_angles=arcpy.management.MakeFeatureLayer(in_features=primary_polygon_fc, out_layer="polygon_with_four_angles", where_clause=f"OBJECTID IN {polygon_ids}")
+        primary_fc_minimumbound = arcpy.management.MinimumBoundingGeometry(in_features=polygon_with_four_angles,out_feature_class=rf"{working_gdb}\Polygons_MinimumBoundi",
+                                                                           geometry_type="RECTANGLE_BY_AREA",group_option="NONE", group_field=None,mbg_fields_option="NO_MBG_FIELDS")
+        enlarge_polygon_side(primary_fc_minimumbound, tolerance)
+        selected_primary_polygon_fc = arcpy.management.SelectLayerByAttribute(in_layer_or_view=primary_polygon_fc,selection_type="NEW_SELECTION",where_clause=f"OBJECTID IN {polygon_ids}",
+                                                                              invert_where_clause=None)
+        arcpy.management.DeleteFeatures(selected_primary_polygon_fc)
+        arcpy.management.Append(primary_fc_minimumbound, primary_polygon_fc, "NO_TEST")
+
+def terrace_buildings_to_builtup_area(fc_list, building_fc_name, road_fc_name, built_up_fc_name, working_gdb, field_name="RET"):
+    building_fc = resolve_fc_from_fc_list(building_fc_name, fc_list)
+    road_fc = resolve_fc_from_fc_list(road_fc_name, fc_list)
+    built_up_fc = resolve_fc_from_fc_list(built_up_fc_name, fc_list)
+    terrace_fc = arcpy.management.SelectLayerByAttribute(building_fc, "NEW_SELECTION", f"{field_name} = 3")
+    
+    # Aggreate selected terrace houses
+    aggregated_terrace_houses = arcpy.cartography.AggregatePolygons(in_features=terrace_fc, out_feature_class=f"{working_gdb}\\aggregated_terrace_houses", aggregation_distance="60 Meters", orthogonality_option="ORTHOGONAL")
+
+    # Make feature layer
+    area_field = arcpy.da.Describe(aggregated_terrace_houses)['areaFieldName']
+    selected_aggregate_features = arcpy.conversion.ExportFeatures(aggregated_terrace_houses, f"{working_gdb}\\selected_aggregate_features", f"{area_field} > 8600")
+
+    
+    for row in arcpy.da.SearchCursor(selected_aggregate_features, ["SHAPE@", "OID@"]):
+        geom = row[0]
+        oid = row[1]
+        terrace_fc = arcpy.management.SelectLayerByLocation(building_fc, "WITHIN", geom, None, "NEW_SELECTION")
+        # Dissolved selected terrace house
+        dissolved_terrace_house = arcpy.analysis.PairwiseDissolve(terrace_fc, f"{working_gdb}\\dissolved_terrace_house")
+        # Select road feature 
+        selected_road_fc = arcpy.management.SelectLayerByLocation(road_fc, "WITHIN_A_DISTANCE", dissolved_terrace_house, "25 Meters", "NEW_SELECTION")
+        arcpy.AddMessage(f"Selected road features count: {count_features(selected_road_fc)}")
+        # Dissolved selected road feature
+        if count_features(selected_road_fc) > 0:
+            arcpy.AddMessage(f"Object ID: {oid}")
+            dissolved_road_feature = arcpy.analysis.PairwiseDissolve(selected_road_fc, f"{working_gdb}\\dissolved_road_feature_{oid}")
+            # Buffer the dissolved road
+            road_buffer_fc = arcpy.analysis.Buffer(dissolved_road_feature, f"{working_gdb}\\road_buffer_fc_{oid}", "50 Meters","FULL","FLAT","ALL", None,"PLANAR")
+            # Convert polygon to line
+            buffer_poly_to_line = arcpy.management.PolygonToLine(road_buffer_fc,f"{working_gdb}\\buffer_poly_to_line_{oid}", "IDENTIFY_NEIGHBORS")
+            # Merge buffer polygon and dissolved road feature
+            merged_road_fc = arcpy.management.Merge([dissolved_road_feature, buffer_poly_to_line], f"{working_gdb}\\merged_road_fc_{oid}")
+            # Split the road feature
+            splitted_road_fc = arcpy.management.SplitLine(merged_road_fc, f"{working_gdb}\\splitted_road_fc_{oid}")
+            # Create convex hull polygon feature
+            convex_hull_fc_road = arcpy.management.MinimumBoundingGeometry(dissolved_road_feature, f"{working_gdb}\\convex_hull_fc_road_{oid}", "CONVEX_HULL", "ALL", None, "NO_MBG_FIELDS")
+            # Select splitted lines by convex hull
+            selected_splitted_road_fc = arcpy.management.SelectLayerByLocation(splitted_road_fc, "INTERSECT", convex_hull_fc_road, None, "NEW_SELECTION")
+            # Export the selected features
+            exported_selected_split_features = arcpy.conversion.ExportFeatures(selected_splitted_road_fc, f"{working_gdb}\\exported_selected_split_features_{oid}")
+            # Extend line to near line
+            arcpy.edit.ExtendLine(exported_selected_split_features, "20 Meters", "EXTENSION")
+            # Line to polygon
+            split_line_fc_to_poly = arcpy.management.FeatureToPolygon(exported_selected_split_features, f"{working_gdb}\\split_line_fc_to_poly_{oid}", None, "ATTRIBUTES", None)
+            # Snapping to remove gap
+            arcpy.edit.Snap(exported_selected_split_features, [[split_line_fc_to_poly, "VERTEX", "60 Meters"]])
+            # Convert line to polygon
+            polygon_from_lines = arcpy.management.FeatureToPolygon(exported_selected_split_features, f"{working_gdb}\\polygon_from_lines_{oid}", None, "ATTRIBUTES", None)
+            # Dissolved created polygon
+            dissolved_polygon_from_lines = arcpy.analysis.PairwiseDissolve(polygon_from_lines, f"{working_gdb}\\dissolved_polygon_from_lines_{oid}")
+            # Simplify polygon
+            simplify_building = arcpy.cartography.SimplifyPolygon(dissolved_polygon_from_lines, f"{working_gdb}\\simplified_polygon_{oid}", "BEND_SIMPLIFY", "30 Meters")
+            # Select buildings within simplified polygon
+            selected_build_up_bldg = arcpy.management.SelectLayerByLocation(building_fc, "WITHIN", simplify_building, None, "NEW_SELECTION")
+            # Delete selected buildings
+            arcpy.management.DeleteFeatures(selected_build_up_bldg)
+            # Append simplified polygon to built-up area
+            arcpy.management.Append(simplify_building, built_up_fc, "NO_TEST")
+
+
 
 def gen_buildup(fc_list, small_bldg_2_point_a, small_bldg_2_point_p, min_size_bldg, sql_bldg, delete_input, one_point, unique_field, working_gdb, min_size_bldg2, features_in_cemetery, 
                 enlarge_min_size, enlarge_val, enlarge_barrier_fcs, delete_small_bldgs, del_min_area, enlarge_building_features, enlarge_bldg_min_width, enlarge_bldg_min_length, 
@@ -220,6 +1193,14 @@ def gen_buildup(fc_list, small_bldg_2_point_a, small_bldg_2_point_p, min_size_bl
         enlarge_barrier_fcs = list(filter(str.strip, enlarge_barrier_fcs))
         enlarge_barrier_fcs = [fc for a_lyr in enlarge_barrier_fcs for fc in fc_list if str(a_lyr) in fc]
         enlarge_polygon_barrier(cemetery, None, None, enlarge_min_size, enlarge_val, enlarge_barrier_fcs, working_gdb)
+
+        #Enlarge cemetery features to road and river
+        road = [fc for fc in fc_list if 'TA0060_Road_L' in fc][0]
+        river = [fc for fc in fc_list if 'HH0041_River_Bank_L' in fc][0]
+
+        extend_cemetery_with_road_river(cemetery, road, working_gdb)
+        extend_cemetery_with_road_river(cemetery, river, working_gdb)
+
         # Delete small buildings
         delete_small_building(fc_list, delete_small_bldgs, del_min_area)
         # Enlarge small buildings
@@ -231,7 +1212,7 @@ def gen_buildup(fc_list, small_bldg_2_point_a, small_bldg_2_point_p, min_size_bl
             if has_features(polygon_fc):
                 simplify_buildings(polygon_fc, simpl_bldg_distance, working_gdb)
         # Delineaate town built-Up Areas
-        delineate_built_up_area(fc_list, in_buildings_list, edge_features_list, grouping_distance, minimum_detail_size, minimum_building_count, in_feature_loc, delineate_ref_scale)
+        delineate_built_up_area(fc_list, in_buildings_list, edge_features_list, grouping_distance, minimum_detail_size, minimum_building_count, working_gdb, delineate_ref_scale)
         # Generalised Buildings
         generalised_buildings(fc_list)
         # Delete small features (Swimming)
@@ -241,6 +1222,46 @@ def gen_buildup(fc_list, small_bldg_2_point_a, small_bldg_2_point_p, min_size_bl
         remove_by_converting(recreation, delete_small_features, del_small_recreation_fc_min_size, None, working_gdb)
         # Erase vagetaton
         erase_polygons_by_replace(cemetery, delete_small_features, erase_sql, working_gdb)
+        pond = [fc for fc in fc_list if 'HH0210_Pond_A' in fc][0]
+        fence = [fc for fc in fc_list if 'BJ0400_Fence_L' in fc][0]
+        lake = [fc for fc in fc_list if 'HH0020_Lake_A' in fc][0]
+        
+        # Resolve fence for pond, lake and swimming pool
+        resolve_fence(pond, fence, working_gdb)
+        resolve_fence(lake, fence, working_gdb)
+        resolve_fence(recreation, fence, working_gdb)
+
+        # Fix Conflict Between Fence and Road / Track
+        road_fc = [fc for fc in fc_list if 'TA0060_Road_L' in fc][0]
+        track_fc = [fc for fc in fc_list if 'TA0110_Track_L' in fc][0]
+        # # Fence Feature Class
+        fence_fc = [fc for fc in fc_list if 'BJ0400_Fence_L' in fc][0]
+        # # Wall Feature Class
+        wall_fc = [fc for fc in fc_list if 'BJ0390_Wall_L' in fc][0]
+
+        fence_road_distance_rules={1: 77.8, 2: 67.8, 3: 77.8, 4: 67.8, 5: 62.8, 6: 65.3}
+        fence_track_distance_rules={1: 36.3, 2: 31.3}
+        fix_wall_fence_conflict_with_road(road_fc, track_fc, fence_fc, fence_road_distance_rules, fence_track_distance_rules, working_gdb, logger, 'RCS', 'TCS')
+
+        wall_road_distance_rules={1: 82.8, 2: 72.8, 3: 82.8, 4: 72.8, 5: 67.8, 6: 70.3}
+        wall_track_distance_rules={1: 41.3, 2: 36.3}
+        fix_wall_fence_conflict_with_road(road_fc, track_fc, wall_fc, wall_road_distance_rules, wall_track_distance_rules, working_gdb, logger, 'RCS', 'TCS')
+        # # Merge Buildings that are too close between Buildings and Street
+        merge_buildings_too_closed_between_building_and_street("TA0060_Road_L", "BA0010_Residential_Building_A", fc_list, working_gdb, logger)
+        # # Align State Boundary in Reference to River Bank Line 
+        align_feature_with_reference_fc("DA0040_State_Coverage_L", "HH0041_River_Bank_L", fc_list, working_gdb, logger)
+        # Move Buildings in accordance with Historical Sites
+        move_feature_1_around_feature_2_to_specific_distance(fc_list, 
+                                                             ["BJ0380_Historical_Site_A"], 
+                                                             ["BA0010_Residential_Building_A", "BA0010_Residential_Building_P"], 
+                                                             working_gdb, logger, min_distance = "12.5")
+        residential_building_polygon = [fc for fc in fc_list if 'BA0010_Residential_Building_A' in fc][0]
+        residential_building_side_tolerance = 35
+        
+        if has_features(residential_building_polygon):
+            main_enlarge_building_polygon_side(residential_building_polygon, residential_building_side_tolerance, working_gdb)
+        # # Terrace Buildings to Build-up Area
+        terrace_buildings_to_builtup_area(fc_list, 'BA0010_Residential_Building_A', 'TA0060_Road_L', 'BJ0073_Town_Built_up_A', working_gdb)
 
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()

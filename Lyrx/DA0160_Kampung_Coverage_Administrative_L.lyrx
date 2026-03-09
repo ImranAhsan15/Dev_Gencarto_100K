@@ -3,16 +3,17 @@
   "version" : "3.5.0",
   "build" : 57366,
   "layers" : [
-    "CIMPATH=01_Gen10K1/DA0160_Kampung_Coverage_Administrative_L.json"
+    "CIMPATH=GenCarto100K/DA0160_Kampung_Coverage_Administrative_L.json"
   ],
   "layerDefinitions" : [
     {
       "type" : "CIMFeatureLayer",
       "name" : "DA0160_Kampung_Coverage_Administrative_L",
-      "uRI" : "CIMPATH=01_Gen10K1/DA0160_Kampung_Coverage_Administrative_L.json",
+      "uRI" : "CIMPATH=GenCarto100K/DA0160_Kampung_Coverage_Administrative_L.json",
       "sourceModifiedTime" : {
         "type" : "TimeInstant"
       },
+      "metadataURI" : "CIMPATH=Metadata/e265777df15217c15252f2f57d846e2b.xml",
       "useSourceMetadata" : true,
       "description" : "DA0160_Kampung_Coverage_Administrative_L",
       "layerElevation" : {
@@ -59,7 +60,7 @@
         "dataConnection" : {
           "type" : "CIMFeatureDatasetDataConnection",
           "featureDataset" : "Topo",
-          "workspaceConnectionString" : "DATABASE=..\\GenCarto10K\\PDGK.gdb",
+          "workspaceConnectionString" : "DATABASE=..\\PDGK.gdb",
           "workspaceFactory" : "FileGDB",
           "dataset" : "DA0160_Kampung_Coverage_Administrative_L",
           "datasetType" : "esriDTFeatureClass"
@@ -125,7 +126,7 @@
                 }
               ],
               "trimStackingSeparators" : true,
-              "preferToStackLongLabels" : false
+              "preferToStackLongLabels" : true
             },
             "lineFeatureType" : "General",
             "linePlacementMethod" : "OffsetStraightFromLine",
@@ -298,21 +299,12 @@
         "patch" : "Default",
         "symbol" : {
           "type" : "CIMSymbolReference",
-          "primitiveOverrides" : [
-            {
-              "type" : "CIMPrimitiveOverride",
-              "primitiveName" : "c7efcee8-2978-4030-ab10-9241eeb6a2c0",
-              "propertyName" : "Color",
-              "expression" : "[FNM]"
-            }
-          ],
           "symbol" : {
             "type" : "CIMLineSymbol",
             "symbolLayers" : [
               {
                 "type" : "CIMSolidStroke",
                 "enable" : true,
-                "primitiveName" : "c7efcee8-2978-4030-ab10-9241eeb6a2c0",
                 "capStyle" : "Round",
                 "joinStyle" : "Round",
                 "lineStyle3D" : "Strip",
@@ -323,9 +315,9 @@
                 "color" : {
                   "type" : "CIMRGBColor",
                   "values" : [
-                    138,
+                    59,
                     0,
-                    83,
+                    135,
                     100
                   ]
                 }
@@ -336,6 +328,13 @@
       },
       "scaleSymbols" : true,
       "snappable" : true
+    }
+  ],
+  "binaryReferences" : [
+    {
+      "type" : "CIMBinaryReference",
+      "uRI" : "CIMPATH=Metadata/e265777df15217c15252f2f57d846e2b.xml",
+      "data" : "<?xml version=\"1.0\"?>\r\n<metadata xml:lang=\"en\"><Esri><CreaDate>20251006</CreaDate><CreaTime>04083600</CreaTime><ArcGISFormat>1.0</ArcGISFormat><SyncOnce>TRUE</SyncOnce></Esri><dataIdInfo><idCitation><resTitle>DA0160_Kampung_Coverage_Administrative_L</resTitle></idCitation><idAbs>DA0160_Kampung_Coverage_Administrative_L</idAbs><idCredit></idCredit><idPurp></idPurp><resConst><Consts><useLimit></useLimit></Consts></resConst></dataIdInfo></metadata>\r\n"
     }
   ],
   "rGBColorProfile" : "sRGB IEC61966-2.1",

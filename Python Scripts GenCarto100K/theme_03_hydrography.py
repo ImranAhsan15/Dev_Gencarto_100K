@@ -657,7 +657,10 @@ def narrow_polygons_new(fc_list, polygon_input_list, centerline_input_list, widt
                         arcpy.management.DeleteFeatures("delete_features")
 
                 # Widen the remaining polygons
-                if len(widen_ids) >= 1:
+
+                enable_widening = False
+
+                if enable_widening and len(widen_ids) >= 1:
                     arcpy.AddMessage('Features to widen')
                     arcpy.management.SelectLayerByAttribute(split_layer, "CLEAR_SELECTION")
                     poly_layer2 = arcpy.management.MakeFeatureLayer(split_polygons, "poly_lyr2")
@@ -1448,19 +1451,352 @@ def update_veg_lyr_with_hydro_lyr(hydro_fc_list, veg_lyr_list, working_gdb):
         error_message = f"Erase vegetation layer error: {e}\nTraceback details:\n{tb}"
         arcpy.AddMessage(error_message)
 
+
+"""
+delete_small_hydro_: Used till - 16th February 2026
+"""
+def delete_small_hydro_(fc_list, delete_small_bldgs, del_min_area, working_gdb, intersecting_fc = None, replacing_fcs = None):
+    try:
+        delete_small_bldgs = list(filter(str.strip, delete_small_bldgs))
+        delete_small_bldgs = [fc for a_lyr in delete_small_bldgs for fc in fc_list if str(a_lyr) in fc]
+        # arcpy.AddMessage(f"del_min_area: {del_min_area}")
+        # arcpy.AddMessage(f"replacing_fcs: {replacing_fcs}")
+        for polygon_fc in delete_small_bldgs:
+            if has_features(polygon_fc):
+                # Create query
+                desc = arcpy.da.Describe(polygon_fc)
+                fc_name = desc['name']
+                shape_area = desc['areaFieldName']
+                query = f"{shape_area} <= {del_min_area}"
+                features_lyr = arcpy.management.MakeFeatureLayer(polygon_fc, f"{fc_name}_layer", query)
+                # Delete features
+                arcpy.management.DeleteFeatures(features_lyr)
+
+    except Exception as e:
+        tb = traceback.format_exc()
+        error_message = f"Delete small building error: {e}\nTraceback details:\n{tb}"
+        arcpy.AddMessage(error_message)
+
+"""
+delete_small_hydro: Used from 17th February 2026
+"""
+def delete_small_hydro(
+    fc_list,
+    delete_small_hydros,
+    del_min_area,
+    working_gdb,
+    intersecting_fc=None,
+    replacing_fcs=None
+):
+    """
+    Extends the user's function:
+      - delete small hydro polygons
+      - if intersecting_fc provided, replace small hydro that intersects intersecting_fc
+        with adjacent polygons from replacing_fcs (union hydro geom into best neighbor)
+      - modified on: 17th February 2026
+    """
+    try:
+        def _msg(t): arcpy.AddMessage(f"[delete_small_hydro] {t}")
+        def _warn(t): arcpy.AddWarning(f"[delete_small_hydro] {t}")
+        def _err(t): arcpy.AddError(f"[delete_small_hydro] {t}")
+
+        def _as_list(x):
+            if x is None:
+                return []
+            if isinstance(x, str):
+                return [x]
+            return list(x)
+
+        # Normalize list inputs
+        fc_list = _as_list(fc_list)
+        delete_small_hydros = _as_list(delete_small_hydros)
+        intersecting_fc = _as_list(intersecting_fc)
+        replacing_fcs = _as_list(replacing_fcs)
+
+        _msg(f"del_min_area={del_min_area}")
+        _msg(f"working_gdb={working_gdb}")
+        _msg(f"intersecting_fc count={len(intersecting_fc)} | replacing_fcs count={len(replacing_fcs)}")
+
+        # Keep your existing filtering logic (substring match)
+        delete_small_hydros = list(filter(str.strip, delete_small_hydros))
+        delete_small_hydros = [fc for a_lyr in delete_small_hydros for fc in fc_list if str(a_lyr) in fc]
+        _msg(f"Hydro FCs matched from fc_list: {len(delete_small_hydros)}")
+
+        # Replacement enabled only if both intersecting_fc and replacing_fcs exist
+        do_replace = bool(intersecting_fc) and bool(replacing_fcs)
+        if intersecting_fc and not replacing_fcs:
+            raise ValueError("intersecting_fc provided but replacing_fcs is empty. Provide replacing_fcs for replacement.")
+
+        # Build intersecting layer(s) once (as layers) if provided
+        intersect_layers = []
+        if intersecting_fc:
+            for i, ifc in enumerate(intersecting_fc, start=1):
+                if not arcpy.Exists(ifc):
+                    _warn(f"Intersecting FC missing, skipping: {ifc}")
+                    continue
+                lyr = f"temp_intersect_{i}"
+                arcpy.management.MakeFeatureLayer(ifc, lyr)
+                intersect_layers.append(lyr)
+            _msg(f"Intersecting layers created: {len(intersect_layers)}")
+
+        # Build replacement layers once
+        rep_layers = []
+        if do_replace:
+            for i, rfc in enumerate(replacing_fcs, start=1):
+                if not arcpy.Exists(rfc):
+                    _warn(f"Replacing FC missing, skipping: {rfc}")
+                    continue
+                lyr = f"temp_rep_{i}"
+                arcpy.management.MakeFeatureLayer(rfc, lyr)
+                rep_layers.append((rfc, lyr))
+            _msg(f"Replacement layers created: {len(rep_layers)}")
+            if not rep_layers:
+                _warn("No valid replacement FCs exist after filtering; replacement will be skipped.")
+                do_replace = False
+
+        # Summary for debugging
+        summary = {}
+
+        for polygon_fc in delete_small_hydros:
+            summary[polygon_fc] = {"small": 0, "deleted": 0, "replace_candidates": 0, "replaced": 0, "skipped_no_neighbor": 0}
+
+            if not arcpy.Exists(polygon_fc):
+                _warn(f"Hydro FC missing, skipping: {polygon_fc}")
+                continue
+
+            if not has_features(polygon_fc):
+                _msg(f"No features in hydro FC, skipping: {polygon_fc}")
+                continue
+
+            desc = arcpy.da.Describe(polygon_fc)
+            fc_name = desc["name"]
+            shape_area = desc["areaFieldName"]  # uses dataset's area field name
+            oid_field = desc["OIDFieldName"]
+
+            query = f"{shape_area} <= {float(del_min_area)}"
+            _msg(f"Processing hydro FC: {polygon_fc}")
+            _msg(f"Small-area query: {query}")
+
+            # Layer of small hydros
+            features_lyr = arcpy.management.MakeFeatureLayer(polygon_fc, f"{fc_name}_small_lyr", query)
+
+            small_count = int(arcpy.management.GetCount(features_lyr)[0])
+            summary[polygon_fc]["small"] = small_count
+            _msg(f"Small hydro selected: {small_count}")
+
+            if small_count == 0:
+                arcpy.management.Delete(features_lyr)
+                continue
+
+            # If no intersecting_fc: delete all small and continue
+            if not do_replace or not intersect_layers:
+                _msg("Replacement disabled (no intersecting_fc or no replacing_fcs). Deleting all small hydro.")
+                summary[polygon_fc]["deleted"] += small_count
+                arcpy.management.DeleteFeatures(features_lyr)
+                arcpy.management.Delete(features_lyr)
+                continue
+
+            # 1) Identify replace candidates = small hydros that intersect any intersecting layer
+            # Start from small selection already in features_lyr
+            arcpy.management.SelectLayerByAttribute(features_lyr, "NEW_SELECTION", query)
+
+            # Subset selection to INTERSECT first layer, then ADD from others
+            arcpy.management.SelectLayerByLocation(
+                features_lyr, "INTERSECT", intersect_layers[0], selection_type="SUBSET_SELECTION"
+            )
+            for extra in intersect_layers[1:]:
+                arcpy.management.SelectLayerByLocation(
+                    features_lyr, "INTERSECT", extra, selection_type="ADD_TO_SELECTION"
+                )
+
+            replace_count = int(arcpy.management.GetCount(features_lyr)[0])
+            summary[polygon_fc]["replace_candidates"] = replace_count
+            _msg(f"Replace candidates (small ∩ intersecting): {replace_count}")
+
+            # Capture replace candidate OIDs from the ORIGINAL FC
+            replace_oids = [r[0] for r in arcpy.da.SearchCursor(features_lyr, [oid_field])]
+            replace_oid_set = set(replace_oids)
+
+            # 2) Delete small hydros NOT intersecting: (small) minus (replace candidates)
+            # Re-select all small
+            arcpy.management.SelectLayerByAttribute(features_lyr, "NEW_SELECTION", query)
+
+            if replace_oid_set:
+                # Remove candidates -> left with delete set
+                chunks = [replace_oids[i:i+999] for i in range(0, len(replace_oids), 999)]
+                for ch in chunks:
+                    arcpy.management.SelectLayerByAttribute(
+                        features_lyr, "REMOVE_FROM_SELECTION",
+                        f"{oid_field} IN ({','.join(map(str, ch))})"
+                    )
+
+            delete_count = int(arcpy.management.GetCount(features_lyr)[0])
+            _msg(f"Delete-set (small \\ replace): {delete_count}")
+
+            if delete_count > 0:
+                summary[polygon_fc]["deleted"] += delete_count
+                _msg(f"Deleting {delete_count} small hydro (non-intersecting).")
+                arcpy.management.DeleteFeatures(features_lyr)
+
+            # 3) Replacement pass for replace candidates
+            if not replace_oid_set:
+                _msg("No replace candidates; done with this hydro FC.")
+                arcpy.management.Delete(features_lyr)
+                continue
+
+            _msg(f"Starting replacement pass for {len(replace_oid_set)} hydro polygons.")
+
+            # Read hydro geometries by OID
+            # (Do it with a where clause in chunks to avoid very long IN clauses.)
+            hyd_geom_by_oid = {}
+            replace_oid_list = list(replace_oid_set)
+            for i in range(0, len(replace_oid_list), 999):
+                chunk = replace_oid_list[i:i+999]
+                where = f"{oid_field} IN ({','.join(map(str, chunk))})"
+                with arcpy.da.SearchCursor(polygon_fc, [oid_field, "SHAPE@"], where_clause=where) as scur:
+                    for oid, geom in scur:
+                        hyd_geom_by_oid[oid] = geom
+
+            _msg(f"Loaded hydro geometries for replacement: {len(hyd_geom_by_oid)}")
+
+            # For each hydro poly, choose best adjacent polygon among replacing_fcs
+            # Metric: shared boundary length (hydro boundary ∩ candidate boundary).
+            # If nothing shares boundary, we skip (and log).
+            hydros_replaced = []
+
+            for hyd_oid, hyd_geom in hyd_geom_by_oid.items():
+                if not hyd_geom:
+                    continue
+
+                hyd_boundary = hyd_geom.boundary()
+
+                best = None  # (shared_len, rep_fc, rep_oid)
+                for rep_fc, rep_lyr in rep_layers:
+                    # Select candidates that at least intersect hydro (fast prefilter)
+                    arcpy.management.SelectLayerByAttribute(rep_lyr, "CLEAR_SELECTION")
+                    arcpy.management.SelectLayerByLocation(rep_lyr, "INTERSECT", hyd_geom, selection_type="NEW_SELECTION")
+
+                    cand_count = int(arcpy.management.GetCount(rep_lyr)[0])
+                    if cand_count == 0:
+                        continue
+
+                    rep_oid_field = arcpy.da.Describe(rep_fc)["OIDFieldName"]
+                    with arcpy.da.SearchCursor(rep_lyr, [rep_oid_field, "SHAPE@"]) as rcur:
+                        for roid, rgeom in rcur:
+                            if not rgeom:
+                                continue
+
+                            # shared boundary length
+                            inter_line = hyd_boundary.intersect(rgeom.boundary(), 2)  # 2 = polyline
+                            shared_len = inter_line.length if inter_line else 0.0
+                            if shared_len <= 0:
+                                continue
+
+                            if (best is None) or (shared_len > best[0]):
+                                best = (shared_len, rep_fc, roid)
+
+                if best is None:
+                    summary[polygon_fc]["skipped_no_neighbor"] += 1
+                    continue
+
+                shared_len, best_rep_fc, best_rep_oid = best
+                rep_oid_field = arcpy.da.Describe(best_rep_fc)["OIDFieldName"]
+
+                # Update the best replacement polygon: union with hydro geometry
+                where = f"{rep_oid_field} = {int(best_rep_oid)}"
+                updated = False
+                with arcpy.da.UpdateCursor(best_rep_fc, ["SHAPE@"], where_clause=where) as ucur:
+                    for (g,) in ucur:
+                        if g:
+                            ucur.updateRow((g.union(hyd_geom),))
+                            updated = True
+
+                if updated:
+                    hydros_replaced.append(hyd_oid)
+
+            replaced_count = len(hydros_replaced)
+            summary[polygon_fc]["replaced"] += replaced_count
+            _msg(f"Replacement polygons updated: {replaced_count}")
+            if summary[polygon_fc]["skipped_no_neighbor"]:
+                _warn(f"Hydro polys skipped (no adjacent replacement polygon): {summary[polygon_fc]['skipped_no_neighbor']}")
+
+            # Delete the hydro polygons that were successfully replaced
+            if hydros_replaced:
+                del_lyr = arcpy.management.MakeFeatureLayer(polygon_fc, f"{fc_name}_del_replaced_lyr")
+                arcpy.management.SelectLayerByAttribute(del_lyr, "CLEAR_SELECTION")
+                for i in range(0, len(hydros_replaced), 999):
+                    chunk = hydros_replaced[i:i+999]
+                    arcpy.management.SelectLayerByAttribute(
+                        del_lyr, "ADD_TO_SELECTION",
+                        f"{oid_field} IN ({','.join(map(str, chunk))})"
+                    )
+                _msg(f"Deleting replaced hydro polygons: {len(hydros_replaced)}")
+                arcpy.management.DeleteFeatures(del_lyr)
+                arcpy.management.Delete(del_lyr)
+
+            # Cleanup
+            arcpy.management.Delete(features_lyr)
+            _msg(f"Done hydro FC: {polygon_fc} | {summary[polygon_fc]}")
+
+        # Cleanup shared layers
+        for lyr in intersect_layers:
+            try:
+                arcpy.management.Delete(lyr)
+            except Exception:
+                pass
+        for _, lyr in rep_layers:
+            try:
+                arcpy.management.Delete(lyr)
+            except Exception:
+                pass
+
+        _msg(f"ALL DONE. Summary: {summary}")
+        return summary
+
+    except Exception as ex:
+        arcpy.AddError(f"[delete_small_hydro] Failed: {ex}")
+        raise
+
+
+
+def replace_polygon_with_line_hydro_feature(poly_feature, line_feature, working_gdb, logger, smooth_tolerance = 10):
+    arcpy.env.workspace = working_gdb
+    arcpy.env.overwriteOutput = True
+
+    # Spatial Join between lake and river
+    lake_river_spatial_joined_fc = arcpy.analysis.SpatialJoin(poly_feature, line_feature, f"{working_gdb}\\lake_river_spatial_joined_fc")
+    # Make feature layer from spatially joined layer
+    arcpy.management.MakeFeatureLayer(lake_river_spatial_joined_fc, "lake_river_spatial_joined_fc")
+    
+    # Query gte 2
+    arcpy.management.SelectLayerByAttribute("lake_river_spatial_joined_fc","NEW_SELECTION", f"Join_Count < 2")
+    # Delete selected features
+    arcpy.management.DeleteFeatures("lake_river_spatial_joined_fc")
+    # Collapse hydro polygon
+    collapsed_hydro_polygon = arcpy.cartography.CollapseHydroPolygon(lake_river_spatial_joined_fc, f"{working_gdb}\\collapsed_hydro_polygon", "NO_MERGE", [line_feature])
+    # Smooth line
+    hydro_smooth_line = arcpy.cartography.SmoothLine(collapsed_hydro_polygon, f"{working_gdb}\\hydro_smooth_line", "PAEK", f"{smooth_tolerance} Meters")
+    # Append smooth line with river
+    arcpy.management.Append(hydro_smooth_line, line_feature, "NO_TEST")
+
+    arcpy.topographic.MergeLinesByPseudoNode(line_feature)
+
+    return None
+
+
 def gen_hydrography(fc_list, hydro_prep_fc_list, name_fld, line_len, working_gdb, polygon_input_list, centerline_input_list, width_units, buffer_percent, vis_field, topo_fcs_list, 
                     generalize_operations, simple_tolerance, smooth_tolerance, delete, in_feature_loc, hydro_remove_small_poly_exp, hydro_remove_small_poly_mim_area, hydro_enlarge_poly_mim_size, 
                     hydro_enlarge_poly_buffer_dist, hydro_remove_near_poly_list, hydro_remove_near_poly_delete_size, hydro_remove_near_poly_min_size, hydro_remove_near_poly_dist, 
                     hydro_remove_near_poly_sql, hydro_enlarge_poly_sql, hydro_enlarge_untouch_poly_buffer_dist, hydro_enlarge_poly_list, hydro_trim_between_polygon_min_area,
                     hydro_trim_between_polygon_distance, hydro_remove_small_poly_list, hydro_remove_small_sql, hydro_remove_small_min_size, hydro_erase_poly_list, hydro_erase_poly_max_gap_area, 
                     hydro_convert_ungr_river_min_length, increase_hydro_line_min_length, remove_close_parallel_per_min, remove_close_parallel_per_max, remove_close_dist, remove_close_tolerance, 
-                    hydro_line_dangle_min_length, hydro_small_line_fc_list, hydro_small_point_fc_list, hydro_small_fc_min_length, delete_input, one_point, unique_field, logger):
+                    hydro_line_dangle_min_length, hydro_small_line_fc_list, hydro_small_point_fc_list, hydro_small_fc_min_length, delete_input, one_point, unique_field, hydro_delete_small_pools, hydro_delete_small_pool_min_area, hydro_replace_poly_with_line_smooth_tolerance, logger):
     
     arcpy.AddMessage('Starting hydrography features generalization.....')
     # Set the workspace
     arcpy.env.overwriteOutput = True
     try:
-        # Hydro preparation
+        
         hydro_prep_fc_list = list(filter(str.strip, hydro_prep_fc_list))
         hydro_prep_fc_list = [fc for a_lyr in hydro_prep_fc_list for fc in fc_list if str(a_lyr) in fc]
         river = [fc for fc in fc_list if 'HH0040_River_L' in fc][0]
@@ -1471,21 +1807,35 @@ def gen_hydrography(fc_list, hydro_prep_fc_list, name_fld, line_len, working_gdb
         irrigation_canal_cover_list = [fc for fc in fc_list if 'HH0192_Irrigation_Canal_Coverage_A' in fc]
         topo_fcs_list = list(filter(str.strip, topo_fcs_list))
         topo_fcs = [fc for a_lyr in topo_fcs_list for fc in fc_list if str(a_lyr) in fc]
-
-        hydro_prep(river, hydro_prep_fc_list)
-        hydro_prep(irrigation, irrigation_canal_cover_list)
-   
-        # Hydro Remove Short Lines Connecting Polygons
         pond = [fc for fc in fc_list if 'HH0210_Pond_A' in fc][0]
         lake = [fc for fc in fc_list if 'HH0020_Lake_A' in fc][0]
+        river_coverage = [fc for fc in fc_list if 'HH0042_River_Coverage_A' in fc][0]
+        irrigation_canal_cover = [fc for fc in fc_list if 'HH0192_Irrigation_Canal_Coverage_A' in fc][0]
+        topology_fcs = [fc for a_lyr in topo_fcs_list for fc in fc_list if str(a_lyr) in fc]
+
+        aoi = f"{in_feature_loc}\\AOI"
+        topology_fcs01 = [river_coverage, sea_coverage, aoi]
+        topology_fcs02 = [irrigation_canal_cover, sea_coverage, aoi]
+
+        hydro_remove_near_poly_list = list(filter(str.strip, hydro_remove_near_poly_list))
+        hydro_remove_near_poly_list = [fc for a_lyr in hydro_remove_near_poly_list for fc in fc_list if str(a_lyr) in fc]
+        # # Hydro preparation
+        hydro_prep(river, hydro_prep_fc_list)
+        hydro_prep(irrigation, irrigation_canal_cover_list)
+
+        replace_polygon_with_line_hydro_feature(lake, river, working_gdb, logger, hydro_replace_poly_with_line_smooth_tolerance)
+   
+        # # Hydro Remove Short Lines Connecting Polygons
+        
         river_coverage = [fc for fc in fc_list if 'HH0042_River_Coverage_A' in fc][0]
         remove_short_lines_connecting_polys(river, pond, name_fld, line_len, working_gdb)
         remove_short_lines_connecting_polys(river, lake, name_fld, line_len, working_gdb)
 
         # Hydro narrow polygons
         narrow_polygons_new(fc_list, polygon_input_list, centerline_input_list, width_units, buffer_percent, vis_field, topo_fcs, working_gdb, logger)
-        # Hydro generalize shared
-        polygon_input_list = [fc for topo in ['HH0042_River_Coverage_A', 'HH0192_Irrigation_Canal_Coverage_A'] for fc in fc_list if str(topo) in fc]
+        # # Hydro generalize shared
+        polygon_input_list = [fc for topo in ['HH0042_River_Coverage_A', 'HH0192_Irrigation_Canal_Coverage_A', 'HH0210_Pond_A', 'HH0020_Lake_A', 
+                                              'HL0010_Inland_Island_A', 'HL0020_Coastal_Island_A', 'HL0030_Offshore_Island_A', 'HE0150_Log_Pond_A'] for fc in fc_list if str(topo) in fc]
         centerline_input_list = [fc for topo in ['HH0040_River_L', 'HH0190_Irrigation_Canal_L'] for fc in fc_list if str(topo) in fc]
         for line_fc, poly_fc in zip(centerline_input_list, polygon_input_list):
             desc = arcpy.da.Describe(line_fc)
@@ -1496,22 +1846,21 @@ def gen_hydrography(fc_list, hydro_prep_fc_list, name_fld, line_len, working_gdb
             snap_env = [poly_fc, "EDGE", "2 Meters"]
             arcpy.edit.Snap(features_lyr, [snap_env])
 
+        delete_small_hydro(fc_list, hydro_delete_small_pools, hydro_delete_small_pool_min_area, working_gdb, river, topo_fcs)
+
         update_veg_lyr_with_hydro_lyr(polygon_input_list, topo_fcs, working_gdb)
-        river_coverage = [fc for fc in fc_list if 'HH0042_River_Coverage_A' in fc][0]
-        irrigation_canal_cover = [fc for fc in fc_list if 'HH0192_Irrigation_Canal_Coverage_A' in fc][0]
-        topology_fcs = [fc for a_lyr in topo_fcs_list for fc in fc_list if str(a_lyr) in fc]
         # Generalize shared features
         topology_fcs.insert(0, lake)
-        gen_shared_features(lake, generalize_operations, simple_tolerance, smooth_tolerance, working_gdb, topology_fcs)
+        gen_shared_features(lake, generalize_operations, simple_tolerance, smooth_tolerance, working_gdb, topology_fcs, None)
         topology_fcs.remove(lake)
         topology_fcs.insert(0, pond)
-        gen_shared_features(pond, generalize_operations, simple_tolerance, smooth_tolerance, working_gdb, topology_fcs)
+        gen_shared_features(pond, generalize_operations, simple_tolerance, smooth_tolerance, working_gdb, topology_fcs, None)
         topology_fcs.remove(pond)
         topology_fcs.insert(0, river_coverage)
-        gen_shared_features(river_coverage, generalize_operations, simple_tolerance, smooth_tolerance, working_gdb, topology_fcs)
+        gen_shared_features(river_coverage, generalize_operations, simple_tolerance, smooth_tolerance, working_gdb, topology_fcs, None)
         topology_fcs.remove(river_coverage)
         topology_fcs.insert(0, irrigation_canal_cover)
-        gen_shared_features(irrigation_canal_cover, generalize_operations, simple_tolerance, smooth_tolerance, working_gdb, topology_fcs)
+        gen_shared_features(irrigation_canal_cover, generalize_operations, simple_tolerance, smooth_tolerance, working_gdb, topology_fcs, None)
         topology_fcs.remove(irrigation_canal_cover)
         
         # Determination and Reconnecting
@@ -1543,16 +1892,16 @@ def gen_hydrography(fc_list, hydro_prep_fc_list, name_fld, line_len, working_gdb
 
         # Run the determine function
         # For River-Pond
+        # determine(river, pond, out_table2, line_field_river, poly_field_pond, working_gdb)
         determine(river, pond, out_table2, line_field_river, poly_field_pond, working_gdb)
         reconnect_touching(pond, river, out_table2, delete)
         # For River-Lake
         determine(river, lake, out_table1, line_field_river, poly_field_lake, working_gdb)
+        # determine(river, lake, out_table1, line_field_river, poly_field_lake, working_gdb)
         reconnect_touching(lake, river, out_table1, delete)
 
         # Recreate boundary lines
-        aoi = f"{in_feature_loc}\\AOI"
-        topology_fcs01 = [river_coverage, sea_coverage, aoi]
-        topology_fcs02 = [irrigation_canal_cover, sea_coverage, aoi]
+        
         recreate_boundary_lines(river_bank, river_coverage, topology_fcs01)
         recreate_boundary_lines(irrigation_edge, irrigation_canal_cover, topology_fcs02)
 
@@ -1597,7 +1946,7 @@ def gen_hydrography(fc_list, hydro_prep_fc_list, name_fld, line_len, working_gdb
         # For River-Lake
         determine(river, lake, out_table1, line_field_river, poly_field_lake, working_gdb)        
         ## Hydro remove small polygons between lines
-        # Make feature layer
+        #  Make feature layer
         arcpy.management.MakeFeatureLayer(lake, "lake_lyr", hydro_remove_small_poly_exp)
         arcpy.management.MakeFeatureLayer(pond, "pond_lyr", hydro_remove_small_poly_exp)
         river_fc1 = extend_lines_remove_poly(river, "lake_lyr", hydro_remove_small_poly_mim_area, False, topo_fcs, working_gdb)
@@ -1633,8 +1982,6 @@ def gen_hydrography(fc_list, hydro_prep_fc_list, name_fld, line_len, working_gdb
         enlarge_polygon_barrier(pond_lyr, None, river_lyr, hydro_enlarge_poly_mim_size, hydro_enlarge_poly_buffer_dist, enlarge_barrier_fcs02, working_gdb)
 
         # Hydro remove near polygons
-        hydro_remove_near_poly_list = list(filter(str.strip, hydro_remove_near_poly_list))
-        hydro_remove_near_poly_list = [fc for a_lyr in hydro_remove_near_poly_list for fc in fc_list if str(a_lyr) in fc]
 
         for polygon_fc in hydro_remove_near_poly_list:
             if any(island in polygon_fc for island in ['HL0010_Inland_Island_A', 'HL0020_Coastal_Island_A', 'HL0030_Offshore_Island_A']):
@@ -1708,7 +2055,7 @@ def gen_hydrography(fc_list, hydro_prep_fc_list, name_fld, line_len, working_gdb
 
         input_secondary01 = [lake, sea_coverage, river_coverage, pond]
         input_secondary02 = [lake, river_coverage] + topo_fcs
-
+        
         # Convert polygons
         for p_fc in hydro_remove_small_poly_list:
             if any(island in p_fc for island in ['HL0010_Inland_Island_A', 'HL0020_Coastal_Island_A', 'HL0030_Offshore_Island_A']):
@@ -1739,8 +2086,9 @@ def gen_hydrography(fc_list, hydro_prep_fc_list, name_fld, line_len, working_gdb
             else:
                 erase_polygons_by_replace(enlarge_fc, topo_fcs, None, working_gdb)
 
-        # Fill gaps
+        # # Fill gaps
         lake = [fc for fc in fc_list if 'HH0020_Lake_A' in fc][0]
+        forest = 'VB0000_Forest_A'
         arcpy.topographic.FillGaps(lake, hydro_erase_poly_max_gap_area, "FILL_BY_LENGTH")
 
         # Remove shoreline not on hydro area feature boundary
@@ -1805,6 +2153,7 @@ def gen_hydrography(fc_list, hydro_prep_fc_list, name_fld, line_len, working_gdb
         sql = None
         for line_fc, point_fc in zip(hydro_small_line_fc_list, hydro_small_point_fc_list):
             feature2point(working_gdb, line_fc, point_fc, hydro_small_fc_min_length, delete_input, one_point, unique_field, sql)
+        
 
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()

@@ -3,21 +3,22 @@
   "version" : "3.5.0",
   "build" : 57366,
   "layers" : [
-    "CIMPATH=01_Gen10K1/HH0120_Rapids_P.json"
+    "CIMPATH=GenCarto100K/HH0120_Rapids_P.json"
   ],
   "layerDefinitions" : [
     {
       "type" : "CIMFeatureLayer",
       "name" : "HH0120_Rapids_P",
-      "uRI" : "CIMPATH=01_Gen10K1/HH0120_Rapids_P.json",
+      "uRI" : "CIMPATH=GenCarto100K/HH0120_Rapids_P.json",
       "sourceModifiedTime" : {
         "type" : "TimeInstant"
       },
+      "metadataURI" : "CIMPATH=Metadata/135327abb86524bfd6ff4892c20b2b3b.xml",
       "useSourceMetadata" : true,
       "description" : "HH0120_Rapids_P",
       "layerElevation" : {
         "type" : "CIMLayerElevationSurface",
-        "elevationSurfaceLayerURI" : "CIMPATH=01_Gen10K1/Ground.json"
+        "elevationSurfaceLayerURI" : "CIMPATH=Map/d4664cefdc9e493b96a647b5c67b709e.json"
       },
       "expanded" : true,
       "layerType" : "Operational",
@@ -40,7 +41,7 @@
         "dataConnection" : {
           "type" : "CIMFeatureDatasetDataConnection",
           "featureDataset" : "Topo",
-          "workspaceConnectionString" : "DATABASE=..\\GenCarto10K\\PDGK.gdb",
+          "workspaceConnectionString" : "DATABASE=..\\PDGK.gdb",
           "workspaceFactory" : "FileGDB",
           "dataset" : "HH0120_Rapids_P",
           "datasetType" : "esriDTFeatureClass"
@@ -282,31 +283,21 @@
           "primitiveOverrides" : [
             {
               "type" : "CIMPrimitiveOverride",
-              "primitiveName" : "dd1eff51-1d11-4606-a76f-253c8a87f494",
+              "primitiveName" : "bb9484d7-7601-480d-8722-a34c906429e0",
               "propertyName" : "FillColor",
-              "valueExpressionInfo" : {
-                "type" : "CIMExpressionInfo",
-                "title" : "Custom",
-                "expression" : "$feature.FNM",
-                "returnType" : "Default"
-              }
+              "expression" : "[FCD]"
             },
             {
               "type" : "CIMPrimitiveOverride",
-              "primitiveName" : "dd1eff51-1d11-4606-a76f-253c8a87f494",
+              "primitiveName" : "bb9484d7-7601-480d-8722-a34c906429e0",
               "propertyName" : "StrokeColor",
-              "expression" : "[FNM]"
+              "expression" : "[FCD]"
             },
             {
               "type" : "CIMPrimitiveOverride",
               "primitiveName" : "1.0",
               "propertyName" : "Rotation",
-              "valueExpressionInfo" : {
-                "type" : "CIMExpressionInfo",
-                "title" : "Custom",
-                "expression" : "$feature.Orientation",
-                "returnType" : "Default"
-              }
+              "expression" : "[Orientation_Degree]"
             }
           ],
           "symbol" : {
@@ -318,7 +309,7 @@
                 "colorLocked" : true,
                 "primitiveName" : "1.0",
                 "anchorPoint" : {
-                  "x" : -3.9166201146498574e-17,
+                  "x" : 0,
                   "y" : 0
                 },
                 "anchorPointUnits" : "Relative",
@@ -366,7 +357,7 @@
                         {
                           "type" : "CIMSolidStroke",
                           "enable" : true,
-                          "name" : "New_249debea-75f2-45d3-b6d9-000f241bf49e",
+                          "name" : "New_56383185-acb4-468a-aca5-dd4444015204",
                           "capStyle" : "Round",
                           "joinStyle" : "Round",
                           "lineStyle3D" : "Strip",
@@ -401,7 +392,7 @@
                       ],
                       "angleAlignment" : "Map"
                     },
-                    "primitiveName" : "dd1eff51-1d11-4606-a76f-253c8a87f494"
+                    "primitiveName" : "bb9484d7-7601-480d-8722-a34c906429e0"
                   }
                 ],
                 "scaleSymbolsProportionally" : true,
@@ -418,13 +409,20 @@
       "snappable" : true
     }
   ],
+  "binaryReferences" : [
+    {
+      "type" : "CIMBinaryReference",
+      "uRI" : "CIMPATH=Metadata/135327abb86524bfd6ff4892c20b2b3b.xml",
+      "data" : "<?xml version=\"1.0\"?>\r\n<metadata xml:lang=\"en\"><Esri><CreaDate>20251006</CreaDate><CreaTime>04083600</CreaTime><ArcGISFormat>1.0</ArcGISFormat><SyncOnce>TRUE</SyncOnce></Esri><dataIdInfo><idCitation><resTitle>HH0120_Rapids_P</resTitle></idCitation><idAbs>HH0120_Rapids_P</idAbs><idCredit></idCredit><idPurp></idPurp><resConst><Consts><useLimit></useLimit></Consts></resConst></dataIdInfo></metadata>\r\n"
+    }
+  ],
   "rGBColorProfile" : "sRGB IEC61966-2.1",
   "cMYKColorProfile" : "U.S. Web Coated (SWOP) v2",
   "elevationSurfaceLayerDefinitions" : [
     {
       "type" : "CIMElevationSurfaceLayer",
       "name" : "Ground",
-      "uRI" : "CIMPATH=01_Gen10K1/Ground.json",
+      "uRI" : "CIMPATH=Map/d4664cefdc9e493b96a647b5c67b709e.json",
       "sourceModifiedTime" : {
         "type" : "TimeInstant"
       },

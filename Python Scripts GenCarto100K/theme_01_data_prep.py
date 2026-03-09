@@ -290,12 +290,59 @@ def create_partition(in_feature_loc, feature_count, fc_list, logger):
         logger.error(error_message)
         simplified_msgs('Create partition', f'{exc_value}\n')
 
+def trans_delete_dangles(trans_lines, sql, compare_fcs, seg_length, working_gdb, recursive):
+    # Define environment variables
+    arcpy.env.overwriteOutput = 1
+    arcpy.env.workspace = working_gdb
+
+    try:
+        # Denote dangles using points using the
+        # Feature Vertices to Points GP tool at dangles
+        arcpy.AddMessage("Creating points at dangles...")
+        dangles = arcpy.management.FeatureVerticesToPoints(trans_lines, "dangles", "DANGLE").getOutput(0)
+        # Use Describe function to get SHAPE Length field
+        shp_len_fld = arcpy.da.Describe(trans_lines)['lengthFieldName']
+        # Create feature layer of hydro lines where
+        # length of segment < seg_length and Name field
+        # is an empty string or NULL
+    
+        where = f"{shp_len_fld} < {seg_length}"
+        if sql:
+            where += " AND "  + "(" + sql + ")"
+        arcpy.management.MakeFeatureLayer(trans_lines, "transport", where)
+        feature_count = count_features("transport")
+        if feature_count >= 1:
+            if recursive == "true":
+                delete_dangles("transport", dangles, seg_length, compare_fcs, working_gdb)
+                arcpy.management.SelectLayerByAttribute("transport", "NEW_SELECTION", where)
+        else:
+            delete_dangles("transport", dangles, seg_length, compare_fcs, working_gdb)
+
+        # Delete temp files
+        arcpy.management.Delete([dangles, "transport"])
+
+    except Exception as e:
+            tb = traceback.format_exc()
+            error_message = f"Delete dangles error: {e}\nTraceback details:\n{tb}"
+            arcpy.AddMessage(error_message)
+
+
 def data_cleaning_all_funcs(aoi, fc_list, in_feature_loc, working_gdb, buffer_distance, vertex_limit, buffer_distance_point, feature_count, not_include_fields, 
-                            fcs_trim_extend, extend_val, trim_val, buffer_points_25K, feature_to_split, bau_field_fc,logger):
+                            fcs_trim_extend, extend_val, trim_val, buffer_points_25K, feature_to_split, bau_field_fc, trans_build_up_buildings, seg_length, logger):
     arcpy.AddMessage('Starting Data cleaning process.....')
     # Set environment variables
     arcpy.env.overwriteOutput = True
     try:
+        # Remove dangling roads and tracks wich are under given segment length (for example: less then 150m)
+        input_line_list = [fc for in_line in ['TA0060_Road_L', 'TA0110_Track_L'] for fc in fc_list if str(in_line) in fc]
+        compare_fcs_list = list(filter(str.strip, trans_build_up_buildings))
+        compare_fcs_list = sorted([fc for a_lyr in trans_build_up_buildings for fc in fc_list if str(a_lyr) in fc])
+        # Delete dangles
+        delete_dngl_sql = "NAM = '' Or NAM = ' ' Or NAM IS NULL"
+        recursive = "true"
+        for trans_lines in input_line_list:
+            trans_delete_dangles(trans_lines, delete_dngl_sql, compare_fcs_list, seg_length, working_gdb, recursive)
+
         # Split contour features
         contour_clean_up(aoi, fc_list, working_gdb, buffer_distance, vertex_limit, logger)
         # Split feature classes
@@ -305,9 +352,9 @@ def data_cleaning_all_funcs(aoi, fc_list, in_feature_loc, working_gdb, buffer_di
         # Create buffer
         create_buffer_25k(working_gdb, buffer_distance_point, fc_list, buffer_points_25K, logger)
         # # Add Identifier BUA Field
-        # add_identifier_BUA(fc_list, bau_field_fc, logger)
+        # # add_identifier_BUA(fc_list, bau_field_fc, logger)
         # # Add Invisibility and Hierarchy Field
-        # add_invisibility_hierarchy_field(fc_list, logger)
+        # # add_invisibility_hierarchy_field(fc_list, logger)
         # Create Carto Partition
         create_partition(in_feature_loc, feature_count, fc_list, logger)
         # Polygon to line conversion for boundary

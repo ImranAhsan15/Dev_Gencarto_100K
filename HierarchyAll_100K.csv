@@ -17,7 +17,7 @@ DA0080_District_Jajahan_or_Sub_District_Coverage_Administrative_L,,1
 DA0086_Sub_district_Boundary_Administrative_L,,1
 DA0100_Mukim_Coverage_Administrative_L,,1
 DA0180_Section_Coverage_Administrative_L,,1
-DA0200_Precinct_Coverage_L,,1
+ DA0200_Precinct_Coverage_L,,1
 DA0220_Local_Authority_Area_L,,1
 U_Telecom_Line_L,,2
 RA0070_Cutting_L,,3
@@ -31,6 +31,9 @@ HH0041_River_Bank_L,,0
 UC0110_Water_Pipeline_L,,2
 UD0080_Oil_Pipeline_L,,2
 UD0090_Gas_Pipeline_L,,2
+UC0110_Water_Pipeline_L,,2
+UD0080_Oil_Pipeline_L,,2
+UD0090_Gas_Pipeline_L,,2
 BA0010_Residential_Building_A,NAM IS NULL OR NAM = '',3
 BC0010_Industrial_Building_A,NAM IS NULL OR NAM = '',3
 BE0010_Educational_Building_A,NAM IS NULL OR NAM = '',3
@@ -39,6 +42,9 @@ BA0010_Residential_Building_A,NAM IS NOT NULL AND NAM <> '',2
 BC0010_Industrial_Building_A,NAM IS NOT NULL AND NAM <> '',2
 BE0010_Educational_Building_A,NAM IS NOT NULL AND NAM <> '',2
 BF0010_Building_Of_Worship_A,NAM IS NOT NULL AND NAM <> '',2
+BA0010_Residential_Building_A,,1
+BC0010_Industrial_Building_A,,1
+BE0010_Educational_Building_A,,1
 BF0010_Building_Of_Worship_A,,1
 BA0010_Residential_Building_P,NAM IS NULL OR NAM = '',4
 BC0010_Industrial_Building_P,NAM IS NULL OR NAM = '',4
@@ -48,6 +54,9 @@ BA0010_Residential_Building_P,NAM IS NOT NULL AND NAM <> '',2
 BC0010_Industrial_Building_P,NAM IS NOT NULL AND NAM <> '',2
 BE0010_Educational_Building_P,NAM IS NOT NULL AND NAM <> '',2
 BF0010_Building_Of_Worship_P,NAM IS NOT NULL AND NAM <> '',2
+BA0010_Residential_Building_P,,1
+BC0010_Industrial_Building_P,,1
+BE0010_Educational_Building_P,,1
 BF0010_Building_Of_Worship_P,,1
 BB0010_Commercial_Building_A,NAM IS NULL OR NAM = '',3
 BB0030_Office_A,NAM IS NULL OR NAM = '',3
@@ -241,14 +250,14 @@ BD0170_Agricultural_Station_P,NAM IS NOT NULL AND NAM <> '',2
 BD0180_Research_Station_Laboratory_P,NAM IS NOT NULL AND NAM <> '',2
 BD0999_Other_Institutional_Building_P,NAM IS NOT NULL AND NAM <> '',2
 BD0044_Rehabilitation_Centre_P,NAM IS NOT NULL AND NAM <> '',2
-BJ0010_Taxi_Terminal_Taxi_Stand_A,NAM IS NULL OR NAM = '',3
-BJ0030_Rail Terminal_Railway Station_A,NAM IS NULL OR NAM = '',3
+BJ0010_Taxi Terminal/Taxi Stand_A,NAM IS NULL OR NAM = '',3
+BJ0030_Rail Terminal/Railway Station_A,NAM IS NULL OR NAM = '',3
 BJ0330_Petrol Station_A,NAM IS NULL OR NAM = '',3
 BJ0370_Parking Area_A,NAM IS NULL OR NAM = '',3
 BJ0440_Airport Terminal_A,NAM IS NULL OR NAM = '',3
 BJ0460_Public Toilet_A,NAM IS NULL OR NAM = '',3
-BJ0010_Taxi_Terminal_Taxi_Stand_A,NAM IS NOT NULL AND NAM <> '',2
-BJ0030_Rail Terminal_Railway Station_A,NAM IS NOT NULL AND NAM <> '',2
+BJ0010_Taxi Terminal/Taxi Stand_A,NAM IS NOT NULL AND NAM <> '',2
+BJ0030_Rail Terminal/Railway Station_A,NAM IS NOT NULL AND NAM <> '',2
 BJ0330_Petrol Station_A,NAM IS NOT NULL AND NAM <> '',2
 BJ0370_Parking Area_A,NAM IS NOT NULL AND NAM <> '',2
 BJ0440_Airport Terminal_A,NAM IS NOT NULL AND NAM <> '',2
