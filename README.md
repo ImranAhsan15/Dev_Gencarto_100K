@@ -37,13 +37,13 @@
 
 ## 📁 File Paths
 
-- **All necessary data**: `Z:\People\RShounok\GenCarto100K\`
-- **Testing Geodatabase Path**: `Z:\People\RShounok\GenCarto100K\GK11_JOB_327545_backup.gdb`
+- **All necessary data**: `Z:\share\People\MHasan\Data_for_GenCarto`
+- **Testing Geodatabase Path**: `Z:\share\People\MHasan\Data_for_GenCarto\Raw_GDB\For_New_Schema\100K\AU1_Harmoni_BFDT.gdb.zip`
 - **Map Files**: `'Mapx' Directory`. I've prepared the Map files For 01_DataPrep and 08_ApplyCarto. Prepare Other themes accordingly, according to Sheet 0_MapPackageConfig.
 - **Hierarchy File**: `HierarchyAll_100K.csv`
-- **Config File**: `GenCarto100k_Config_File_v3.xlsx`
-- **VST Workspace**: `Z:\People\RShounok\GenCarto100K\ProductLibraryCarto.gdb`
-- **Style file for 100k**: `'Layrx_files' directory`
+- **Config File**: `GeneralizationRules100K.xlsx`
+- **VST Workspace**: `Z:\share\People\MHasan\Data_for_GenCarto\ProductLibraryCarto.gdb`
+- **Style file for 100k**: `'Lyrx' directory`
 - **Layer file**: `no_outline.lyr` must be in the **same folder** as the input workspace.
 
 ---
