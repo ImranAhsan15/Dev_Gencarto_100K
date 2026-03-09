@@ -7,10 +7,11 @@
 ## ⚙️ Tool Requirements
 
 - **Schema Compatibility**: This tool is developed for **old schema** only.
-- **ArcGIS Pro Version**: Ensure you are using **ArcGIS Pro 3.4.2**.
+- **ArcGIS Pro Version**: Ensure you are using **ArcGIS Pro 3.6**.
 - **Required Extensions**:
   - Production Mapping
   - Spatial Analyst
+  - ArcGIS Topographic Mapping
 
 ---
 
