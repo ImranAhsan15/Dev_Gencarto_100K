@@ -9,7 +9,7 @@ def contour_clean_up(aoi, feature_list, working_gdb, buffer_distance, vertex_lim
     arcpy.env.overwriteOutput = True
     try:
         # Get contour feature
-        contour_fcs = [contour for contour in feature_list if 'RA0010_Contour_Line_L' in contour][0]
+        contour_fcs = [contour for contour in feature_list if resolve_lyr().Contour_Line_L in contour][0]
         base_name = arcpy.da.Describe(contour_fcs)['name']
         # Creating buffer fc
         buffer_fc = f'{working_gdb}\\aoi_buffer'
@@ -43,7 +43,7 @@ def split_fcs(aoi, fc_list, buffer_distance, working_gdb, feature_to_split, logg
     try:
         # Remove empty string
         feature_to_split_list = list(filter(str.strip, feature_to_split))
-        feature_to_split_list = [fc for a_lyr in feature_to_split_list for fc in fc_list if str(a_lyr) in fc and has_features(fc) and not 'RA0010_Contour_Line_L' in fc]
+        feature_to_split_list = [fc for a_lyr in feature_to_split_list for fc in fc_list if str(a_lyr) in fc and has_features(fc) and not resolve_lyr().Contour_Line_L in fc]
         if not feature_to_split_list:
             arcpy.AddMessage('.....No features to process.')
             return
@@ -186,12 +186,12 @@ def cal_orient_degree(point_fc_list, fc_4_orient_deg, logger):
         point_fcs = [fc for item in fc_4_orient_deg for fc in point_fc_list if str(item) in fc]
 
         for fc in point_fcs:
-            if 'HD0040_Jetty_Pier_P' in fc:
+            if resolve_lyr().Jetty_Pier_P in fc:
                 # Add Field
                 arcpy.management.AddField(in_table=fc, field_name='orientation_degree', field_type='DOUBLE')
                 # Calculate Field
                 arcpy.management.CalculateField(in_table=fc, field='orientation_degree', expression='!orientation_degree!*180 /3.141592654', expression_type='PYTHON3')
-            elif 'TA0180_Kilometer_Post_P' in fc or 'ZA0050_Height_Point_P' in fc:
+            elif resolve_lyr().Kilometer_Post_P in fc or resolve_lyr().Height_Point_P in fc:
                 # Add Field
                 arcpy.management.AddField(in_table=fc, field_name='orientation_degree', field_type='DOUBLE')
                 arcpy.management.AddField(in_table=fc, field_name='OFFSETX', field_type='DOUBLE')
@@ -326,37 +326,39 @@ def trans_delete_dangles(trans_lines, sql, compare_fcs, seg_length, working_gdb,
             error_message = f"Delete dangles error: {e}\nTraceback details:\n{tb}"
             arcpy.AddMessage(error_message)
 
-
-def data_cleaning_all_funcs(aoi, fc_list, in_feature_loc, working_gdb, buffer_distance, vertex_limit, buffer_distance_point, feature_count, not_include_fields, 
-                            fcs_trim_extend, extend_val, trim_val, buffer_points_25K, feature_to_split, bau_field_fc, trans_build_up_buildings, seg_length, logger):
+# # Data Prep Before 04th March 2026
+# def data_cleaning_all_funcs(aoi, fc_list, in_feature_loc, working_gdb, buffer_distance, vertex_limit, buffer_distance_point, feature_count, not_include_fields, 
+#                             fcs_trim_extend, extend_val, trim_val, buffer_points_25K, feature_to_split, bau_field_fc, trans_build_up_buildings, seg_length, logger):
+def data_cleaning_all_funcs(aoi, fc_list, in_feature_loc, working_gdb, val_dict, not_include_fields, 
+                            fcs_trim_extend, buffer_points_25K, feature_to_split, bau_field_fc, trans_build_up_buildings, seg_length, logger):
     arcpy.AddMessage('Starting Data cleaning process.....')
     # Set environment variables
     arcpy.env.overwriteOutput = True
     try:
         # Remove dangling roads and tracks wich are under given segment length (for example: less then 150m)
-        input_line_list = [fc for in_line in ['TA0060_Road_L', 'TA0110_Track_L'] for fc in fc_list if str(in_line) in fc]
+        input_line_list = [fc for in_line in [resolve_lyr().Road_L, resolve_lyr().Track_L] for fc in fc_list if str(in_line) in fc]
         compare_fcs_list = list(filter(str.strip, trans_build_up_buildings))
         compare_fcs_list = sorted([fc for a_lyr in trans_build_up_buildings for fc in fc_list if str(a_lyr) in fc])
         # Delete dangles
-        delete_dngl_sql = "NAM = '' Or NAM = ' ' Or NAM IS NULL"
+        delete_dngl_sql = val_dict['dataprep_delete_dngl_sql']
         recursive = "true"
         for trans_lines in input_line_list:
             trans_delete_dangles(trans_lines, delete_dngl_sql, compare_fcs_list, seg_length, working_gdb, recursive)
 
         # Split contour features
-        contour_clean_up(aoi, fc_list, working_gdb, buffer_distance, vertex_limit, logger)
+        contour_clean_up(aoi, fc_list, working_gdb, val_dict['Data_prep_buffer_distance'], val_dict['Data_prep_vertex_limit_feature_dice'], logger)
         # Split feature classes
-        split_fcs(aoi, fc_list, buffer_distance, working_gdb, feature_to_split, logger)
+        split_fcs(aoi, fc_list, val_dict['Data_prep_buffer_distance'], working_gdb, feature_to_split, logger)
         # Clean data
-        clean_data(aoi, fc_list, working_gdb, not_include_fields, fcs_trim_extend, extend_val, trim_val, logger)
+        clean_data(aoi, fc_list, working_gdb, not_include_fields, fcs_trim_extend,  val_dict['Data_prep_extend_val'], val_dict['Data_prep_trim_dangle_value'], logger)
         # Create buffer
-        create_buffer_25k(working_gdb, buffer_distance_point, fc_list, buffer_points_25K, logger)
+        create_buffer_25k(working_gdb, val_dict['Data_prep_buffer_distance'], fc_list, buffer_points_25K, logger)
         # # Add Identifier BUA Field
         # # add_identifier_BUA(fc_list, bau_field_fc, logger)
         # # Add Invisibility and Hierarchy Field
         # # add_invisibility_hierarchy_field(fc_list, logger)
         # Create Carto Partition
-        create_partition(in_feature_loc, feature_count, fc_list, logger)
+        create_partition(in_feature_loc, val_dict['Data_prep_feature_count'], fc_list, logger)
         # Polygon to line conversion for boundary
         aoi = f"{in_feature_loc}\\AOI"
         arcpy.management.PolygonToLine(aoi, f"{in_feature_loc}\\AOI_L", "IDENTIFY_NEIGHBORS")

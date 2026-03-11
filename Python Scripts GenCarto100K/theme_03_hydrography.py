@@ -516,6 +516,8 @@ def narrow_polygons_new(fc_list, polygon_input_list, centerline_input_list, widt
     polygon_input_list = [fc for a_lyr in polygon_input_list for fc in fc_list if str(a_lyr) in fc]
     centerline_input_list = list(filter(str.strip, centerline_input_list))
     centerline_input_list = [fc for a_lyr in centerline_input_list for fc in fc_list if str(a_lyr) in fc]
+    arcpy.AddMessage(f"width_units: {width_units} and buffer_percent_np: {buffer_percent_np}, topo_fcs: {topo_fcs}")
+
 
     try:
         width_np = width_units
@@ -525,206 +527,207 @@ def narrow_polygons_new(fc_list, polygon_input_list, centerline_input_list, widt
         arcpy.AddMessage("Buffer " + str(half_width_units))
 
         for polygon_input_np, center_line_input in zip(polygon_input_list, centerline_input_list):
-            update_field = 'Casing'
-            desc = arcpy.da.Describe(polygon_input_np)
-            delimit_oid = desc['OIDFieldName']
-            name = desc['name']
-            # Create layers for inputs
-            poly_input_layer = arcpy.management.MakeFeatureLayer(polygon_input_np, 'poly_in_lyr')
-            center_layer = arcpy.management.MakeFeatureLayer(center_line_input, 'Center_line_lyr')
+            arcpy.AddMessage(f"polygon_input_np: {polygon_input_np} and center_line_input: {center_line_input}")
+            # update_field = 'Casing'
+            # desc = arcpy.da.Describe(polygon_input_np)
+            # delimit_oid = desc['OIDFieldName']
+            # name = desc['name']
+            # # Create layers for inputs
+            # poly_input_layer = arcpy.management.MakeFeatureLayer(polygon_input_np, 'poly_in_lyr')
+            # center_layer = arcpy.management.MakeFeatureLayer(center_line_input, 'Center_line_lyr')
 
-            # Set emty list
-            casing_ids = []
-            delete_poly_ids = []
-            widen_ids = []
+            # # Set emty list
+            # casing_ids = []
+            # delete_poly_ids = []
+            # widen_ids = []
                         
-            # Set emty dict
-            delete_poly_for_wide = {}
+            # # Set emty dict
+            # delete_poly_for_wide = {}
 
-            # If there is at least one centerline
-            count_poly_input_layer = int(arcpy.management.GetCount(poly_input_layer)[0])
-            count_center_line = int(arcpy.management.GetCount(center_layer)[0])
+            # # If there is at least one centerline
+            # count_poly_input_layer = int(arcpy.management.GetCount(poly_input_layer)[0])
+            # count_center_line = int(arcpy.management.GetCount(center_layer)[0])
 
-            if count_poly_input_layer >= 1 and count_center_line >= 1:
-                arcpy.AddMessage('Prepping centerlines...')
-                # Split the Hydro Polygons and centerlines
-                split_polygons, split_center, poly_is_split = SplitByBox.split(poly_input_layer, center_layer, width_np, working_gdb)
-                poly_layer = arcpy.management.MakeFeatureLayer(split_polygons, 'poly_lyr')
-                split_field = (arcpy.da.Describe(center_line_input))['name']
-                q1 = f'FID_{split_field} <> -1'
-                layer1 = arcpy.management.MakeFeatureLayer(split_center, 'split_lyr', q1)
-                # Identity polygon
-                identify_polygon(poly_layer, layer1, logger)
-                arcpy.management.SelectLayerByAttribute(layer1, 'CLEAR_SELECTION')
-                diss_center = arcpy.management.Dissolve(layer1, "temp_unsplit", "ORIG_FID", [[update_field, "MAX"]])
-                # Add fields
-                arcpy.management.AddField(diss_center, update_field, "SHORT")
-                # Calculate field
-                arcpy.management.CalculateField(diss_center, update_field, "!MAX_Casing!", "PYTHON3")
-                # Creating layer
-                split_layer = arcpy.management.MakeFeatureLayer(diss_center, "dissolve_center_lyr")
-                # Select the centerlines that fall within a polygon
-                query = "ORIG_FID IS NOT NULL"
-                # Determine how to handle each polygon - delete or widen
-                arcpy.AddMessage("Determining how to handle polygons...")
-                count_split_center= int(arcpy.management.GetCount(split_center)[0])
-                if count_split_center >= 1:
-                    # Loop through each of the center lines
-                    with arcpy.da.SearchCursor(split_center, ['OID@', 'SHAPE@', "ORIG_FID"], query) as cursor:
-                        for row in cursor:
-                            geo = row[1]
-                            line_oid = row[0]
-                            # Buffer the line
-                            geo_buff = geo.buffer(buffer_distance_np)
-                            # Find the polygon that the centerline is within
-                            query = f'{delimit_oid} = {row[2]}'
-                            # Open an update cursor on the polygon feature class
-                            with arcpy.da.SearchCursor(poly_layer, ['OID@', 'SHAPE@'], query) as upcursor:
-                                for uprow in upcursor:
-                                    # Find the geometry of the polygon feature without the holes.
-                                    oid = uprow[0]
-                                    poly_geo = uprow[1]
-                                    # Determine what percentage of the polygon geometry is contained in the buffer
-                                    buff_intersect = geo_buff.intersect(poly_geo, 4)
-                                    percent_contained = ((buff_intersect.area / poly_geo.area) * 100)
-                                    percent_buffer_out = ((buff_intersect.area / geo_buff.area) * 100)
-                                    # If the amount of the feature that is contained within the buffer is larger than the specified percent, then feature should be deleted
-                                    if percent_contained >= buffer_percent_np:
-                                        arcpy.AddMessage(f"... polygon {oid} is narrow and will be deleted")
-                                        # Add polygon to delete list
-                                        delete_poly_ids.append(oid)
-                                        delete_poly_for_wide[oid] = line_oid
-                                        widen_ids.append(line_oid)
-                                        # Add centerline to update list
-                                        casing_ids.append(str(row[0]))
+            # if count_poly_input_layer >= 1 and count_center_line >= 1:
+            #     arcpy.AddMessage('Prepping centerlines...')
+            #     # Split the Hydro Polygons and centerlines
+            #     split_polygons, split_center, poly_is_split = SplitByBox.split(poly_input_layer, center_layer, width_np, working_gdb)
+            #     poly_layer = arcpy.management.MakeFeatureLayer(split_polygons, 'poly_lyr')
+            #     split_field = (arcpy.da.Describe(center_line_input))['name']
+            #     q1 = f'FID_{split_field} <> -1'
+            #     layer1 = arcpy.management.MakeFeatureLayer(split_center, 'split_lyr', q1)
+            #     # Identity polygon
+            #     identify_polygon(poly_layer, layer1, logger)
+            #     arcpy.management.SelectLayerByAttribute(layer1, 'CLEAR_SELECTION')
+            #     diss_center = arcpy.management.Dissolve(layer1, "temp_unsplit", "ORIG_FID", [[update_field, "MAX"]])
+            #     # Add fields
+            #     arcpy.management.AddField(diss_center, update_field, "SHORT")
+            #     # Calculate field
+            #     arcpy.management.CalculateField(diss_center, update_field, "!MAX_Casing!", "PYTHON3")
+            #     # Creating layer
+            #     split_layer = arcpy.management.MakeFeatureLayer(diss_center, "dissolve_center_lyr")
+            #     # Select the centerlines that fall within a polygon
+            #     query = "ORIG_FID IS NOT NULL"
+            #     # Determine how to handle each polygon - delete or widen
+            #     arcpy.AddMessage("Determining how to handle polygons...")
+            #     count_split_center= int(arcpy.management.GetCount(split_center)[0])
+            #     if count_split_center >= 1:
+            #         # Loop through each of the center lines
+            #         with arcpy.da.SearchCursor(split_center, ['OID@', 'SHAPE@', "ORIG_FID"], query) as cursor:
+            #             for row in cursor:
+            #                 geo = row[1]
+            #                 line_oid = row[0]
+            #                 # Buffer the line
+            #                 geo_buff = geo.buffer(buffer_distance_np)
+            #                 # Find the polygon that the centerline is within
+            #                 query = f'{delimit_oid} = {row[2]}'
+            #                 # Open an update cursor on the polygon feature class
+            #                 with arcpy.da.SearchCursor(poly_layer, ['OID@', 'SHAPE@'], query) as upcursor:
+            #                     for uprow in upcursor:
+            #                         # Find the geometry of the polygon feature without the holes.
+            #                         oid = uprow[0]
+            #                         poly_geo = uprow[1]
+            #                         # Determine what percentage of the polygon geometry is contained in the buffer
+            #                         buff_intersect = geo_buff.intersect(poly_geo, 4)
+            #                         percent_contained = ((buff_intersect.area / poly_geo.area) * 100)
+            #                         percent_buffer_out = ((buff_intersect.area / geo_buff.area) * 100)
+            #                         # If the amount of the feature that is contained within the buffer is larger than the specified percent, then feature should be deleted
+            #                         if percent_contained >= buffer_percent_np:
+            #                             arcpy.AddMessage(f"... polygon {oid} is narrow and will be deleted")
+            #                             # Add polygon to delete list
+            #                             delete_poly_ids.append(oid)
+            #                             delete_poly_for_wide[oid] = line_oid
+            #                             widen_ids.append(line_oid)
+            #                             # Add centerline to update list
+            #                             casing_ids.append(str(row[0]))
 
-                                    elif percent_buffer_out >= percent_out:
-                                        arcpy.AddMessage(f"... polygon {oid} will be widened.")
-                                        if geo.length >= (width_np * 2):
-                                            widen_ids.append(line_oid)
-                else:
-                    arcpy.AddWarning("Unable to find any centerlines within polygons. No features will be modified.")
-                # Determine which polygons have dangles
-                arcpy.AddMessage("Determining dangles")
-                arcpy.management.SelectLayerByAttribute(split_layer, "CLEAR_SELECTION")
-                dangle_lyr = find_dangles(split_layer, update_field, working_gdb, logger)
-                dangle_pts = [row[0] for row in arcpy.da.SearchCursor(dangle_lyr, ('SHAPE@'))]
-                arcpy.AddMessage(f'{len(dangle_pts)} dangles')
-                arcpy.analysis.Near(dangle_lyr, poly_layer, "0 Meters")
-                dangle_polys = [row[0] for row in arcpy.da.SearchCursor(dangle_lyr, ('NEAR_FID'))]
-                dangle_polys = set(dangle_polys)
+            #                         elif percent_buffer_out >= percent_out:
+            #                             arcpy.AddMessage(f"... polygon {oid} will be widened.")
+            #                             if geo.length >= (width_np * 2):
+            #                                 widen_ids.append(line_oid)
+            #     else:
+            #         arcpy.AddWarning("Unable to find any centerlines within polygons. No features will be modified.")
+            #     # Determine which polygons have dangles
+            #     arcpy.AddMessage("Determining dangles")
+            #     arcpy.management.SelectLayerByAttribute(split_layer, "CLEAR_SELECTION")
+            #     dangle_lyr = find_dangles(split_layer, update_field, working_gdb, logger)
+            #     dangle_pts = [row[0] for row in arcpy.da.SearchCursor(dangle_lyr, ('SHAPE@'))]
+            #     arcpy.AddMessage(f'{len(dangle_pts)} dangles')
+            #     arcpy.analysis.Near(dangle_lyr, poly_layer, "0 Meters")
+            #     dangle_polys = [row[0] for row in arcpy.da.SearchCursor(dangle_lyr, ('NEAR_FID'))]
+            #     dangle_polys = set(dangle_polys)
 
-                # First try converting polygons to topology feature classes, then delete polygons
-                if len(delete_poly_ids) >= 1:
-                    # Have to delete temp polygons because often only deleting parts...
-                    delete_features = arcpy.management.MakeFeatureLayer(poly_layer, "delete_features")
-                    arcpy.AddMessage("Determining layers to convert features to")
-                    delete_query, delete_poly_ids = check_middle(poly_layer, delete_poly_for_wide, delete_poly_ids, dangle_polys)
+            #     # First try converting polygons to topology feature classes, then delete polygons
+            #     if len(delete_poly_ids) >= 1:
+            #         # Have to delete temp polygons because often only deleting parts...
+            #         delete_features = arcpy.management.MakeFeatureLayer(poly_layer, "delete_features")
+            #         arcpy.AddMessage("Determining layers to convert features to")
+            #         delete_query, delete_poly_ids = check_middle(poly_layer, delete_poly_for_wide, delete_poly_ids, dangle_polys)
 
-                    arcpy.management.SelectLayerByAttribute(delete_features, "NEW_SELECTION", delete_query)
-                    del_cnt = int(arcpy.management.GetCount(delete_features)[0])
-                    arcpy.AddMessage(f'{del_cnt} features will be deleted')
-                    if del_cnt >= 1:
-                    # If secondary feature classes are identified, try converting the features to be deleted into one of these features
-                        # Find out which centerline features touch the polygon that will be deleted
-                        delete_features2 = arcpy.management.MakeFeatureLayer(delete_features, "delete_features2")
-                        center_layer2 = arcpy.management.MakeFeatureLayer(split_center, "Centerline2_lyr")
+            #         arcpy.management.SelectLayerByAttribute(delete_features, "NEW_SELECTION", delete_query)
+            #         del_cnt = int(arcpy.management.GetCount(delete_features)[0])
+            #         arcpy.AddMessage(f'{del_cnt} features will be deleted')
+            #         if del_cnt >= 1:
+            #         # If secondary feature classes are identified, try converting the features to be deleted into one of these features
+            #             # Find out which centerline features touch the polygon that will be deleted
+            #             delete_features2 = arcpy.management.MakeFeatureLayer(delete_features, "delete_features2")
+            #             center_layer2 = arcpy.management.MakeFeatureLayer(split_center, "Centerline2_lyr")
 
-                        arcpy.management.SelectLayerByLocation(center_layer2, "INTERSECT", delete_features2)
+            #             arcpy.management.SelectLayerByLocation(center_layer2, "INTERSECT", delete_features2)
 
-                        touch_table = arcpy.management.CreateTable(working_gdb, "CenterlineTouch")
+            #             touch_table = arcpy.management.CreateTable(working_gdb, "CenterlineTouch")
 
-                        touch.determine(center_layer2, delete_features2, touch_table, "center_id", "delete_poly_id")
+            #             touch.determine(center_layer2, delete_features2, touch_table, "center_id", "delete_poly_id")
 
-                        connect_centerlines(touch_table, center_layer2, split_center, "center_id", "delete_poly_id", delete_poly_ids, logger)
+            #             connect_centerlines(touch_table, center_layer2, split_center, "center_id", "delete_poly_id", delete_poly_ids, logger)
 
-                        if len(topo_fcs) >= 1:
-                            topo_fc_lyrs = create_secondary_lyrs(topo_fcs, delete_features)
+            #             if len(topo_fcs) >= 1:
+            #                 topo_fc_lyrs = create_secondary_lyrs(topo_fcs, delete_features)
 
-                            # Convert overlapping features
-                            count_delete_fcs = int(arcpy.management.GetCount(delete_features)[0])
+            #                 # Convert overlapping features
+            #                 count_delete_fcs = int(arcpy.management.GetCount(delete_features)[0])
 
-                            if count_delete_fcs >= 1:
-                                convert.ConvertOverlapping(delete_features, topo_fc_lyrs, working_gdb)
-                            # Convert enclosed features
-                            selected_delete_fcs = arcpy.management.SelectLayerByAttribute(delete_features, "NEW_SELECTION", delete_query)
-                            cnt_del_fcs = int(arcpy.management.GetCount(selected_delete_fcs)[0]) 
-                            if cnt_del_fcs >= 1:
-                                convert.ConvertEnclosed(delete_features, topo_fc_lyrs)
+            #                 if count_delete_fcs >= 1:
+            #                     convert.ConvertOverlapping(delete_features, topo_fc_lyrs, working_gdb)
+            #                 # Convert enclosed features
+            #                 selected_delete_fcs = arcpy.management.SelectLayerByAttribute(delete_features, "NEW_SELECTION", delete_query)
+            #                 cnt_del_fcs = int(arcpy.management.GetCount(selected_delete_fcs)[0]) 
+            #                 if cnt_del_fcs >= 1:
+            #                     convert.ConvertEnclosed(delete_features, topo_fc_lyrs)
 
-                    # Finally, if any features could not be converted, just delete them
-                    if int(arcpy.management.GetCount(delete_features)[0]) >= 1:
-                        arcpy.management.DeleteFeatures("delete_features")
+            #         # Finally, if any features could not be converted, just delete them
+            #         if int(arcpy.management.GetCount(delete_features)[0]) >= 1:
+            #             arcpy.management.DeleteFeatures("delete_features")
 
-                # Widen the remaining polygons
+            #     # Widen the remaining polygons
 
-                enable_widening = False
+            #     enable_widening = False
 
-                if enable_widening and len(widen_ids) >= 1:
-                    arcpy.AddMessage('Features to widen')
-                    arcpy.management.SelectLayerByAttribute(split_layer, "CLEAR_SELECTION")
-                    poly_layer2 = arcpy.management.MakeFeatureLayer(split_polygons, "poly_lyr2")
-                    with arcpy.da.SearchCursor(split_layer, ['OID@', 'SHAPE@', 'ORIG_FID']) as s_cur:
-                        for s_row in s_cur:
-                            if s_row[2] != None:
-                                if s_row[2] >= 1:
-                                    query = f'{(arcpy.da.Describe(poly_layer2))["OIDFieldName"]} = {s_row[2]}'
-                                    with arcpy.da.UpdateCursor(poly_layer2, ['OID@', 'SHAPE@'], query) as p_up_cur:
-                                        for p_up_row in p_up_cur:
-                                            arcpy.AddMessage(f"Widening polygon {p_up_row[0]} from line {s_row[0]}")
-                                            poly_geo = p_up_row[1]
-                                            arcpy.AddMessage(f"Orig area {poly_geo.area}")
-                                            buffer_geo = s_row[1].buffer(buffer_distance_np)
-                                            test_buff = arcpy.management.CopyFeatures(buffer_geo, "test_buffer")
-                                            # Integrate  between features
-                                            arcpy.management.Integrate([[test_buff, 2], [split_center, 1]])
-                                            # Densify
-                                            arcpy.edit.Densify(test_buff, "DISTANCE", width_np)
-                                            # Convert to geometry
-                                            simple_buff = arcpy.management.CopyFeatures(test_buff, arcpy.Geometry())
-                                            new_geo =poly_geo.union(simple_buff[0])
-                                            p_up_row[1] = new_geo
-                                            arcpy.AddMessage(f"New area {new_geo.area}")
-                                            p_up_cur.updateRow(p_up_row)
+            #     if enable_widening and len(widen_ids) >= 1:
+            #         arcpy.AddMessage('Features to widen')
+            #         arcpy.management.SelectLayerByAttribute(split_layer, "CLEAR_SELECTION")
+            #         poly_layer2 = arcpy.management.MakeFeatureLayer(split_polygons, "poly_lyr2")
+            #         with arcpy.da.SearchCursor(split_layer, ['OID@', 'SHAPE@', 'ORIG_FID']) as s_cur:
+            #             for s_row in s_cur:
+            #                 if s_row[2] != None:
+            #                     if s_row[2] >= 1:
+            #                         query = f'{(arcpy.da.Describe(poly_layer2))["OIDFieldName"]} = {s_row[2]}'
+            #                         with arcpy.da.UpdateCursor(poly_layer2, ['OID@', 'SHAPE@'], query) as p_up_cur:
+            #                             for p_up_row in p_up_cur:
+            #                                 arcpy.AddMessage(f"Widening polygon {p_up_row[0]} from line {s_row[0]}")
+            #                                 poly_geo = p_up_row[1]
+            #                                 arcpy.AddMessage(f"Orig area {poly_geo.area}")
+            #                                 buffer_geo = s_row[1].buffer(buffer_distance_np)
+            #                                 test_buff = arcpy.management.CopyFeatures(buffer_geo, "test_buffer")
+            #                                 # Integrate  between features
+            #                                 arcpy.management.Integrate([[test_buff, 2], [split_center, 1]])
+            #                                 # Densify
+            #                                 arcpy.edit.Densify(test_buff, "DISTANCE", width_np)
+            #                                 # Convert to geometry
+            #                                 simple_buff = arcpy.management.CopyFeatures(test_buff, arcpy.Geometry())
+            #                                 new_geo =poly_geo.union(simple_buff[0])
+            #                                 p_up_row[1] = new_geo
+            #                                 arcpy.AddMessage(f"New area {new_geo.area}")
+            #                                 p_up_cur.updateRow(p_up_row)
 
-                # Dissolve the polygons back together after being split and add back to input polygon
-                arcpy.AddMessage("Updating input polygons")
-                # Recreate the Polygons dissolve the polygons to create one feature for each input.
-                if poly_is_split:
-                    # dissolve_field = f"FID_{name}"
-                    dissolve_field = "fid"
-                    dissolve_features = arcpy.management.Dissolve(split_polygons, "temp_dissolve", dissolve_field)
+            #     # Dissolve the polygons back together after being split and add back to input polygon
+            #     arcpy.AddMessage("Updating input polygons")
+            #     # Recreate the Polygons dissolve the polygons to create one feature for each input.
+            #     if poly_is_split:
+            #         # dissolve_field = f"FID_{name}"
+            #         dissolve_field = "fid"
+            #         dissolve_features = arcpy.management.Dissolve(split_polygons, "temp_dissolve", dissolve_field)
 
-                    # Update cursor to update the geometries of the original polygons
-                    with arcpy.da.UpdateCursor(poly_input_layer, ['OID@', 'SHAPE@']) as cursor:
-                        for row in cursor:
-                            query = f'{dissolve_field} = {row[0]}'
-                            values = [srow[0] for srow in arcpy.da.SearchCursor(dissolve_features, ['SHAPE@', dissolve_field], query)]
+            #         # Update cursor to update the geometries of the original polygons
+            #         with arcpy.da.UpdateCursor(poly_input_layer, ['OID@', 'SHAPE@']) as cursor:
+            #             for row in cursor:
+            #                 query = f'{dissolve_field} = {row[0]}'
+            #                 values = [srow[0] for srow in arcpy.da.SearchCursor(dissolve_features, ['SHAPE@', dissolve_field], query)]
 
-                            # If only one geometry is returned, update the geometry
-                            if len(values) == 1:
-                                arcpy.AddMessage(f"{row[0]} update")
-                                geo = values[0]
-                                row[1] = geo
-                                cursor.updateRow(row)
+            #                 # If only one geometry is returned, update the geometry
+            #                 if len(values) == 1:
+            #                     arcpy.AddMessage(f"{row[0]} update")
+            #                     geo = values[0]
+            #                     row[1] = geo
+            #                     cursor.updateRow(row)
 
-                            # If no geometries are returned, the feature was deleted
-                            elif len(values) == 0:
-                                arcpy.AddMessage(f"{row[0]} delete")
-                                cursor.deleteRow()
-                            else:
-                                arcpy.AddMessage(f"Unable to determine new geometry for {row[0]}")
+            #                 # If no geometries are returned, the feature was deleted
+            #                 elif len(values) == 0:
+            #                     arcpy.AddMessage(f"{row[0]} delete")
+            #                     cursor.deleteRow()
+            #                 else:
+            #                     arcpy.AddMessage(f"Unable to determine new geometry for {row[0]}")
 
-                # Update Centerlines
-                # Code to snap centerlines to centerline if snapped to poly and poly deleted
-                if int(arcpy.management.GetCount(split_layer)[0]) >= 1:
-                    new_split = arcpy.management.MakeFeatureLayer(split_center, "new_center_split_lyr", q1)
-                    rebuild_centerline(new_split, center_layer, update_field, poly_input_layer, width_np, working_gdb, logger)
-            else:
-                arcpy.AddMessage("No polygon features found to process and No centerline features found to process.")
+            #     # Update Centerlines
+            #     # Code to snap centerlines to centerline if snapped to poly and poly deleted
+            #     if int(arcpy.management.GetCount(split_layer)[0]) >= 1:
+            #         new_split = arcpy.management.MakeFeatureLayer(split_center, "new_center_split_lyr", q1)
+            #         rebuild_centerline(new_split, center_layer, update_field, poly_input_layer, width_np, working_gdb, logger)
+            # else:
+            #     arcpy.AddMessage("No polygon features found to process and No centerline features found to process.")
 
         # Delete temp files
-        arcpy.management.Delete([center_layer])
+        # arcpy.management.Delete([center_layer])
 
     except Exception as e:
         tb = traceback.format_exc()
@@ -1513,14 +1516,14 @@ def delete_small_hydro(
         intersecting_fc = _as_list(intersecting_fc)
         replacing_fcs = _as_list(replacing_fcs)
 
-        _msg(f"del_min_area={del_min_area}")
-        _msg(f"working_gdb={working_gdb}")
-        _msg(f"intersecting_fc count={len(intersecting_fc)} | replacing_fcs count={len(replacing_fcs)}")
+        # _msg(f"del_min_area={del_min_area}")
+        # _msg(f"working_gdb={working_gdb}")
+        # _msg(f"intersecting_fc count={len(intersecting_fc)} | replacing_fcs count={len(replacing_fcs)}")
 
         # Keep your existing filtering logic (substring match)
         delete_small_hydros = list(filter(str.strip, delete_small_hydros))
         delete_small_hydros = [fc for a_lyr in delete_small_hydros for fc in fc_list if str(a_lyr) in fc]
-        _msg(f"Hydro FCs matched from fc_list: {len(delete_small_hydros)}")
+        # _msg(f"Hydro FCs matched from fc_list: {len(delete_small_hydros)}")
 
         # Replacement enabled only if both intersecting_fc and replacing_fcs exist
         do_replace = bool(intersecting_fc) and bool(replacing_fcs)
@@ -1784,33 +1787,37 @@ def replace_polygon_with_line_hydro_feature(poly_feature, line_feature, working_
     return None
 
 
-def gen_hydrography(fc_list, hydro_prep_fc_list, name_fld, line_len, working_gdb, polygon_input_list, centerline_input_list, width_units, buffer_percent, vis_field, topo_fcs_list, 
-                    generalize_operations, simple_tolerance, smooth_tolerance, delete, in_feature_loc, hydro_remove_small_poly_exp, hydro_remove_small_poly_mim_area, hydro_enlarge_poly_mim_size, 
-                    hydro_enlarge_poly_buffer_dist, hydro_remove_near_poly_list, hydro_remove_near_poly_delete_size, hydro_remove_near_poly_min_size, hydro_remove_near_poly_dist, 
-                    hydro_remove_near_poly_sql, hydro_enlarge_poly_sql, hydro_enlarge_untouch_poly_buffer_dist, hydro_enlarge_poly_list, hydro_trim_between_polygon_min_area,
-                    hydro_trim_between_polygon_distance, hydro_remove_small_poly_list, hydro_remove_small_sql, hydro_remove_small_min_size, hydro_erase_poly_list, hydro_erase_poly_max_gap_area, 
-                    hydro_convert_ungr_river_min_length, increase_hydro_line_min_length, remove_close_parallel_per_min, remove_close_parallel_per_max, remove_close_dist, remove_close_tolerance, 
-                    hydro_line_dangle_min_length, hydro_small_line_fc_list, hydro_small_point_fc_list, hydro_small_fc_min_length, delete_input, one_point, unique_field, hydro_delete_small_pools, hydro_delete_small_pool_min_area, hydro_replace_poly_with_line_smooth_tolerance, logger):
-    
+# def gen_hydrography(fc_list, hydro_prep_fc_list, name_fld, line_len, working_gdb, polygon_input_list, centerline_input_list, width_units, buffer_percent, vis_field, topo_fcs_list, 
+#                     generalize_operations, simple_tolerance, smooth_tolerance, delete, in_feature_loc, hydro_remove_small_poly_exp, hydro_remove_small_poly_mim_area, hydro_enlarge_poly_mim_size, 
+#                     hydro_enlarge_poly_buffer_dist, hydro_remove_near_poly_list, hydro_remove_near_poly_delete_size, hydro_remove_near_poly_min_size, hydro_remove_near_poly_dist, 
+#                     hydro_remove_near_poly_sql, hydro_enlarge_poly_sql, hydro_enlarge_untouch_poly_buffer_dist, hydro_enlarge_poly_list, hydro_trim_between_polygon_min_area,
+#                     hydro_trim_between_polygon_distance, hydro_remove_small_poly_list, hydro_remove_small_sql, hydro_remove_small_min_size, hydro_erase_poly_list, hydro_erase_poly_max_gap_area, 
+#                     hydro_convert_ungr_river_min_length, increase_hydro_line_min_length, remove_close_parallel_per_min, remove_close_parallel_per_max, remove_close_dist, remove_close_tolerance, 
+#                     hydro_line_dangle_min_length, hydro_small_line_fc_list, hydro_small_point_fc_list, hydro_small_fc_min_length, delete_input, one_point, unique_field, hydro_delete_small_pools, hydro_delete_small_pool_min_area, hydro_replace_poly_with_line_smooth_tolerance, logger):
+def gen_hydrography(fc_list, hydro_prep_fc_list, working_gdb, polygon_input_list, centerline_input_list, 
+                            topo_fcs_list, generalize_operations, in_feature_loc, hydro_remove_near_poly_list, 
+                            hydro_enlarge_poly_list, hydro_remove_small_poly_list,  hydro_erase_poly_list,  hydro_small_line_fc_list, hydro_small_point_fc_list, 
+                            hydro_delete_small_pools, val_dict, logger):
     arcpy.AddMessage('Starting hydrography features generalization.....')
     # Set the workspace
     arcpy.env.overwriteOutput = True
+    dynamic_fc_names = resolve_lyr()
     try:
         
         hydro_prep_fc_list = list(filter(str.strip, hydro_prep_fc_list))
         hydro_prep_fc_list = [fc for a_lyr in hydro_prep_fc_list for fc in fc_list if str(a_lyr) in fc]
-        river = [fc for fc in fc_list if 'HH0040_River_L' in fc][0]
-        river_bank = [fc for fc in fc_list if 'HH0041_River_Bank_L' in fc][0]
-        irrigation = [fc for fc in fc_list if 'HH0190_Irrigation_Canal_L' in fc][0]
-        irrigation_edge = [fc for fc in fc_list if 'HH0191_Irrigation_Canal_Edge_L' in fc][0]
-        sea_coverage = [fc for fc in fc_list if 'HK0040_Sea_Coverage_A' in fc][0]
-        irrigation_canal_cover_list = [fc for fc in fc_list if 'HH0192_Irrigation_Canal_Coverage_A' in fc]
+        river = [fc for fc in fc_list if dynamic_fc_names.River_L in fc][0]
+        river_bank = [fc for fc in fc_list if dynamic_fc_names.River_Bank_L in fc][0]
+        irrigation = [fc for fc in fc_list if dynamic_fc_names.Irrigation_Canal_L in fc][0]
+        irrigation_edge = [fc for fc in fc_list if dynamic_fc_names.Irrigation_Canal_Edge_L in fc][0]
+        sea_coverage = [fc for fc in fc_list if dynamic_fc_names.Sea_Coverage_A in fc][0]
+        irrigation_canal_cover_list = [fc for fc in fc_list if dynamic_fc_names.Irrigation_Canal_Coverage_A in fc]
         topo_fcs_list = list(filter(str.strip, topo_fcs_list))
         topo_fcs = [fc for a_lyr in topo_fcs_list for fc in fc_list if str(a_lyr) in fc]
-        pond = [fc for fc in fc_list if 'HH0210_Pond_A' in fc][0]
-        lake = [fc for fc in fc_list if 'HH0020_Lake_A' in fc][0]
-        river_coverage = [fc for fc in fc_list if 'HH0042_River_Coverage_A' in fc][0]
-        irrigation_canal_cover = [fc for fc in fc_list if 'HH0192_Irrigation_Canal_Coverage_A' in fc][0]
+        pond = [fc for fc in fc_list if dynamic_fc_names.Pond_A in fc][0]
+        lake = [fc for fc in fc_list if dynamic_fc_names.Lake_A in fc][0]
+        river_coverage = [fc for fc in fc_list if dynamic_fc_names.River_Coverage_A in fc][0]
+        irrigation_canal_cover = [fc for fc in fc_list if dynamic_fc_names.Irrigation_Canal_Coverage_A in fc][0]
         topology_fcs = [fc for a_lyr in topo_fcs_list for fc in fc_list if str(a_lyr) in fc]
 
         aoi = f"{in_feature_loc}\\AOI"
@@ -1823,20 +1830,21 @@ def gen_hydrography(fc_list, hydro_prep_fc_list, name_fld, line_len, working_gdb
         hydro_prep(river, hydro_prep_fc_list)
         hydro_prep(irrigation, irrigation_canal_cover_list)
 
-        replace_polygon_with_line_hydro_feature(lake, river, working_gdb, logger, hydro_replace_poly_with_line_smooth_tolerance)
+        replace_polygon_with_line_hydro_feature(lake, river, working_gdb, logger, val_dict["Hydrography_replace_poly_with_line_smooth_tolerance"])
    
         # # Hydro Remove Short Lines Connecting Polygons
         
-        river_coverage = [fc for fc in fc_list if 'HH0042_River_Coverage_A' in fc][0]
-        remove_short_lines_connecting_polys(river, pond, name_fld, line_len, working_gdb)
-        remove_short_lines_connecting_polys(river, lake, name_fld, line_len, working_gdb)
+        river_coverage = [fc for fc in fc_list if dynamic_fc_names.River_Coverage_A in fc][0]
+        remove_short_lines_connecting_polys(river, pond, val_dict['Resolve_conflict_line_name_field'], val_dict['Hydrography_remove_short_line_line_length'], working_gdb)
+        remove_short_lines_connecting_polys(river, lake, val_dict['Resolve_conflict_line_name_field'], val_dict['Hydrography_remove_short_line_line_length'], working_gdb)
 
         # Hydro narrow polygons
-        narrow_polygons_new(fc_list, polygon_input_list, centerline_input_list, width_units, buffer_percent, vis_field, topo_fcs, working_gdb, logger)
+        narrow_polygons_new(fc_list, polygon_input_list, centerline_input_list, val_dict['Hydrography_np_polygon_width'], 
+                            val_dict['Hydrography_np_polygon_percentage'], val_dict['Resolve_conflict_build_visible_field'], topo_fcs, working_gdb, logger)
         # # Hydro generalize shared
-        polygon_input_list = [fc for topo in ['HH0042_River_Coverage_A', 'HH0192_Irrigation_Canal_Coverage_A', 'HH0210_Pond_A', 'HH0020_Lake_A', 
-                                              'HL0010_Inland_Island_A', 'HL0020_Coastal_Island_A', 'HL0030_Offshore_Island_A', 'HE0150_Log_Pond_A'] for fc in fc_list if str(topo) in fc]
-        centerline_input_list = [fc for topo in ['HH0040_River_L', 'HH0190_Irrigation_Canal_L'] for fc in fc_list if str(topo) in fc]
+        polygon_input_list = [fc for topo in [dynamic_fc_names.River_Coverage_A, dynamic_fc_names.Irrigation_Canal_Coverage_A, dynamic_fc_names.Pond_A, dynamic_fc_names.Lake_A, 
+                                              dynamic_fc_names.Inland_Island_A, dynamic_fc_names.Coastal_Island_A, dynamic_fc_names.Offshore_Island_A, dynamic_fc_names.Log_Pond_A] for fc in fc_list if str(topo) in fc]
+        centerline_input_list = [fc for topo in [dynamic_fc_names.River_L, dynamic_fc_names.Irrigation_Canal_L] for fc in fc_list if str(topo) in fc]
         for line_fc, poly_fc in zip(centerline_input_list, polygon_input_list):
             desc = arcpy.da.Describe(line_fc)
             fc_name = desc['name']
@@ -1846,21 +1854,21 @@ def gen_hydrography(fc_list, hydro_prep_fc_list, name_fld, line_len, working_gdb
             snap_env = [poly_fc, "EDGE", "2 Meters"]
             arcpy.edit.Snap(features_lyr, [snap_env])
 
-        delete_small_hydro(fc_list, hydro_delete_small_pools, hydro_delete_small_pool_min_area, working_gdb, river, topo_fcs)
+        delete_small_hydro(fc_list, hydro_delete_small_pools, val_dict["Hydrography_delete_small_pool_min_area"], working_gdb, river, topo_fcs)
 
         update_veg_lyr_with_hydro_lyr(polygon_input_list, topo_fcs, working_gdb)
         # Generalize shared features
         topology_fcs.insert(0, lake)
-        gen_shared_features(lake, generalize_operations, simple_tolerance, smooth_tolerance, working_gdb, topology_fcs, None)
+        gen_shared_features(lake, generalize_operations, val_dict['Hydrography_Hydro_Gen_simple_tolerance'], val_dict['Hydrography_Hydro_Gen_smooth_tolerance'], working_gdb, topology_fcs, None)
         topology_fcs.remove(lake)
         topology_fcs.insert(0, pond)
-        gen_shared_features(pond, generalize_operations, simple_tolerance, smooth_tolerance, working_gdb, topology_fcs, None)
+        gen_shared_features(pond, generalize_operations, val_dict['Hydrography_Hydro_Gen_simple_tolerance'], val_dict['Hydrography_Hydro_Gen_smooth_tolerance'], working_gdb, topology_fcs, None)
         topology_fcs.remove(pond)
         topology_fcs.insert(0, river_coverage)
-        gen_shared_features(river_coverage, generalize_operations, simple_tolerance, smooth_tolerance, working_gdb, topology_fcs, None)
+        gen_shared_features(river_coverage, generalize_operations, val_dict['Hydrography_Hydro_Gen_simple_tolerance'], val_dict['Hydrography_Hydro_Gen_smooth_tolerance'], working_gdb, topology_fcs, None)
         topology_fcs.remove(river_coverage)
         topology_fcs.insert(0, irrigation_canal_cover)
-        gen_shared_features(irrigation_canal_cover, generalize_operations, simple_tolerance, smooth_tolerance, working_gdb, topology_fcs, None)
+        gen_shared_features(irrigation_canal_cover, generalize_operations, val_dict['Hydrography_Hydro_Gen_simple_tolerance'], val_dict['Hydrography_Hydro_Gen_smooth_tolerance'], working_gdb, topology_fcs, None)
         topology_fcs.remove(irrigation_canal_cover)
         
         # Determination and Reconnecting
@@ -1892,13 +1900,11 @@ def gen_hydrography(fc_list, hydro_prep_fc_list, name_fld, line_len, working_gdb
 
         # Run the determine function
         # For River-Pond
-        # determine(river, pond, out_table2, line_field_river, poly_field_pond, working_gdb)
         determine(river, pond, out_table2, line_field_river, poly_field_pond, working_gdb)
-        reconnect_touching(pond, river, out_table2, delete)
+        reconnect_touching(pond, river, out_table2, val_dict['Hydrography_hydro_trim_update_val'])
         # For River-Lake
         determine(river, lake, out_table1, line_field_river, poly_field_lake, working_gdb)
-        # determine(river, lake, out_table1, line_field_river, poly_field_lake, working_gdb)
-        reconnect_touching(lake, river, out_table1, delete)
+        reconnect_touching(lake, river, out_table1, val_dict['Hydrography_hydro_trim_update_val'])
 
         # Recreate boundary lines
         
@@ -1947,15 +1953,15 @@ def gen_hydrography(fc_list, hydro_prep_fc_list, name_fld, line_len, working_gdb
         determine(river, lake, out_table1, line_field_river, poly_field_lake, working_gdb)        
         ## Hydro remove small polygons between lines
         #  Make feature layer
-        arcpy.management.MakeFeatureLayer(lake, "lake_lyr", hydro_remove_small_poly_exp)
-        arcpy.management.MakeFeatureLayer(pond, "pond_lyr", hydro_remove_small_poly_exp)
-        river_fc1 = extend_lines_remove_poly(river, "lake_lyr", hydro_remove_small_poly_mim_area, False, topo_fcs, working_gdb)
-        river_fc2 = extend_lines_remove_poly(river_fc1, "pond_lyr", hydro_remove_small_poly_mim_area, False, topo_fcs, working_gdb)
+        arcpy.management.MakeFeatureLayer(lake, "lake_lyr", val_dict['Hydrography_hydro_remove_small_poly_exp'])
+        arcpy.management.MakeFeatureLayer(pond, "pond_lyr", val_dict['Hydrography_hydro_remove_small_poly_exp'])
+        river_fc1 = extend_lines_remove_poly(river, "lake_lyr", val_dict['Hydrography_hydro_remove_small_poly_mim_area'], False, topo_fcs, working_gdb)
+        river_fc2 = extend_lines_remove_poly(river_fc1, "pond_lyr", val_dict['Hydrography_hydro_remove_small_poly_mim_area'], False, topo_fcs, working_gdb)
 
         # Hydro enlarge polygons touching lines
-        global_position_station = [fc for fc in fc_list if 'ZA0010_Global_Navigation_Satellite_System_Station_P' in fc][0]
-        base_pont = [fc for fc in fc_list if 'ZA0070_Base_Point_P' in fc][0]
-        trigonometric_station = [fc for fc in fc_list if 'ZA0040_Trigonometry_Station_P' in fc][0]
+        global_position_station = [fc for fc in fc_list if dynamic_fc_names.Global_Navigation_Satellite_System_Station_P in fc][0]
+        base_pont = [fc for fc in fc_list if dynamic_fc_names.Base_Point_P in fc][0]
+        trigonometric_station = [fc for fc in fc_list if dynamic_fc_names.Trigonometry_Station_P in fc][0]
 
         # CHANGES IN 100K COMMENT OUT THE REPAIR GEOMETRY SECTION FOR GEN_HYDRO
         # # Repair geometry
@@ -1978,76 +1984,79 @@ def gen_hydrography(fc_list, hydro_prep_fc_list, name_fld, line_len, working_gdb
         enlarge_barrier_fcs01 = [global_position_station_lyr, base_pont_lyr, trigonometric_station_lyr]
         enlarge_barrier_fcs02 = [pond_lyr, base_pont_lyr, global_position_station_lyr, lake_lyr]
    
-        enlarge_polygon_barrier(lake_lyr, None, river_lyr, hydro_enlarge_poly_mim_size, hydro_enlarge_poly_buffer_dist, enlarge_barrier_fcs01, working_gdb)
-        enlarge_polygon_barrier(pond_lyr, None, river_lyr, hydro_enlarge_poly_mim_size, hydro_enlarge_poly_buffer_dist, enlarge_barrier_fcs02, working_gdb)
+        enlarge_polygon_barrier(lake_lyr, None, river_lyr, val_dict['Hydrography_hydro_enlarge_poly_min_size'], val_dict['Hydrography_hydro_enlarge_poly_buffer_dist'], enlarge_barrier_fcs01, working_gdb)
+        enlarge_polygon_barrier(pond_lyr, None, river_lyr, val_dict['Hydrography_hydro_enlarge_poly_min_size'], val_dict['Hydrography_hydro_enlarge_poly_buffer_dist'], enlarge_barrier_fcs02, working_gdb)
 
         # Hydro remove near polygons
 
         for polygon_fc in hydro_remove_near_poly_list:
-            if any(island in polygon_fc for island in ['HL0010_Inland_Island_A', 'HL0020_Coastal_Island_A', 'HL0030_Offshore_Island_A']):
-                delete_small_fc_near_large_fc(polygon_fc, None, name_fld, hydro_remove_near_poly_delete_size, hydro_remove_near_poly_min_size, hydro_remove_near_poly_dist, 
+            if any(island in polygon_fc for island in [dynamic_fc_names.Inland_Island_A, dynamic_fc_names.Coastal_Island_A, dynamic_fc_names.Offshore_Island_A]):
+                delete_small_fc_near_large_fc(polygon_fc, None, val_dict['Resolve_conflict_line_name_field'], val_dict['Hydrography_hydro_remove_near_poly_delete_size'], val_dict['Hydrography_hydro_remove_near_poly_min_size'], val_dict['Hydrography_hydro_remove_near_poly_dist'], 
                                           None, working_gdb)
-            elif "HH0210_Pond_A" in polygon_fc:
-                delete_small_fc_near_large_fc(polygon_fc, None, name_fld, hydro_remove_near_poly_delete_size, hydro_remove_near_poly_min_size, hydro_remove_near_poly_dist, 
+            elif dynamic_fc_names.Pond_A in polygon_fc:
+                delete_small_fc_near_large_fc(polygon_fc, None, val_dict['Resolve_conflict_line_name_field'], val_dict['Hydrography_hydro_remove_near_poly_delete_size'], val_dict['Hydrography_hydro_remove_near_poly_min_size'], val_dict['Hydrography_hydro_remove_near_poly_dist'], 
                                         topo_fcs, working_gdb)
-            elif "HH0020_Lake_A" in polygon_fc:
-                delete_small_fc_near_large_fc(polygon_fc, None, name_fld, hydro_remove_near_poly_delete_size, hydro_remove_near_poly_min_size, hydro_remove_near_poly_dist, 
+            elif dynamic_fc_names.Lake_A in polygon_fc:
+                delete_small_fc_near_large_fc(polygon_fc, None, val_dict['Resolve_conflict_line_name_field'], val_dict['Hydrography_hydro_remove_near_poly_delete_size'], val_dict['Hydrography_hydro_remove_near_poly_min_size'], val_dict['Hydrography_hydro_remove_near_poly_dist'], 
                                         topo_fcs, working_gdb)
             else:
-                delete_small_fc_near_large_fc(polygon_fc, None, name_fld, hydro_remove_near_poly_delete_size, hydro_remove_near_poly_min_size, hydro_remove_near_poly_dist, 
+                delete_small_fc_near_large_fc(polygon_fc, None, val_dict['Resolve_conflict_line_name_field'], val_dict['Hydrography_hydro_remove_near_poly_delete_size'], val_dict['Hydrography_hydro_remove_near_poly_min_size'], val_dict['Hydrography_hydro_remove_near_poly_dist'], 
                                         None, working_gdb)
             
         # Hydro merge near polygons
         for input_polygons in hydro_remove_near_poly_list:
-            if any(island in input_polygons for island in ['HL0010_Inland_Island_A', 'HL0020_Coastal_Island_A', 'HL0030_Offshore_Island_A']):
-                aggregare_polygons(input_polygons, hydro_remove_near_poly_sql, name_fld, hydro_remove_near_poly_min_size, hydro_remove_near_poly_dist, working_gdb)
+            if any(island in input_polygons for island in [dynamic_fc_names.Inland_Island_A, dynamic_fc_names.Coastal_Island_A, dynamic_fc_names.Offshore_Island_A]):
+                aggregare_polygons(input_polygons, val_dict['Hydrography_hydro_remove_near_poly_sql'], val_dict['Resolve_conflict_line_name_field'], val_dict['Hydrography_hydro_remove_near_poly_min_size'], val_dict['Hydrography_hydro_remove_near_poly_dist'], working_gdb)
             else:
-                aggregare_polygons(input_polygons, None, name_fld, hydro_remove_near_poly_min_size, hydro_remove_near_poly_dist, working_gdb)
+                aggregare_polygons(input_polygons, None, val_dict['Resolve_conflict_line_name_field'], val_dict['Hydrography_hydro_remove_near_poly_min_size'], val_dict['Hydrography_hydro_remove_near_poly_dist'], working_gdb)
 
         # Hydro enlarge polygons untouching
         hydro_enlarge_untch_poly_list = list(filter(str.strip, hydro_enlarge_poly_list))
         hydro_enlarge_untch_poly_list = [fc for a_lyr in hydro_enlarge_untch_poly_list for fc in fc_list if str(a_lyr) in fc]
         for polygon_fc in hydro_enlarge_untch_poly_list:
-            if any(island in polygon_fc for island in ['HL0010_Inland_Island_A', 'HL0020_Coastal_Island_A', 'HL0030_Offshore_Island_A']):
+            if any(island in polygon_fc for island in [dynamic_fc_names.Inland_Island_A, dynamic_fc_names.Coastal_Island_A, dynamic_fc_names.Offshore_Island_A]):
                 enlarge_barrier_fcs01.append(polygon_fc)
-                polygon_fc_lyr = arcpy.management.MakeFeatureLayer(polygon_fc, "island_fc_lyr", hydro_enlarge_poly_sql)
-                enlarge_polygon_barrier(polygon_fc_lyr, None, None, hydro_enlarge_poly_mim_size, hydro_enlarge_untouch_poly_buffer_dist, enlarge_barrier_fcs01, working_gdb)
+                polygon_fc_lyr = arcpy.management.MakeFeatureLayer(polygon_fc, "island_fc_lyr", val_dict['Hydrography_hydro_enlarge_poly_sql'])
+                enlarge_polygon_barrier(polygon_fc_lyr, None, None, val_dict['Hydrography_hydro_enlarge_poly_min_size'], val_dict['Hydrography_hydro_enlarge_untouch_poly_buffer_dist'], enlarge_barrier_fcs01, working_gdb)
                 enlarge_barrier_fcs01.remove(polygon_fc)
-            elif "HH0210_Pond_A" in polygon_fc:
+            elif dynamic_fc_names.Pond_A in polygon_fc:
                 enlarge_barrier_fcs01.append(pond)
                 enlarge_barrier_fcs01.append(lake)
-                polygon_fc_lyr = arcpy.management.MakeFeatureLayer(polygon_fc, "pond_fc_lyr", hydro_enlarge_poly_sql)
-                enlarge_polygon_barrier(polygon_fc_lyr, None, None, hydro_enlarge_poly_mim_size, hydro_enlarge_untouch_poly_buffer_dist, enlarge_barrier_fcs01, working_gdb)
+                polygon_fc_lyr = arcpy.management.MakeFeatureLayer(polygon_fc, "pond_fc_lyr", val_dict['Hydrography_hydro_enlarge_poly_sql'])
+                enlarge_polygon_barrier(polygon_fc_lyr, None, None, val_dict['Hydrography_hydro_enlarge_poly_min_size'], val_dict['Hydrography_hydro_enlarge_untouch_poly_buffer_dist'], enlarge_barrier_fcs01, working_gdb)
                 enlarge_barrier_fcs01.remove(pond)
                 enlarge_barrier_fcs01.remove(lake)
-            elif "HH0020_Lake_A" in polygon_fc:
+            elif dynamic_fc_names.Lake_A in polygon_fc:
                 enlarge_barrier_fcs01.append(pond)
                 enlarge_barrier_fcs01.append(lake)
-                polygon_fc_lyr = arcpy.management.MakeFeatureLayer(polygon_fc, "lake_fc_lyr", hydro_enlarge_poly_sql)
-                enlarge_polygon_barrier(polygon_fc_lyr, None, None, hydro_enlarge_poly_mim_size, hydro_enlarge_untouch_poly_buffer_dist, enlarge_barrier_fcs01, working_gdb)
+                polygon_fc_lyr = arcpy.management.MakeFeatureLayer(polygon_fc, "lake_fc_lyr", val_dict['Hydrography_hydro_enlarge_poly_sql'])
+                enlarge_polygon_barrier(polygon_fc_lyr, None, None, val_dict['Hydrography_hydro_enlarge_poly_min_size'], val_dict['Hydrography_hydro_enlarge_untouch_poly_buffer_dist'], enlarge_barrier_fcs01, working_gdb)
                 enlarge_barrier_fcs01.remove(pond)
                 enlarge_barrier_fcs01.remove(lake)
             else:
                 enlarge_barrier_fcs01.append(polygon_fc)
-                enlarge_polygon_barrier(polygon_fc, None, None, hydro_enlarge_poly_mim_size, hydro_enlarge_untouch_poly_buffer_dist, enlarge_barrier_fcs01, working_gdb)
+                enlarge_polygon_barrier(polygon_fc, None, None, val_dict['Hydrography_hydro_enlarge_poly_min_size'], val_dict['Hydrography_hydro_enlarge_untouch_poly_buffer_dist'], enlarge_barrier_fcs01, working_gdb)
                 enlarge_barrier_fcs01.remove(polygon_fc)
         # Hydro dissolve touching polygons
         for poly_fc in hydro_enlarge_untch_poly_list:
-            merge_touching_features_new(poly_fc, None, name_fld, working_gdb)
+            merge_touching_features_new(poly_fc, None, val_dict['Resolve_conflict_line_name_field'], working_gdb)
         # # Hydro trim between polygons
-        island = [fc for fc in fc_list if any(islandelm in fc for islandelm in ['HL0010_Inland_Island_A', 'HL0020_Coastal_Island_A', 'HL0030_Offshore_Island_A'])][0]
-        trim_polygon_within_distance(island, name_fld, None, hydro_trim_between_polygon_distance, hydro_trim_between_polygon_min_area, delete, working_gdb)
-        trim_polygon_within_distance(lake, name_fld, None, hydro_trim_between_polygon_distance, hydro_trim_between_polygon_min_area, delete, working_gdb)
-        trim_polygon_within_distance(pond, name_fld, None, hydro_trim_between_polygon_distance, hydro_trim_between_polygon_min_area, delete, working_gdb)
+        island = [fc for fc in fc_list if any(islandelm in fc for islandelm in [dynamic_fc_names.Inland_Island_A, dynamic_fc_names.Coastal_Island_A, dynamic_fc_names.Offshore_Island_A])][0]
+        trim_polygon_within_distance(island, val_dict['Resolve_conflict_line_name_field'], None, 
+                                     val_dict['Hydrography_hydro_trim_between_polygon_distance'], val_dict['Hydrography_hydro_trim_between_polygon_min_area'], val_dict['Hydrography_hydro_trim_update_val'], working_gdb)
+        trim_polygon_within_distance(lake, val_dict['Resolve_conflict_line_name_field'], None, 
+                                     val_dict['Hydrography_hydro_trim_between_polygon_distance'], val_dict['Hydrography_hydro_trim_between_polygon_min_area'], val_dict['Hydrography_hydro_trim_update_val'], working_gdb)
+        trim_polygon_within_distance(pond, val_dict['Resolve_conflict_line_name_field'], None, 
+                                     val_dict['Hydrography_hydro_trim_between_polygon_distance'], val_dict['Hydrography_hydro_trim_between_polygon_min_area'], val_dict['Hydrography_hydro_trim_update_val'], working_gdb)
 
         # Reconnect Touching Hydro
-        pond = [fc for fc in fc_list if 'HH0210_Pond_A' in fc][0]
-        lake = [fc for fc in fc_list if 'HH0020_Lake_A' in fc][0]
-        river = [fc for fc in fc_list if 'HH0040_River_L' in fc][0]
+        pond = [fc for fc in fc_list if dynamic_fc_names.Pond_A in fc][0]
+        lake = [fc for fc in fc_list if dynamic_fc_names.Lake_A in fc][0]
+        river = [fc for fc in fc_list if dynamic_fc_names.River_L in fc][0]
         out_table1 = f"{working_gdb}\\Pond_River_Touch"
         out_table2 = f"{working_gdb}\\Lake_River_Touch"  
-        reconnect_touching(pond, river, out_table1, delete)
-        reconnect_touching(lake, river, out_table2, delete)
+        reconnect_touching(pond, river, out_table1, val_dict['Hydrography_hydro_trim_update_val'])
+        reconnect_touching(lake, river, out_table2, val_dict['Hydrography_hydro_trim_update_val'])
 
         # Hydro remove small polygon by converting
         hydro_remove_small_poly_list = list(filter(str.strip, hydro_remove_small_poly_list))
@@ -2058,61 +2067,61 @@ def gen_hydrography(fc_list, hydro_prep_fc_list, name_fld, line_len, working_gdb
         
         # Convert polygons
         for p_fc in hydro_remove_small_poly_list:
-            if any(island in p_fc for island in ['HL0010_Inland_Island_A', 'HL0020_Coastal_Island_A', 'HL0030_Offshore_Island_A']):
-                convert_polygon(p_fc, input_secondary01, hydro_remove_small_min_size, hydro_remove_small_sql, working_gdb)
-            elif "HA0130_Intertidal_Flat_A" in p_fc:
-                convert_polygon(p_fc, input_secondary02, hydro_remove_small_min_size, None, working_gdb)
-            elif "HH0310_Swamp_A" in p_fc:
-                convert_polygon(p_fc, topo_fcs, hydro_remove_small_min_size, None, working_gdb)
-            elif "HH0080_Sand_Bar_A" in p_fc:
-                convert_polygon(p_fc, topo_fcs, hydro_remove_small_min_size, None, working_gdb)
+            if any(island in p_fc for island in [dynamic_fc_names.Inland_Island_A, dynamic_fc_names.Coastal_Island_A, dynamic_fc_names.Offshore_Island_A]):
+                convert_polygon(p_fc, input_secondary01, val_dict['Hydrography_hydro_remove_small_min_size'], val_dict['Hydrography_hydro_remove_small_sql'], working_gdb)
+            elif 'HA0130_Intertidal_Flat_A' in p_fc:
+                convert_polygon(p_fc, input_secondary02, val_dict['Hydrography_hydro_remove_small_min_size'], None, working_gdb)
+            elif 'HH0310_Swamp_A' in p_fc:
+                convert_polygon(p_fc, topo_fcs, val_dict['Hydrography_hydro_remove_small_min_size'], None, working_gdb)
+            elif 'HH0080_Sand_Bar_A' in p_fc:
+                convert_polygon(p_fc, topo_fcs, val_dict['Hydrography_hydro_remove_small_min_size'], None, working_gdb)
             else:
-                convert_polygon(p_fc, topo_fcs, hydro_remove_small_min_size, hydro_remove_small_sql, working_gdb)
+                convert_polygon(p_fc, topo_fcs, val_dict['Hydrography_hydro_remove_small_min_size'], val_dict['Hydrography_hydro_remove_small_sql'], working_gdb)
 
         # Hydro erase polygons
         hydro_erase_poly_list = list(filter(str.strip, hydro_erase_poly_list))
         hydro_erase_poly_list = [fc for a_lyr in hydro_erase_poly_list for fc in fc_list if str(a_lyr) in fc]
-        track = [fc for fc in fc_list if 'TA0110_Track_L' in fc][0]
+        track = [fc for fc in fc_list if dynamic_fc_names.Track_L in fc][0]
         temp_list = [river, track] + topo_fcs
         temp_list01 = [river] + topo_fcs
         temp_list02 = [lake, river_coverage]
         for enlarge_fc in hydro_erase_poly_list:
-            if "HH0210_Pond_A" in enlarge_fc:
+            if dynamic_fc_names.Pond_A in enlarge_fc:
                 erase_polygons_by_replace(enlarge_fc, temp_list, None, working_gdb)
-            elif "HH0020_Lake_A" in enlarge_fc:
+            elif dynamic_fc_names.Lake_A in enlarge_fc:
                 erase_polygons_by_replace(enlarge_fc, temp_list01, None, working_gdb)
-            elif any(island in enlarge_fc for island in ['HL0010_Inland_Island_A', 'HL0020_Coastal_Island_A', 'HL0030_Offshore_Island_A']):
+            elif any(island in enlarge_fc for island in [dynamic_fc_names.Inland_Island_A, dynamic_fc_names.Coastal_Island_A, dynamic_fc_names.Offshore_Island_A]):
                 erase_polygons_by_replace(enlarge_fc, temp_list02, None, working_gdb)
             else:
                 erase_polygons_by_replace(enlarge_fc, topo_fcs, None, working_gdb)
 
         # # Fill gaps
-        lake = [fc for fc in fc_list if 'HH0020_Lake_A' in fc][0]
-        forest = 'VB0000_Forest_A'
-        arcpy.topographic.FillGaps(lake, hydro_erase_poly_max_gap_area, "FILL_BY_LENGTH")
+        lake = [fc for fc in fc_list if dynamic_fc_names.Lake_A in fc][0]
+        forest = dynamic_fc_names.Forest_A
+        arcpy.topographic.FillGaps(lake, val_dict['Hydrography_hydro_erase_poly_max_gap_area'], "FILL_BY_LENGTH")
 
         # Remove shoreline not on hydro area feature boundary
-        shore_line = [fc for fc in fc_list if 'HA0010_Shoreline_L' in fc][0]
+        shore_line = [fc for fc in fc_list if dynamic_fc_names.Shoreline_L in fc][0]
         shore_line_lyr = arcpy.management.MakeFeatureLayer(shore_line, "shore_line")
         selected_shore_line_island = arcpy.management.SelectLayerByLocation(shore_line_lyr, 'CROSSED_BY_THE_OUTLINE_OF', island, None, 'ADD_TO_SELECTION', 'INVERT')
         selected_shore_line_pond = arcpy.management.SelectLayerByLocation(shore_line_lyr, 'CROSSED_BY_THE_OUTLINE_OF', pond, None, 'ADD_TO_SELECTION', 'INVERT')
         selected_shore_line_lake = arcpy.management.SelectLayerByLocation(shore_line_lyr, 'CROSSED_BY_THE_OUTLINE_OF', lake, None, 'ADD_TO_SELECTION', 'INVERT')
         # Calculate Field
-        arcpy.management.CalculateField(in_table=selected_shore_line_island, field=vis_field, expression=1, expression_type='PYTHON3')
-        arcpy.management.CalculateField(in_table=selected_shore_line_pond, field=vis_field, expression=1, expression_type='PYTHON3')
-        arcpy.management.CalculateField(in_table=selected_shore_line_lake, field=vis_field, expression=1, expression_type='PYTHON3')
+        arcpy.management.CalculateField(in_table=selected_shore_line_island, field=val_dict['Resolve_conflict_build_visible_field'], expression=1, expression_type='PYTHON3')
+        arcpy.management.CalculateField(in_table=selected_shore_line_pond, field=val_dict['Resolve_conflict_build_visible_field'], expression=1, expression_type='PYTHON3')
+        arcpy.management.CalculateField(in_table=selected_shore_line_lake, field=val_dict['Resolve_conflict_build_visible_field'], expression=1, expression_type='PYTHON3')
 
         # Convert underground river
-        under_ground_river = [fc for fc in fc_list if 'HH0050_Under_Ground_River_L' in fc][0]
-        river = [fc for fc in fc_list if 'HH0040_River_L' in fc][0]
+        under_ground_river = [fc for fc in fc_list if dynamic_fc_names.Under_Ground_River_L in fc][0]
+        river = [fc for fc in fc_list if dynamic_fc_names.River_L in fc][0]
         connect = True
-        convert_type(under_ground_river, None, hydro_convert_ungr_river_min_length, river, None, connect, working_gdb)
+        convert_type(under_ground_river, None, val_dict['Hydrography_hydro_convert_ungr_river_min_length'], river, None, connect, working_gdb)
         # Increase hydro line length
-        dam = [fc for fc in fc_list if 'HH0010_Dam_L' in fc][0]
-        under_ground_river = [fc for fc in fc_list if 'HH0050_Under_Ground_River_L' in fc][0]
-        under_ground_river_lyr = arcpy.management.MakeFeatureLayer(under_ground_river, "under_ground_river_lyr", hydro_enlarge_poly_sql)
-        increase_line_length(under_ground_river_lyr, None, increase_hydro_line_min_length, working_gdb)
-        increase_line_length(dam, None, increase_hydro_line_min_length, working_gdb)
+        dam = [fc for fc in fc_list if dynamic_fc_names.Dam_L in fc][0]
+        under_ground_river = [fc for fc in fc_list if dynamic_fc_names.Under_Ground_River_L in fc][0]
+        under_ground_river_lyr = arcpy.management.MakeFeatureLayer(under_ground_river, "under_ground_river_lyr", val_dict['Hydrography_hydro_enlarge_poly_sql'])
+        increase_line_length(under_ground_river_lyr, None, val_dict['Hydrography_increase_hydro_line_min_length'], working_gdb)
+        increase_line_length(dam, None, val_dict['Hydrography_increase_hydro_line_min_length'], working_gdb)
         # Remove close hydro lines
         dangles1 = "true"
         dangles2 = "false"
@@ -2124,26 +2133,30 @@ def gen_hydrography(fc_list, hydro_prep_fc_list, name_fld, line_len, working_gdb
         comp_lines = []
         
         # For river fc
-        river = [fc for fc in fc_list if 'HH0040_River_L' in fc][0]
-        arcpy.management.Integrate([river], remove_close_tolerance)
+        river = [fc for fc in fc_list if dynamic_fc_names.River_L in fc][0]
+        arcpy.management.Integrate([river], val_dict['Hydrography_remove_close_tolerance'])
         h_river_l_intg_repare_geom = arcpy.management.RepairGeometry(in_features=river, delete_null=True, validation_method="ESRI")
-        remove_close_lines(h_river_l_intg_repare_geom, hydro_remove_small_sql, remove_close_dist, remove_close_parallel_per_min, dangles1, delete, vis_field, check_connect1, connect_angle1, 
+        remove_close_lines(h_river_l_intg_repare_geom, val_dict['Hydrography_hydro_remove_small_sql'], val_dict['Hydrography_remove_close_dist'], 
+                           val_dict['Hydrography_remove_close_parallel_per_min'], dangles1, delete, val_dict['Resolve_conflict_build_visible_field'], 
+                           check_connect1, connect_angle1, 
                            comp_lines, working_gdb)
         # For irrigation canal fc
-        irrigation = [fc for fc in fc_list if 'HH0190_Irrigation_Canal_L' in fc][0]
-        arcpy.management.Integrate([irrigation], remove_close_tolerance)
+        irrigation = [fc for fc in fc_list if dynamic_fc_names.Irrigation_Canal_L in fc][0]
+        arcpy.management.Integrate([irrigation], val_dict['Hydrography_remove_close_tolerance'])
         h_river_l_intg_repare_geom = arcpy.management.RepairGeometry(in_features=irrigation, delete_null=True, validation_method="ESRI")
-        remove_close_lines(h_river_l_intg_repare_geom, hydro_remove_small_sql, remove_close_dist, remove_close_parallel_per_max, dangles2, delete, vis_field, check_connect2, connect_angle2, 
+        remove_close_lines(h_river_l_intg_repare_geom, val_dict['Hydrography_hydro_remove_small_sql'], val_dict['Hydrography_remove_close_dist'], 
+                           val_dict['Hydrography_remove_close_parallel_per_max'], dangles2, delete, 
+                           val_dict['Resolve_conflict_build_visible_field'], check_connect2, connect_angle2, 
                            comp_lines, working_gdb)
         
         # Hydro line dangles
-        compare_fcs = [fc for a_lyr in ['HH0192_Irrigation_Canal_Coverage_A', 'HH0020_Lake_A', 'HH0210_Pond_A', 'HH0042_River_Coverage_A'] for fc in fc_list if str(a_lyr) in fc]
-        hydro_lines_list = [fc for a_lyr in ['HH0190_Irrigation_Canal_L', 'HH0040_River_L'] for fc in fc_list if str(a_lyr) in fc]
+        compare_fcs = [fc for a_lyr in [dynamic_fc_names.Irrigation_Canal_Coverage_A, dynamic_fc_names.Lake_A, dynamic_fc_names.Pond_A, dynamic_fc_names.River_Coverage_A] for fc in fc_list if str(a_lyr) in fc]
+        hydro_lines_list = [fc for a_lyr in [dynamic_fc_names.Irrigation_Canal_L, dynamic_fc_names.River_L] for fc in fc_list if str(a_lyr) in fc]
         aoi = f"{in_feature_loc}\\AOI_L"
         compare_fcs.append(aoi)
         recursive = "true"
         for hydro_lines in hydro_lines_list:
-            remove_dangles_lines(working_gdb, hydro_lines, hydro_remove_small_sql, hydro_line_dangle_min_length, compare_fcs, recursive)
+            remove_dangles_lines(working_gdb, hydro_lines, val_dict['Hydrography_hydro_remove_small_sql'], val_dict['Hydrography_hydro_line_dangle_min_length'], compare_fcs, recursive)
         # Hydro small feature to point
         hydro_small_line_fc_list = list(filter(str.strip, hydro_small_line_fc_list))
         hydro_small_line_fc_list = [fc for a_lyr in hydro_small_line_fc_list for fc in fc_list if str(a_lyr) in fc]
@@ -2152,7 +2165,7 @@ def gen_hydrography(fc_list, hydro_prep_fc_list, name_fld, line_len, working_gdb
 
         sql = None
         for line_fc, point_fc in zip(hydro_small_line_fc_list, hydro_small_point_fc_list):
-            feature2point(working_gdb, line_fc, point_fc, hydro_small_fc_min_length, delete_input, one_point, unique_field, sql)
+            feature2point(working_gdb, line_fc, point_fc, val_dict['Hydrography_hydro_small_fc_min_length'], val_dict['Hydrography_hydro_delete_input'], val_dict['Hydrography_hydro_create_one_point'], val_dict['Hydrography_hydro_unique_field'], sql)
         
 
     except Exception as e:

@@ -310,22 +310,21 @@ def trim_line_within_distance(input_line, visible_field, distance, min_length, r
         arcpy.AddMessage(error_message)
 
 
-def offset_kilometer_post(fc_list, road_query, orient_fld, offset_dist_l, offset_dist_u, perpendicular, working_gdb, snap_dist):
-    dynamic_fc_names = resolve_lyr()
+def offset_kilometer_post(fc_list, road_query, orient_fld, offset_dist_l, offset_dist_u, perpendicular, working_gdb):
     try:
         # Set Environment
         arcpy.env.overwriteOutput = 1
         # Get feature classes
-        road = [fc for fc in fc_list if dynamic_fc_names.Road_L in fc][0]
+        road = [fc for fc in fc_list if 'TA0060_Road_L' in fc][0]
         feature_layer_rd = arcpy.management.MakeFeatureLayer(road, "feature_layer_rd")
-        kilometer_post = [fc for fc in fc_list if dynamic_fc_names.Kilometer_Post_P in fc][0]
+        kilometer_post = [fc for fc in fc_list if 'TA0180_Kilometer_Post_P' in fc][0]
         feature_layer_kilo = arcpy.management.MakeFeatureLayer(kilometer_post, "feature_layer_kilo")
         single_carriage_hwy = arcpy.management.SelectLayerByAttribute(feature_layer_rd, "NEW_SELECTION", road_query[0])
         single_carriage_road = arcpy.management.SelectLayerByAttribute(feature_layer_rd, "NEW_SELECTION", road_query[1])
         dual_carriage_hwy = arcpy.management.SelectLayerByAttribute(feature_layer_rd, "NEW_SELECTION", road_query[2])
         dual_carriage_road = arcpy.management.SelectLayerByAttribute(feature_layer_rd, "NEW_SELECTION", road_query[3])
         # Snapping kilometer post feature
-        snap_env = [feature_layer_rd, "EDGE", snap_dist]
+        snap_env = [feature_layer_rd, "EDGE", 35]
         arcpy.edit.Snap(feature_layer_rd, [snap_env])
         # Select by location
         sel_single_carriage_hwy = arcpy.management.SelectLayerByLocation(feature_layer_kilo, "INTERSECT", single_carriage_hwy, "", "NEW_SELECTION")
@@ -343,22 +342,21 @@ def offset_kilometer_post(fc_list, road_query, orient_fld, offset_dist_l, offset
         error_message = f"Offset kilometer post error: {e}\nTraceback details:\n{tb}"
         arcpy.AddMessage(error_message)
 
-def offset_benckmark(fc_list, road_query, bench_query, orient_fld, offset_dist_l, offset_dist_u, perpendicular, working_gdb, snap_dist):
-    dynamic_fc_names = resolve_lyr()
+def offset_benckmark(fc_list, road_query, bench_query, orient_fld, offset_dist_l, offset_dist_u, perpendicular, working_gdb):
     try:
         # Set Environment
         arcpy.env.overwriteOutput = 1
         # Get feature classes
-        road = [fc for fc in fc_list if dynamic_fc_names.Road_L in fc][0]
+        road = [fc for fc in fc_list if 'TA0060_Road_L' in fc][0]
         feature_layer_rd = arcpy.management.MakeFeatureLayer(road, "feature_layer_rd")
-        height_point = [fc for fc in fc_list if dynamic_fc_names.Height_Point_P in fc][0]
+        height_point = [fc for fc in fc_list if 'ZA0050_Height_Point_P' in fc][0]
         feature_layer_hp = arcpy.management.MakeFeatureLayer(height_point, "feature_layer_kilo", bench_query)
         single_carriage_hwy = arcpy.management.SelectLayerByAttribute(feature_layer_rd, "NEW_SELECTION", road_query[0])
         single_carriage_road = arcpy.management.SelectLayerByAttribute(feature_layer_rd, "NEW_SELECTION", road_query[1])
         dual_carriage_hwy = arcpy.management.SelectLayerByAttribute(feature_layer_rd, "NEW_SELECTION", road_query[2])
         dual_carriage_road = arcpy.management.SelectLayerByAttribute(feature_layer_rd, "NEW_SELECTION", road_query[3])
         # Snapping kilometer post feature
-        snap_env = [feature_layer_rd, "EDGE", snap_dist]
+        snap_env = [feature_layer_rd, "EDGE", 50]
         arcpy.edit.Snap(feature_layer_rd, [snap_env])
         # Select by location
         sel_single_carriage_hwy = arcpy.management.SelectLayerByLocation(feature_layer_hp, "INTERSECT", single_carriage_hwy, "", "NEW_SELECTION")
@@ -376,16 +374,13 @@ def offset_benckmark(fc_list, road_query, bench_query, orient_fld, offset_dist_l
         error_message = f"Offset benchmark error: {e}\nTraceback details:\n{tb}"
         arcpy.AddMessage(error_message)  
 
-# def resolve_conflict_lines(fc_list, feature_loc_path, input_line_layers, ln_lyr_ex, symbology_file_path, ref_scale, hierarchy_field, working_gdb, delete, cartopartion, edge_features, 
-#                            river_ex, road_query_rlc, name_fld, distance_b, distance_s, min_area, additionalCriteria, visible_field, distance, min_length, erase_y, embank_list, 
-#                            compare_fcs_embank, orient_fld, offset_dist_l, offset_dist_u, offset_dist_benc_l, offset_dist_benc_u, perpendicular_k, perpendicular_b, bench_query, bridge_query, 
-#                            footprint_fcs, resolve_line_compare, road_query, log_dir, map_name, logger):
-def resolve_conflict_lines(fc_list, feature_loc_path, input_line_layers, symbology_file_path, working_gdb, cartopartion, edge_features, embank_list, 
-                           compare_fcs_embank, bridge_query, footprint_fcs, resolve_line_compare, road_query, log_dir, map_name, val_dict, logger):
+def resolve_conflict_lines(fc_list, feature_loc_path, input_line_layers, ln_lyr_ex, symbology_file_path, ref_scale, hierarchy_field, working_gdb, delete, cartopartion, edge_features, 
+                           river_ex, road_query_rlc, name_fld, distance_b, distance_s, min_area, additionalCriteria, visible_field, distance, min_length, erase_y, embank_list, 
+                           compare_fcs_embank, orient_fld, offset_dist_l, offset_dist_u, offset_dist_benc_l, offset_dist_benc_u, perpendicular_k, perpendicular_b, bench_query, bridge_query, 
+                           footprint_fcs, resolve_line_compare, road_query, log_dir, map_name, logger):
     
     logger.info(f"Map Name is: {map_name}")
     arcpy.AddMessage('Starting resolve conflicts for lines.....')
-    dynamic_fc_names = resolve_lyr()
     try:
         # Set Environment
         arcpy.env.overwriteOutput = 1
@@ -399,19 +394,19 @@ def resolve_conflict_lines(fc_list, feature_loc_path, input_line_layers, symbolo
         if(maps):
             fc_layers = maps[0].listLayers()
         # Line features
-        river = [fc for fc in fc_layers if dynamic_fc_names.River_L  in fc.name][0]
+        river = [fc for fc in fc_layers if 'HH0040_River_L'  in fc.name][0]
 
-        irrigation_canal = [fc for fc in fc_layers if dynamic_fc_names.Irrigation_Canal_L in fc.name][0]
+        irrigation_canal = [fc for fc in fc_layers if 'HH0190_Irrigation_Canal_L' in fc.name][0]
         # Polygon features
-        lake = [fc for fc in fc_layers if dynamic_fc_names.Lake_A in fc.name][0]
-        pond = [fc for fc in fc_layers if dynamic_fc_names.Pond_A in fc.name][0]
-        irrigation_cov = [fc for fc in fc_layers if dynamic_fc_names.Irrigation_Canal_Coverage_A in fc.name][0]
+        lake = [fc for fc in fc_layers if 'HH0020_Lake_A' in fc.name][0]
+        pond = [fc for fc in fc_layers if 'HH0210_Pond_A' in fc.name][0]
+        irrigation_cov = [fc for fc in fc_layers if 'HH0192_Irrigation_Canal_Coverage_A' in fc.name][0]
         ##Set the symbology for the line layers
         layerx_path = symbology_file_path
          
         #---Resolve road conflicts---#
         # Set the reference scale
-        arcpy.env.referenceScale = val_dict['Resolve_conflict_line_ref_scale']
+        arcpy.env.referenceScale = ref_scale
         arcpy.env.cartographicPartitions = cartopartion
         
         # Get the feature layer
@@ -421,7 +416,7 @@ def resolve_conflict_lines(fc_list, feature_loc_path, input_line_layers, symbolo
         
         if len(fc_line_layers) > 0:
             arcpy.AddMessage("Resolving road conflicts")
-            arcpy.cartography.ResolveRoadConflicts(fc_line_layers, val_dict['Resolve_conflict_line_hierarchy_field'], f"{working_gdb}\\displace")
+            arcpy.cartography.ResolveRoadConflicts(fc_line_layers, hierarchy_field, f"{working_gdb}\\displace")
 
         # Determine and reconnect for line features
         arcpy.AddMessage("Determining and reconnecting line features")
@@ -485,31 +480,31 @@ def resolve_conflict_lines(fc_list, feature_loc_path, input_line_layers, symbolo
  
         # # Run the determine function
         determine(river, lake, out_table1, line_field_river, poly_field_lake, working_gdb)
-        reconnect_touching(lake, river, out_table1, val_dict['Resolve_conflict_line_delete'])
+        reconnect_touching(lake, river, out_table1, delete)
         determine(irrigation_canal, lake, out_table2, line_field_canal, poly_field_lake, working_gdb)
-        reconnect_touching(lake, irrigation_canal, out_table2, val_dict['Resolve_conflict_line_delete'])
+        reconnect_touching(lake, irrigation_canal, out_table2, delete)
         determine(river, pond, out_table3, line_field_river, poly_field_pond, working_gdb)
-        reconnect_touching(pond, river, out_table3, val_dict['Resolve_conflict_line_delete'])
+        reconnect_touching(pond, river, out_table3, delete)
         determine(irrigation_canal, pond, out_table4, line_field_canal, poly_field_pond, working_gdb)
-        reconnect_touching(pond, irrigation_canal, out_table4, val_dict['Resolve_conflict_line_delete'])
+        reconnect_touching(pond, irrigation_canal, out_table4, delete)
         determine(river, irrigation_cov, out_table5, line_field_river, poly_field_irri_cov, working_gdb)
-        reconnect_touching(irrigation_cov, river, out_table5, val_dict['Resolve_conflict_line_delete'])
+        reconnect_touching(irrigation_cov, river, out_table5, delete)
         determine(irrigation_canal, irrigation_cov, out_table6, line_field_canal, poly_field_irri_cov, working_gdb)
-        reconnect_touching(irrigation_cov, irrigation_canal, out_table6, val_dict['Resolve_conflict_line_delete'])
+        reconnect_touching(irrigation_cov, irrigation_canal, out_table6, delete)
 
         ## Recreate boundary
         edge_features = list(filter(str.strip, edge_features))
         edge_features = [fc for edge_lyr in edge_features for fc in fc_layers if str(edge_lyr) in fc.name]
-        irrigation_canal_edge = [fc for fc in fc_layers if dynamic_fc_names.Irrigation_Canal_Edge_L in fc.name][0]
-        river_bank = [fc for fc in fc_layers if dynamic_fc_names.River_Bank_L in fc.name][0]
-        river_cov = [fc for fc in fc_layers if dynamic_fc_names.River_Coverage_A in fc.name][0]
+        irrigation_canal_edge = [fc for fc in fc_layers if 'HH0191_Irrigation_Canal_Edge_L' in fc.name][0]
+        river_bank = [fc for fc in fc_layers if 'HH0041_River_Bank_L' in fc.name][0]
+        river_cov = [fc for fc in fc_layers if 'HH0042_River_Coverage_A' in fc.name][0]
         # Recreate boundary lines
         recreate_boundary_lines(irrigation_canal_edge, irrigation_cov, edge_features)
         recreate_boundary_lines(river_bank, river_cov, edge_features)
         # Propagate displacement
         footprint_fcs = list(filter(str.strip, footprint_fcs))
         footprint_fcs = [fc for ft_lyr in footprint_fcs for fc in fc_layers if str(ft_lyr) in fc.name]
-        arcpy.env.referenceScale = val_dict['Resolve_conflict_line_ref_scale']
+        arcpy.env.referenceScale = ref_scale
         for footprint in footprint_fcs:
             arcpy.cartography.PropagateDisplacement(footprint, f"{working_gdb}\\displace", "AUTO")
         #--- Resolve conflict for lakes and ponds ---#
@@ -518,15 +513,15 @@ def resolve_conflict_lines(fc_list, feature_loc_path, input_line_layers, symbolo
         compare_fcs = [fc for com_lyr in compare_fcs for fc in fc_list if str(com_lyr) in fc]
 
         # Polygon features
-        lake = [fc for fc in fc_layers if dynamic_fc_names.Lake_A in fc.name][0]
-        pond = [fc for fc in fc_layers if dynamic_fc_names.Pond_A in fc.name][0]
+        lake = [fc for fc in fc_layers if 'HH0020_Lake_A' in fc.name][0]
+        pond = [fc for fc in fc_layers if 'HH0210_Pond_A' in fc.name][0]
 
-        road = [fc for fc in fc_layers if dynamic_fc_names.Road_L in fc.name][0]
-        feature_layer_rd = arcpy.management.MakeFeatureLayer(road, "feature_layer_rd", val_dict['Resolve_conflict_line_lyr_expression'])
-        track = [fc for fc in fc_layers if dynamic_fc_names.Track_L in fc.name][0]
-        feature_layer_tr = arcpy.management.MakeFeatureLayer(track, "feature_layer_tr", val_dict['Resolve_conflict_line_lyr_expression'])
-        railway = [fc for fc in fc_layers if dynamic_fc_names.Rail_Line_L in fc.name][0]
-        feature_layer_rail = arcpy.management.MakeFeatureLayer(railway, "feature_layer_rail", val_dict['Resolve_conflict_line_lyr_expression'])
+        road = [fc for fc in fc_layers if 'TA0060_Road_L' in fc.name][0]
+        feature_layer_rd = arcpy.management.MakeFeatureLayer(road, "feature_layer_rd", ln_lyr_ex)
+        track = [fc for fc in fc_layers if 'TA0110_Track_L' in fc.name][0]
+        feature_layer_tr = arcpy.management.MakeFeatureLayer(track, "feature_layer_tr", ln_lyr_ex)
+        railway = [fc for fc in fc_layers if 'TA0010_Rail_Line_L' in fc.name][0]
+        feature_layer_rail = arcpy.management.MakeFeatureLayer(railway, "feature_layer_rail", ln_lyr_ex)
 
         # Determine and reconnect for lakes and ponds
         arcpy.AddMessage("Determining and reconnecting lakes and ponds")
@@ -572,64 +567,64 @@ def resolve_conflict_lines(fc_list, feature_loc_path, input_line_layers, symbolo
         poly_field_lake = "FID_" + arcpy.da.Describe(lake)['name']
         poly_field_pond = "FID_" + arcpy.da.Describe(pond)['name']
         # Delete boolean
-        # delete = False
+        delete = False
         # # Run the determine function
         determine(river, pond, out_table1, line_field_river, poly_field_pond, working_gdb)
-        reconnect_touching(pond, river, out_table1, val_dict['Resolve_conflict_line_delete'])
+        reconnect_touching(pond, river, out_table1, delete)
         determine(irrigation_canal, pond, out_table2, line_field_canal, poly_field_pond, working_gdb)
-        reconnect_touching(pond, irrigation_canal, out_table2, val_dict['Resolve_conflict_line_delete'])
+        reconnect_touching(pond, irrigation_canal, out_table2, delete)
         determine(river, lake, out_table3, line_field_river, poly_field_lake, working_gdb)
-        reconnect_touching(lake, river, out_table3, val_dict['Resolve_conflict_line_delete'])
+        reconnect_touching(lake, river, out_table3, delete)
         determine(irrigation_canal, lake, out_table4, line_field_canal, poly_field_lake, working_gdb)
-        reconnect_touching(lake, irrigation_canal, out_table4, val_dict['Resolve_conflict_line_delete'])
+        reconnect_touching(lake, irrigation_canal, out_table4, delete)
         # # Trim polygon features within distance
-        pond_road = trim_polygon_within_distance(pond, val_dict['Resolve_conflict_line_name_field'], feature_layer_rd, val_dict['Resolve_conflict_line_distance_b'], val_dict['Resolve_conflict_line_minimum_area'], val_dict['Resolve_conflict_line_delete'], working_gdb)
-        pond_rai = trim_polygon_within_distance(pond, val_dict['Resolve_conflict_line_name_field'], feature_layer_rail, val_dict['Resolve_conflict_line_distance_b'], val_dict['Resolve_conflict_line_minimum_area'], val_dict['Resolve_conflict_line_delete'], working_gdb)
-        lake_rail = trim_polygon_within_distance(lake, val_dict['Resolve_conflict_line_name_field'], feature_layer_rail, val_dict['Resolve_conflict_line_distance_b'], val_dict['Resolve_conflict_line_minimum_area'], val_dict['Resolve_conflict_line_delete'], working_gdb)
-        lake_road = trim_polygon_within_distance(lake, val_dict['Resolve_conflict_line_name_field'], feature_layer_rd, val_dict['Resolve_conflict_line_distance_b'], val_dict['Resolve_conflict_line_minimum_area'], val_dict['Resolve_conflict_line_delete'], working_gdb)
-        lake_track = trim_polygon_within_distance(lake, val_dict['Resolve_conflict_line_name_field'], feature_layer_tr, val_dict['Resolve_conflict_line_distance_s'], val_dict['Resolve_conflict_line_minimum_area'], val_dict['Resolve_conflict_line_delete'], working_gdb)
-        pond_track = trim_polygon_within_distance(pond, val_dict['Resolve_conflict_line_name_field'], feature_layer_tr, val_dict['Resolve_conflict_line_distance_s'], val_dict['Resolve_conflict_line_minimum_area'], val_dict['Resolve_conflict_line_delete'], working_gdb)
+        pond_road = trim_polygon_within_distance(pond, name_fld, feature_layer_rd, distance_b, min_area, delete, working_gdb)
+        pond_rai = trim_polygon_within_distance(pond, name_fld, feature_layer_rail, distance_b, min_area, delete, working_gdb)
+        lake_rail = trim_polygon_within_distance(lake, name_fld, feature_layer_rail, distance_b, min_area, delete, working_gdb)
+        lake_road = trim_polygon_within_distance(lake, name_fld, feature_layer_rd, distance_b, min_area, delete, working_gdb)
+        lake_track = trim_polygon_within_distance(lake, name_fld, feature_layer_tr, distance_s, min_area, delete, working_gdb)
+        pond_track = trim_polygon_within_distance(pond, name_fld, feature_layer_tr, distance_s, min_area, delete, working_gdb)
         # #---Explode remove dissolve---#
-        explode_remove_dissolve(lake, val_dict['Resolve_conflict_line_minimum_area'], working_gdb)
-        explode_remove_dissolve(pond, val_dict['Resolve_conflict_line_minimum_area'], working_gdb)
+        explode_remove_dissolve(lake, min_area, working_gdb)
+        explode_remove_dissolve(pond, min_area, working_gdb)
         # Delete small polygons by converting
-        minimumArea = val_dict['Resolve_conflict_line_minimum_area'] * 4
-        remove_by_converting(pond_road, compare_fcs, minimumArea, val_dict['Resolve_conflict_line_additional_criteria'], working_gdb)
-        remove_by_converting(pond_rai, compare_fcs, minimumArea, val_dict['Resolve_conflict_line_additional_criteria'], working_gdb)
-        remove_by_converting(lake_rail, compare_fcs, minimumArea, val_dict['Resolve_conflict_line_additional_criteria'], working_gdb)
-        remove_by_converting(lake_road, compare_fcs, minimumArea, val_dict['Resolve_conflict_line_additional_criteria'], working_gdb)
-        remove_by_converting(lake_track, compare_fcs, minimumArea, val_dict['Resolve_conflict_line_additional_criteria'], working_gdb)
-        remove_by_converting(pond_track, compare_fcs, minimumArea, val_dict['Resolve_conflict_line_additional_criteria'], working_gdb)
+        minimumArea = min_area * 4
+        remove_by_converting(pond_road, compare_fcs, minimumArea, additionalCriteria, working_gdb)
+        remove_by_converting(pond_rai, compare_fcs, minimumArea, additionalCriteria, working_gdb)
+        remove_by_converting(lake_rail, compare_fcs, minimumArea, additionalCriteria, working_gdb)
+        remove_by_converting(lake_road, compare_fcs, minimumArea, additionalCriteria, working_gdb)
+        remove_by_converting(lake_track, compare_fcs, minimumArea, additionalCriteria, working_gdb)
+        remove_by_converting(pond_track, compare_fcs, minimumArea, additionalCriteria, working_gdb)
         # # Reduce embankment conflict
         embank_list = list(filter(str.strip, embank_list))
         embank_list = [fc for embn_lyr in embank_list for fc in fc_list if str(embn_lyr) in fc]
         compare_fcs_embank = list(filter(str.strip, compare_fcs_embank))
         compare_fcs_embank = [fc for emb_lyr in compare_fcs_embank for fc in fc_list if str(emb_lyr) in fc]
         for embn_fc in embank_list:
-            trim_line_within_distance(embn_fc, val_dict['Resolve_conflict_line_visible_field'], val_dict['Resolve_conflict_line_distance_l'], val_dict['Resolve_conflict_line_distance_minimum_length'], val_dict['Resolve_conflict_line_ref_scale'], val_dict['Resolve_conflict_line_erase_input_features'], compare_fcs_embank, working_gdb)
+            trim_line_within_distance(embn_fc, visible_field, distance, min_length, ref_scale, erase_y, compare_fcs_embank, working_gdb)
 
         # Offset kilometer post
-        offset_kilometer_post(fc_list, road_query, val_dict['Resolve_conflict_line_orient_fld'], val_dict['Resolve_conflict_line_offset_distance_s'], val_dict['Resolve_conflict_line_offset_distance_l'], val_dict['Resolve_conflict_line_perpendicular_k'], working_gdb, val_dict['RCL_offset_kilometer_post_kmpost_snap_dist'])
+        offset_kilometer_post(fc_list, road_query, orient_fld, offset_dist_l, offset_dist_u, perpendicular_k, working_gdb)
         # Offset benchmark
-        offset_benckmark(fc_list, road_query, val_dict['Resolve_conflict_line_bench_query'], val_dict['Resolve_conflict_line_orient_fld'], val_dict['Resolve_conflict_line_offset_distance_benc_l'], val_dict['Resolve_conflict_line_offset_distance_benc_u'], val_dict['Resolve_conflict_line_perpendicular_b'], working_gdb, val_dict['RCL_offset_benchmark_kmpost_snap_dist'] )
+        offset_benckmark(fc_list, road_query, bench_query, orient_fld, offset_dist_benc_l, offset_dist_benc_u, perpendicular_b, working_gdb)
         # Snap bridge
-        road = [fc for fc in fc_layers if dynamic_fc_names.Road_L in fc.name][0]
+        road = [fc for fc in fc_layers if 'TA0060_Road_L' in fc.name][0]
         feature_layer_rd = arcpy.management.MakeFeatureLayer(road, "feature_layer_rd")
-        track = [fc for fc in fc_layers if dynamic_fc_names.Track_L in fc.name][0]
+        track = [fc for fc in fc_layers if 'TA0110_Track_L' in fc.name][0]
         feature_layer_tr = arcpy.management.MakeFeatureLayer(track, "feature_layer_tr")
         arcpy.management.RepairGeometry(feature_layer_tr)
-        railway = [fc for fc in fc_layers if dynamic_fc_names.Rail_Line_L in fc.name][0]
+        railway = [fc for fc in fc_layers if 'TA0010_Rail_Line_L' in fc.name][0]
         feature_layer_rail = arcpy.management.MakeFeatureLayer(railway, "feature_layer_rail")
         arcpy.management.RepairGeometry(feature_layer_rail)
-        bridge = [fc for fc in fc_layers if dynamic_fc_names.Bridge_P in fc.name][0]
+        bridge = [fc for fc in fc_layers if 'TA0240_Bridge_P' in fc.name][0]
         feature_layer_rail_br = arcpy.management.MakeFeatureLayer(bridge, "feature_layer_rail_br", bridge_query[0])
         feature_layer_road_br = arcpy.management.MakeFeatureLayer(bridge, "feature_layer_road_br", bridge_query[1])
         # Snapping between railway bridge and railway lyr
-        snap_env = [feature_layer_rail, "EDGE", val_dict['RCL_snap_btwn_railbridge_railway_snap_dist']]
+        snap_env = [feature_layer_rail, "EDGE", 35]
         arcpy.edit.Snap(feature_layer_rail_br, [snap_env])
         # Snapping between road bridge and road and track lyr
-        snapEnv1 = [feature_layer_rd, "EDGE", val_dict['RCL_snap_btwn_roadbridge_road_snap_dist_1']]
-        snapEnv2 = [feature_layer_tr, "EDGE", val_dict['RCL_snap_btwn_roadbridge_road_snap_dist_2']]
+        snapEnv1 = [feature_layer_rd, "EDGE", 35]
+        snapEnv2 = [feature_layer_tr, "EDGE", 35]
         arcpy.edit.Snap(feature_layer_road_br, [snapEnv1, snapEnv2])
 
     except Exception as e:

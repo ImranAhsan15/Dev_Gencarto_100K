@@ -3,9 +3,8 @@ import traceback
 import sys
 from common_utils import *
 
-def detect_write_conflicts(in_feature_loc, inputFCs, query, compareFCs,
-                           conflictDistance, rev_workspace, rev_session, severity,
-                           ref_scale, partitions, map_name, symbology_file_path, logger, working_gdb):
+def detect_write_conflicts(in_feature_loc, inputFCs, compareFCs, rev_workspace, partitions, map_name, symbology_file_path, val_dict, logger, working_gdb):
+    
     arcpy.AddMessage('Starting conflicts detection.....')
     # values 'NEVER', 'NO_DISTANCE', 'ALL'
     # this value determines when we use symbology with no outline rather than using
@@ -31,7 +30,7 @@ def detect_write_conflicts(in_feature_loc, inputFCs, query, compareFCs,
         total_conflict = 0
 
         # Set the reference scale and partitions
-        arcpy.env.referenceScale = ref_scale
+        arcpy.env.referenceScale = val_dict['Detect_reference_scale']
         arcpy.env.cartographicPartitions = partitions
 
         # Set spatial reference from first input FC
@@ -45,13 +44,13 @@ def detect_write_conflicts(in_feature_loc, inputFCs, query, compareFCs,
         if USE_NO_OUTLINE == "ALL":
             symbology = "NO_OUTLINE"
         elif USE_NO_OUTLINE == "NO_DISTANCE":
-            dist = conflictDistance
+            dist = val_dict['Detect_conflict_distance']
             if dist == '0':
                 symbology = "NO_OUTLINE"
 
-        inLayers = prepFcs(inputFCs, in_feature_loc, map_name, symbology_file_path, query, symbology)
+        inLayers = prepFcs(inputFCs, in_feature_loc, map_name, symbology_file_path, val_dict['Detect_expression'], symbology)
         if len(inLayers) >= 1:
-            compareLayers = prepFcs(compareFCs, in_feature_loc, map_name, symbology_file_path, query, symbology)
+            compareLayers = prepFcs(compareFCs, in_feature_loc, map_name, symbology_file_path, val_dict['Detect_expression'], symbology)
             outfcname = "detectconflict"
 
             for inlyr in inLayers:
@@ -74,7 +73,7 @@ def detect_write_conflicts(in_feature_loc, inputFCs, query, compareFCs,
                         arcpy.AddMessage("Comparing " + str(inlyr) + " to " + str(conflict_lyr_ID))
 
                         # Run DetectGraphicConflict (original: fixed name in current workspace)
-                        outfc = arcpy.cartography.DetectGraphicConflict(inlyr, conflict_lyr_ID, outfcname, conflictDistance)
+                        outfc = arcpy.cartography.DetectGraphicConflict(inlyr, conflict_lyr_ID, outfcname, val_dict['Detect_conflict_distance'])
                         arcpy.AddMessage(arcpy.GetMessages())
 
                         # Repair and count (match original)
@@ -84,7 +83,7 @@ def detect_write_conflicts(in_feature_loc, inputFCs, query, compareFCs,
                         arcpy.AddMessage(str(number_conflict) + " conflicts were found.")
 
                         if number_conflict >= 1:
-                            error_count = write2Rev(outfc, rev_workspace, rev_session, str(severity))
+                            error_count = write2Rev(outfc, rev_workspace, val_dict['Detect_reviewer_session'], str(val_dict['Detect_severity']))
                             if(error_count):
                                 total_conflict = total_conflict + int(error_count)
 

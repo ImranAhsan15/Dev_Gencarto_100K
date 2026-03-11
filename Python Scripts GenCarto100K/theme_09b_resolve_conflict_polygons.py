@@ -3,7 +3,35 @@ import traceback
 import sys
 from common_utils import *
 
-def resolve_building_point_road_track_conflict(building_fcs, logger, road_fc="TA0060_Road_L", track_fc="TA0110_Track_L"):
+def fix_veg_after_resolve_conflict(fc_list, input_primary, input_secondary, in_prim_sql, max_gap_area, fill_option, invisibility_field, working_gdb):
+    dynamic_fc_names = resolve_lyr()
+    try:
+        # Get feature classes
+        input_primary = list(filter(str.strip, input_primary))
+        input_primary = [fc for in_prim in input_primary for fc in fc_list if str(in_prim) in fc]
+        input_secondary = list(filter(str.strip, input_secondary))
+        input_secondary = [fc for in_second in input_secondary for fc in fc_list if str(in_second) in fc]
+        river_coverage_A = [fc for fc in fc_list if dynamic_fc_names.River_Coverage_A in fc][0]
+
+        # Convert polygons
+        for in_p in input_primary:
+            convert_polygon(in_p, input_secondary, max_gap_area, in_prim_sql, working_gdb)
+        # Erase features and Fill gaps
+        input_primary.append(river_coverage_A)
+        erase_features(input_primary, input_secondary, working_gdb, max_gap_area, fill_option, invisibility_field)
+
+    except Exception as e:
+        tb = traceback.format_exc()
+        error_message = f"Fix vegetation after resolving conflicts error: {e}\nTraceback details:\n{tb}"
+        arcpy.AddMessage(error_message)
+
+def resolve_building_point_road_track_conflict(building_fcs, logger, road_fc=None, track_fc=None):
+    if road_fc is None or track_fc is None:
+        dynamic_fc_names = resolve_lyr()
+        if road_fc is None:
+            road_fc = dynamic_fc_names.Road_L
+        if track_fc is None:
+            track_fc = dynamic_fc_names.Track_L
     arcpy.env.overwriteOutput = True
     aprx = arcpy.mp.ArcGISProject("CURRENT")
     active_map = aprx.activeMap
@@ -41,7 +69,13 @@ def resolve_building_point_road_track_conflict(building_fcs, logger, road_fc="TA
         )
         arcpy.management.SelectLayerByAttribute(src, "CLEAR_SELECTION")
 
-def resolve_building_polygon_road_track_conflict(building_fcs, logger, road_fc="TA0060_Road_L", track_fc="TA0110_Track_L"):
+def resolve_building_polygon_road_track_conflict(building_fcs, logger, road_fc=None, track_fc=None):
+    if road_fc is None or track_fc is None:
+        dynamic_fc_names = resolve_lyr()
+        if road_fc is None:
+            road_fc = dynamic_fc_names.Road_L
+        if track_fc is None:
+            track_fc = dynamic_fc_names.Track_L
     arcpy.env.overwriteOutput = True
     aprx = arcpy.mp.ArcGISProject("CURRENT")
     active_map = aprx.activeMap
@@ -79,8 +113,9 @@ def resolve_building_polygon_road_track_conflict(building_fcs, logger, road_fc="
         )
         arcpy.management.SelectLayerByAttribute(src, "CLEAR_SELECTION")
 
-def move_building_near_adjacent_points(fc_list, map_name, logger, working_gdb, building_features = None, stated_point_features_dict_with_distance = None):
+def move_building_near_adjacent_points(fc_list, map_name, logger, working_gdb, dist_mx, dist_mn, invisi_field, bld_gap, min_size, hier_field, building_features = None, stated_point_features_dict_with_distance = None):
     arcpy.AddMessage(f"Starting moving buildings in respect to stated points...")
+    dynamic_fc_names = resolve_lyr()
     valid_barriers = []
     point_buffered_features = {}
     arcpy.env.workspace = working_gdb
@@ -92,7 +127,7 @@ def move_building_near_adjacent_points(fc_list, map_name, logger, working_gdb, b
     building_layers = []
     
     if(not building_features):
-        building_features = ["BA0010_Residential_Building_A", "BA0010_Residential_Building_P"]
+        building_features = [dynamic_fc_names.Residential_Building_A, dynamic_fc_names.Residential_Building_P]
         for bfc in building_features:
             for lyr in active_layers:
                # arcpy.AddMessage(f"active_layer : {lyr.name}")
@@ -100,16 +135,16 @@ def move_building_near_adjacent_points(fc_list, map_name, logger, working_gdb, b
                    building_layers.append(lyr)
     if(not stated_point_features_dict_with_distance):
         stated_point_features_dict_with_distance = {
-            "HH0130_Natural_Spring_A": '12.5 Meters',
-            "HH0130_Natural_Spring_P": '12.5 Meters',
-            "BF0010_Building_Of_Worship_A": '12.5 Meters',
-            "BF0010_Building_Of_Worship_P": '12.5 Meters',
-            "ZA0010_Global_Navigation_Satellite_System_Station_P": '12.5 Meters',
-            "ZA0040_Trigonometry_Station_P": '12.5 Meters',
-            "ZA0050_Height_Point_P": '0 Meters',
-            "ZA0070_Base_Point_P": '0 Meters',
-            "ZA0080_International_Boundary_Marker_P": '12.5 Meters',
-            "ZA0090_State_Boundary_Marker_P": '12.5 Meters'
+            dynamic_fc_names.Natural_Spring_A: f'{dist_mx} Meters',
+            dynamic_fc_names.Natural_Spring_P: f'{dist_mx} Meters',
+            dynamic_fc_names.Building_Of_Worship_A: f'{dist_mx} Meters',
+            dynamic_fc_names.Building_Of_Worship_P: f'{dist_mx} Meters',
+            dynamic_fc_names.Global_Navigation_Satellite_System_Station_P: f'{dist_mx} Meters',
+            dynamic_fc_names.Trigonometry_Station_P: f'{dist_mx} Meters',
+            dynamic_fc_names.Height_Point_P: f'{dist_mn} Meters',
+            dynamic_fc_names.Base_Point_P: f'{dist_mn} Meters',
+            dynamic_fc_names.International_Boundary_Marker_P: f'{dist_mx} Meters',
+            dynamic_fc_names.State_Boundary_Marker_P: f'{dist_mx} Meters'
         }
 
     for feature, distance in stated_point_features_dict_with_distance.items():
@@ -148,11 +183,11 @@ def move_building_near_adjacent_points(fc_list, map_name, logger, working_gdb, b
         in_barriers = ";".join(valid_barriers)
         arcpy.cartography.ResolveBuildingConflicts(
             in_buildings=building_layers, 
-            invisibility_field="INVISIBILITY",
+            invisibility_field=invisi_field,
             in_barriers=in_barriers,
-            building_gap="12.5 Meters",
-            minimum_size="10 Meters",
-            hierarchy_field="HIERARCHY"
+            building_gap=f"{bld_gap} Meters",
+            minimum_size=f"{min_size} Meters",
+            hierarchy_field=hier_field
         )
         
     else:
@@ -160,61 +195,64 @@ def move_building_near_adjacent_points(fc_list, map_name, logger, working_gdb, b
 
     return None
 
-def resolve_conflict_polygons(fc_list, build_up_area_fcs, express_val_mx, express_val_mn, field_name, search_distance, query, input_building_layers, input_barrier_layers, bb_lyr_ex, 
-                               bb_lyr_ex_his, hierarchy_field, invisibility_field, symbology_file_path, ref_scale, minimum_size, bld_gap, ap_src_dis_mn, ap_src_dis_mx, orient_dir, g1_align_features, 
-                               g4_align_features, g5_input_points, g5_align_features, g6_align_features, g7_input_points, g7_align_features, input_primary, input_secondary, in_prim_sql, 
-                               max_gap_area, fill_option, working_gdb, map_name, orient_f, log_dir, logger):
+# def resolve_conflict_polygons(fc_list, build_up_area_fcs, express_val_mx, express_val_mn, field_name, search_distance, query, input_building_layers, input_barrier_layers, bb_lyr_ex, 
+#                                bb_lyr_ex_his, hierarchy_field, invisibility_field, symbology_file_path, ref_scale, minimum_size, bld_gap, ap_src_dis_mn, ap_src_dis_mx, orient_dir, g1_align_features, 
+#                                g4_align_features, g5_input_points, g5_align_features, g6_align_features, g7_input_points, g7_align_features, input_primary, input_secondary, in_prim_sql, 
+#                                max_gap_area, fill_option, working_gdb, map_name, orient_f, log_dir, logger):
+def resolve_conflict_polygons(fc_list, build_up_area_fcs, input_building_layers, input_barrier_layers, symbology_file_path, g1_align_features, 
+                               g4_align_features, g5_input_points, g5_align_features, g6_align_features, g7_input_points, g7_align_features, input_primary, input_secondary, working_gdb, map_name, log_dir, val_dict, logger):
     arcpy.AddMessage('Starting resolve conflicts for polygons.....')
+    dynamic_fc_names = resolve_lyr()
     try:
         # # Hide buildings under built up area
-        hide_blgs_under_built_up_area(fc_list, build_up_area_fcs, express_val_mx, express_val_mn, field_name, search_distance, query, map_name)
+        hide_blgs_under_built_up_area(fc_list, build_up_area_fcs, val_dict['Resolve_conflict_build_express_val_mx'], val_dict['Resolve_conflict_build_express_val_mn'], val_dict['Resolve_conflict_build_visible_field'], val_dict['Resolve_conflict_build_search_distance'], val_dict['Resolve_conflict_build_query'], map_name)
 
         # Resolve conflicts for point and polygon
-        resolve_conflicts_points_polygon(fc_list, input_building_layers, input_barrier_layers, bb_lyr_ex, bb_lyr_ex_his, hierarchy_field, invisibility_field, symbology_file_path, ref_scale, 
-                                        minimum_size, bld_gap, working_gdb, map_name)
+        resolve_conflicts_points_polygon(fc_list, input_building_layers, input_barrier_layers, val_dict['Resolve_conflict_build_bb_lyr_ex'], val_dict['Resolve_conflict_build_bb_lyr_ex_his'], val_dict['Resolve_conflict_build_hierarchy_field'], val_dict['Resolve_conflict_build_visible_field'], symbology_file_path, val_dict['Resolve_conflict_build_ref_scale'], 
+                                        val_dict['Resolve_conflict_build_minimum_size'], val_dict['Resolve_conflict_build_building_gap'], working_gdb, map_name)
         # Align points-G1
-        g1_input_points = [fc for fc in fc_list if 'TA0240_Bridge_P' in fc]
+        g1_input_points = [fc for fc in fc_list if dynamic_fc_names.Bridge_P in fc]
         g1_align_features = list(filter(str.strip, g1_align_features))
         g1_align_features = [fc for align_fc in g1_align_features for fc in fc_list if str(align_fc) in fc]
-        align_points(g1_input_points, g1_align_features, ap_src_dis_mn, orient_dir, ref_scale, hierarchy_field, symbology_file_path, orient_f, working_gdb, map_name)
+        align_points(g1_input_points, g1_align_features, val_dict['Resolve_conflict_build_search_distance_mn'], val_dict['Resolve_conflict_build_orient_direction'], val_dict['Resolve_conflict_build_ref_scale'], val_dict['Resolve_conflict_build_hierarchy_field'], symbology_file_path, val_dict['RCB_Align_points_orientation_field_name'], working_gdb, map_name)
         #Align points-G2
-        g2_input_points = [fc for fc in fc_list if 'BJ0030_Rail_Terminal_Railway_Station_P' in fc]
-        g2_align_features = [fc for fc in fc_list if 'TA0010_Rail_Line_L' in fc]
-        align_points(g2_input_points, g2_align_features, ap_src_dis_mx, orient_dir, ref_scale, hierarchy_field, symbology_file_path, orient_f, working_gdb, map_name)
+        g2_input_points = [fc for fc in fc_list if dynamic_fc_names.Rail_Terminal_Railway_Station_P in fc]
+        g2_align_features = [fc for fc in fc_list if dynamic_fc_names.Rail_Line_L in fc]
+        align_points(g2_input_points, g2_align_features, val_dict['Resolve_conflict_build_search_distance_mx'], val_dict['Resolve_conflict_build_orient_direction'], val_dict['Resolve_conflict_build_ref_scale'], val_dict['Resolve_conflict_build_hierarchy_field'], symbology_file_path, val_dict['RCB_Align_points_orientation_field_name'], working_gdb, map_name)
         # Align points-G3
-        g3_input_points = [fc for fc in fc_list if 'TA0150_Toll_Plaza_P' in fc]
-        g3_align_features = [fc for fc in fc_list if 'TA0060_Road_L' in fc]
-        align_points(g3_input_points, g3_align_features, ap_src_dis_mx, orient_dir, ref_scale, hierarchy_field, symbology_file_path, orient_f, working_gdb, map_name)
+        g3_input_points = [fc for fc in fc_list if dynamic_fc_names.Toll_Plaza_P in fc]
+        g3_align_features = [fc for fc in fc_list if dynamic_fc_names.Road_L in fc]
+        align_points(g3_input_points, g3_align_features, val_dict['Resolve_conflict_build_search_distance_mx'], val_dict['Resolve_conflict_build_orient_direction'], val_dict['Resolve_conflict_build_ref_scale'], val_dict['Resolve_conflict_build_hierarchy_field'], symbology_file_path, val_dict['RCB_Align_points_orientation_field_name'], working_gdb, map_name)
         # Align points-G4
-        g4_input_points = [fc for fc in fc_list for build_p in ['BA0010_Residential_Building_P','BC0010_Industrial_Building_P','BE0010_Educational_Building_P'] if build_p in fc]
+        g4_input_points = [fc for fc in fc_list for build_p in [dynamic_fc_names.Residential_Building_P, dynamic_fc_names.Industrial_Building_P, dynamic_fc_names.Educational_Building_P] if build_p in fc]
         g4_align_features = list(filter(str.strip, g4_align_features))
         g4_align_features = [fc for align_fc in g4_align_features for fc in fc_list if str(align_fc) in fc]
-        align_points(g4_input_points, g4_align_features, ap_src_dis_mx, orient_dir, ref_scale, hierarchy_field, symbology_file_path, orient_f, working_gdb, map_name)
+        align_points(g4_input_points, g4_align_features, val_dict['Resolve_conflict_build_search_distance_mx'], val_dict['Resolve_conflict_build_orient_direction'], val_dict['Resolve_conflict_build_ref_scale'], val_dict['Resolve_conflict_build_hierarchy_field'], symbology_file_path, val_dict['RCB_Align_points_orientation_field_name'], working_gdb, map_name)
         #Align points-G5
         g5_input_points = list(filter(str.strip, g5_input_points))
         g5_input_points = [fc for input_fc in g5_input_points for fc in fc_list if str(input_fc) in fc]
         g5_align_features = list(filter(str.strip, g5_align_features))
         g5_align_features = [fc for align_fc in g5_align_features for fc in fc_list if str(align_fc) in fc]
-        align_points(g5_input_points, g5_align_features, ap_src_dis_mn, orient_dir, ref_scale, hierarchy_field, symbology_file_path, orient_f, working_gdb, map_name)
+        align_points(g5_input_points, g5_align_features, val_dict['Resolve_conflict_build_search_distance_mn'], val_dict['Resolve_conflict_build_orient_direction'], val_dict['Resolve_conflict_build_ref_scale'], val_dict['Resolve_conflict_build_hierarchy_field'], symbology_file_path, val_dict['RCB_Align_points_orientation_field_name'], working_gdb, map_name)
         # Align points-G6
-        g6_input_points = [fc for fc in fc_list if 'HD0040_Jetty_Pier_P' in fc]
+        g6_input_points = [fc for fc in fc_list if dynamic_fc_names.Jetty_Pier_P in fc]
         g6_align_features = list(filter(str.strip, g6_align_features))
         g6_align_features = [fc for align_fc in g6_align_features for fc in fc_list if str(align_fc) in fc]
-        align_points(g6_input_points, g6_align_features, ap_src_dis_mn, orient_dir, ref_scale, hierarchy_field, symbology_file_path, orient_f, working_gdb, map_name)
+        align_points(g6_input_points, g6_align_features, val_dict['Resolve_conflict_build_search_distance_mn'], val_dict['Resolve_conflict_build_orient_direction'], val_dict['Resolve_conflict_build_ref_scale'], val_dict['Resolve_conflict_build_hierarchy_field'], symbology_file_path, val_dict['RCB_Align_points_orientation_field_name'], working_gdb, map_name)
         # Align points-G7
         g7_input_points = list(filter(str.strip, g7_input_points))
         g7_input_points = [fc for input_fc in g7_input_points for fc in fc_list if str(input_fc) in fc]
         g7_align_features = list(filter(str.strip, g7_align_features))
         g7_align_features = [fc for align_fc in g7_align_features for fc in fc_list if str(align_fc) in fc]
-        align_points(g7_input_points, g7_align_features, ap_src_dis_mn, orient_dir, ref_scale, hierarchy_field, symbology_file_path, orient_f, working_gdb, map_name)
+        align_points(g7_input_points, g7_align_features, val_dict['Resolve_conflict_build_search_distance_mn'], val_dict['Resolve_conflict_build_orient_direction'], val_dict['Resolve_conflict_build_ref_scale'], val_dict['Resolve_conflict_build_hierarchy_field'], symbology_file_path, val_dict['RCB_Align_points_orientation_field_name'], working_gdb, map_name)
 
         # Fix Vegetation after Resolve Conflicts
-        fix_veg_after_resolve_conflict(fc_list, input_primary, input_secondary, in_prim_sql, max_gap_area, fill_option, invisibility_field, working_gdb)
+        fix_veg_after_resolve_conflict(fc_list, input_primary, input_secondary, val_dict['Resolve_conflict_build_in_prim_sql'], val_dict['Resolve_conflict_build_mx_gap_area'], val_dict['Resolve_conflict_build_fill_option'], val_dict['Resolve_conflict_build_visible_field'], working_gdb)
         # Apply Layer Definition on Building Feature Classes
-        apply_layer_definition(input_building_layers, "INVISIBILITY = 0 OR INVISIBILITY IS NULL", map_name)
+        apply_layer_definition(input_building_layers, val_dict['RCL_Apply_Layer_Definition_expression'] , map_name)
 
         # # Move Buildings According to Adjacent stated Points
-        move_building_near_adjacent_points(fc_list, map_name, logger, working_gdb)
+        move_building_near_adjacent_points(fc_list, map_name, logger, working_gdb, val_dict['RCP_move_building_near_adjacent_points_dist_mx'], val_dict['RCP_move_building_near_adjacent_points_dist_mn'], val_dict['Resolve_conflict_build_visible_field'], val_dict['Resolve_conflict_build_building_gap'], val_dict['Resolve_conflict_build_minimum_size'], val_dict['Resolve_conflict_build_hierarchy_field'])
 
         # # # resolve_building_point_road_track_conflict(building_point_fcs, logger, road_fc, track_fc)
         # # # resolve_building_polygon_road_track_conflict(building_polygon_fcs, logger, road_fc, track_fc)

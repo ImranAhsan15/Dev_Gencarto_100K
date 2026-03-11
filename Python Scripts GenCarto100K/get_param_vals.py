@@ -4,7 +4,6 @@ import pandas as pd
 import openpyxl
 from dataclasses import dataclass
 from typing import Dict, Iterator, Tuple, Any, Optional
-import arcpy
 
 class ParamValues:
     def __init__(self, excel_file):

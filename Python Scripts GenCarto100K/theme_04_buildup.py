@@ -30,6 +30,7 @@ def convert_small_bldg_2_point(fc_list, small_bldg_2_point_a, small_bldg_2_point
 def delete_features_in_poly(features_in_cemetery, poly_fc, poly_size):
     # Set the workspace
     arcpy.env.overwriteOutput = True
+    dynamic_fc_names = resolve_lyr()
     try:
         desc = arcpy.da.Describe(poly_fc)
         shape_delim = desc['areaFieldName']
@@ -40,9 +41,9 @@ def delete_features_in_poly(features_in_cemetery, poly_fc, poly_size):
                 arcpy.AddMessage(f"Skipping {pt_fc} as it has no features") #new continue block added to avoid operation on empty feature classes 
                 continue
             # Make Feature Layers for input point and polygon
-            if "BA0010_Residential_Building_A" in pt_fc or "BC0010_Industrial_Building_A" in pt_fc or "BE0010_Educational_Building_A" in pt_fc:
+            if dynamic_fc_names.Residential_Building_A in pt_fc or dynamic_fc_names.Industrial_Building_A in pt_fc or dynamic_fc_names.Educational_Building_A in pt_fc:
                 pt_lyr = arcpy.management.MakeFeatureLayer(pt_fc, "point_lyr")
-            elif "BA0010_Residential_Building_P" in pt_fc or "BC0010_Industrial_Building_P" in pt_fc or "BE0010_Educational_Building_P" in pt_fc:
+            elif dynamic_fc_names.Residential_Building_P in pt_fc or dynamic_fc_names.Industrial_Building_P in pt_fc or dynamic_fc_names.Educational_Building_P in pt_fc:
                 pt_lyr = arcpy.management.MakeFeatureLayer(pt_fc, "point_lyr")
             else:
                 pt_lyr = arcpy.management.MakeFeatureLayer(pt_fc, "point_lyr")
@@ -162,13 +163,14 @@ def delineate_built_up_area(fc_list, in_buildings_list, edge_features_list, grou
     # Define environment variables
     arcpy.env.overwriteOutput = 1
     arcpy.env.referenceScale = delineate_ref_scale
+    dynamic_fc_names = resolve_lyr()
     try:
         in_buildings_list = list(filter(str.strip, in_buildings_list))
         in_buildings = [fc for a_lyr in in_buildings_list for fc in fc_list if str(a_lyr) in fc]
         edge_features_list = list(filter(str.strip, edge_features_list))
         edge_features = [fc for a_lyr in edge_features_list for fc in fc_list if str(a_lyr) in fc]
         # Town Built Up Fc Layer
-        town_buil_up = [fc for fc in fc_list if 'BJ0073_Town_Built_up_A' in fc][0]
+        town_buil_up = [fc for fc in fc_list if dynamic_fc_names.Town_Built_up_A in fc][0]
 
         out_feature_class = f"{in_feature_loc}\\town_built_up"
         arcpy.cartography.DelineateBuiltUpAreas(in_buildings, None, edge_features, grouping_distance, minimum_detail_size, out_feature_class, minimum_building_count)
@@ -180,12 +182,13 @@ def delineate_built_up_area(fc_list, in_buildings_list, edge_features_list, grou
         arcpy.AddMessage(error_message)
 
 def generalised_buildings(fc_list):
+    dynamic_fc_names = resolve_lyr()
     try:
         # Set the workspace
         arcpy.env.overwriteOutput = True
-        local_authoruty_cover = [fc for fc in fc_list if 'DA0220_Local_Authority_Area_A' in fc][0]
-        town_buil_up = [fc for fc in fc_list if 'BJ0073_Town_Built_up_A' in fc][0]
-        generalised_building = [fc for fc in fc_list if 'BJ0500_Generalised_Buildings_A' in fc][0]
+        local_authoruty_cover = [fc for fc in fc_list if dynamic_fc_names.Local_Authority_Area_A in fc][0]
+        town_buil_up = [fc for fc in fc_list if dynamic_fc_names.Town_Built_up_A in fc][0]
+        generalised_building = [fc for fc in fc_list if dynamic_fc_names.Generalised_Buildings_A in fc][0]
         # Make feature layers
         local_authoruty_cover = arcpy.management.MakeFeatureLayer(local_authoruty_cover, "local_authoruty_cover")
         town_buil_up = arcpy.management.MakeFeatureLayer(town_buil_up, "town_buil_up")
@@ -1174,35 +1177,39 @@ def terrace_buildings_to_builtup_area(fc_list, building_fc_name, road_fc_name, b
 
 
 
-def gen_buildup(fc_list, small_bldg_2_point_a, small_bldg_2_point_p, min_size_bldg, sql_bldg, delete_input, one_point, unique_field, working_gdb, min_size_bldg2, features_in_cemetery, 
-                enlarge_min_size, enlarge_val, enlarge_barrier_fcs, delete_small_bldgs, del_min_area, enlarge_building_features, enlarge_bldg_min_width, enlarge_bldg_min_length, 
-                enlarge_bldg_additional_criteria, simpl_bldg_distance, in_buildings_list, edge_features_list, grouping_distance, minimum_detail_size, minimum_building_count, 
-                in_feature_loc, delineate_ref_scale, del_small_recreation_fc_min_size, delete_small_features, erase_sql, simplification_tolerance, logger):
+# def gen_buildup(fc_list, small_bldg_2_point_a, small_bldg_2_point_p, min_size_bldg, sql_bldg, delete_input, one_point, unique_field, working_gdb, min_size_bldg2, features_in_cemetery, 
+#                 enlarge_min_size, enlarge_val, enlarge_barrier_fcs, delete_small_bldgs, del_min_area, enlarge_building_features, enlarge_bldg_min_width, enlarge_bldg_min_length, 
+#                 enlarge_bldg_additional_criteria, simpl_bldg_distance, in_buildings_list, edge_features_list, grouping_distance, minimum_detail_size, minimum_building_count, 
+#                 in_feature_loc, delineate_ref_scale, del_small_recreation_fc_min_size, delete_small_features, erase_sql, simplification_tolerance, logger):
+def gen_buildup(fc_list, small_bldg_2_point_a, small_bldg_2_point_p, working_gdb, features_in_cemetery, enlarge_barrier_fcs, delete_small_bldgs,  enlarge_building_features,   
+                  in_buildings_list, edge_features_list, in_feature_loc, delete_small_features, val_dict, logger):
     arcpy.AddMessage('Starting buildup features generalization.....')
     # Set the workspace
     arcpy.env.overwriteOutput = True
+    dynamic_fc_names = resolve_lyr()
     try:
         # Convert small building to point
-        convert_small_bldg_2_point(fc_list, small_bldg_2_point_a, small_bldg_2_point_p, min_size_bldg, delete_input, one_point, unique_field, working_gdb)
+        convert_small_bldg_2_point(fc_list, small_bldg_2_point_a, small_bldg_2_point_p, val_dict['Built_min_size_bldg1'], val_dict['Built_delete_input'], 
+                                   val_dict['Built_create_one_point'], val_dict['Built_unique_field'], working_gdb)
         # Delete buildings in Cemetery
         features_in_cemetery = list(filter(str.strip, features_in_cemetery))
         features_in_cemetery = [fc for a_lyr in features_in_cemetery for fc in fc_list if str(a_lyr) in fc]
-        cemetery = [fc for fc in fc_list if 'BH0010_Cemetery_A' in fc][0]
-        delete_features_in_poly(features_in_cemetery, cemetery, min_size_bldg2)
+        cemetery = [fc for fc in fc_list if dynamic_fc_names.Cemetery_A in fc][0]
+        delete_features_in_poly(features_in_cemetery, cemetery, val_dict['Built_min_size_bldg2'])
         # Enlarge builtup Features (Cemetery)
         enlarge_barrier_fcs = list(filter(str.strip, enlarge_barrier_fcs))
         enlarge_barrier_fcs = [fc for a_lyr in enlarge_barrier_fcs for fc in fc_list if str(a_lyr) in fc]
-        enlarge_polygon_barrier(cemetery, None, None, enlarge_min_size, enlarge_val, enlarge_barrier_fcs, working_gdb)
+        enlarge_polygon_barrier(cemetery, None, None, val_dict['Built_enlarge_min_size'], val_dict['Built_enlarge_val'], enlarge_barrier_fcs, working_gdb)
 
         #Enlarge cemetery features to road and river
-        road = [fc for fc in fc_list if 'TA0060_Road_L' in fc][0]
-        river = [fc for fc in fc_list if 'HH0041_River_Bank_L' in fc][0]
+        road = [fc for fc in fc_list if dynamic_fc_names.Road_L in fc][0]
+        river = [fc for fc in fc_list if dynamic_fc_names.River_Bank_L in fc][0]
 
         extend_cemetery_with_road_river(cemetery, road, working_gdb)
         extend_cemetery_with_road_river(cemetery, river, working_gdb)
 
         # Delete small buildings
-        delete_small_building(fc_list, delete_small_bldgs, del_min_area)
+        delete_small_building(fc_list, delete_small_bldgs, val_dict['Built_del_min_area'])
         # Enlarge small buildings
         enlarge_building_features = list(filter(str.strip, enlarge_building_features))
         enlarge_building_features = [fc for a_lyr in enlarge_building_features for fc in fc_list if str(a_lyr) in fc]
@@ -1210,21 +1217,22 @@ def gen_buildup(fc_list, small_bldg_2_point_a, small_bldg_2_point_p, min_size_bl
         # Simplify buildings
         for polygon_fc in enlarge_building_features:
             if has_features(polygon_fc):
-                simplify_buildings(polygon_fc, simpl_bldg_distance, working_gdb)
+                simplify_buildings(polygon_fc, val_dict['Built_simpl_bldg_distance'], working_gdb)
         # Delineaate town built-Up Areas
-        delineate_built_up_area(fc_list, in_buildings_list, edge_features_list, grouping_distance, minimum_detail_size, minimum_building_count, working_gdb, delineate_ref_scale)
+        delineate_built_up_area(fc_list, in_buildings_list, edge_features_list, val_dict['Built_delineate_grp_dist'], 
+                                val_dict['Built_delineate_min_detail_size'], val_dict['Built_delineate_min_bldg_count'], working_gdb, val_dict['Built_delineate_ref_scale'])
         # Generalised Buildings
         generalised_buildings(fc_list)
         # Delete small features (Swimming)
-        recreation = [fc for fc in fc_list if 'BG0040_Swimming_Pool_A' in fc][0] ## edited
+        recreation = [fc for fc in fc_list if dynamic_fc_names.Swimming_Pool_A in fc][0] ## edited
         delete_small_features = list(filter(str.strip, delete_small_features))
         delete_small_features = [fc for a_lyr in delete_small_features for fc in fc_list if str(a_lyr) in fc]
-        remove_by_converting(recreation, delete_small_features, del_small_recreation_fc_min_size, None, working_gdb)
+        remove_by_converting(recreation, delete_small_features, val_dict['Built_del_small_recreation_min_size'], None, working_gdb)
         # Erase vagetaton
-        erase_polygons_by_replace(cemetery, delete_small_features, erase_sql, working_gdb)
-        pond = [fc for fc in fc_list if 'HH0210_Pond_A' in fc][0]
-        fence = [fc for fc in fc_list if 'BJ0400_Fence_L' in fc][0]
-        lake = [fc for fc in fc_list if 'HH0020_Lake_A' in fc][0]
+        erase_polygons_by_replace(cemetery, delete_small_features, val_dict['Built_erase_sql'], working_gdb)
+        pond = [fc for fc in fc_list if dynamic_fc_names.Pond_A in fc][0]
+        fence = [fc for fc in fc_list if dynamic_fc_names.Fence_L in fc][0]
+        lake = [fc for fc in fc_list if dynamic_fc_names.Lake_A in fc][0]
         
         # Resolve fence for pond, lake and swimming pool
         resolve_fence(pond, fence, working_gdb)
@@ -1232,36 +1240,38 @@ def gen_buildup(fc_list, small_bldg_2_point_a, small_bldg_2_point_p, min_size_bl
         resolve_fence(recreation, fence, working_gdb)
 
         # Fix Conflict Between Fence and Road / Track
-        road_fc = [fc for fc in fc_list if 'TA0060_Road_L' in fc][0]
-        track_fc = [fc for fc in fc_list if 'TA0110_Track_L' in fc][0]
+        road_fc = [fc for fc in fc_list if dynamic_fc_names.Road_L in fc][0]
+        track_fc = [fc for fc in fc_list if dynamic_fc_names.Track_L in fc][0]
         # # Fence Feature Class
-        fence_fc = [fc for fc in fc_list if 'BJ0400_Fence_L' in fc][0]
+        fence_fc = [fc for fc in fc_list if dynamic_fc_names.Fence_L in fc][0]
         # # Wall Feature Class
-        wall_fc = [fc for fc in fc_list if 'BJ0390_Wall_L' in fc][0]
+        wall_fc = [fc for fc in fc_list if dynamic_fc_names.Wall_L in fc][0]
 
         fence_road_distance_rules={1: 77.8, 2: 67.8, 3: 77.8, 4: 67.8, 5: 62.8, 6: 65.3}
         fence_track_distance_rules={1: 36.3, 2: 31.3}
-        fix_wall_fence_conflict_with_road(road_fc, track_fc, fence_fc, fence_road_distance_rules, fence_track_distance_rules, working_gdb, logger, 'RCS', 'TCS')
+        fix_wall_fence_conflict_with_road(road_fc, track_fc, fence_fc, fence_road_distance_rules, fence_track_distance_rules, working_gdb, logger,  
+                                          val_dict['Built_fix_wall_fence_road_class_field'], val_dict['Built_fix_wall_fence_track_class_field'])
 
         wall_road_distance_rules={1: 82.8, 2: 72.8, 3: 82.8, 4: 72.8, 5: 67.8, 6: 70.3}
         wall_track_distance_rules={1: 41.3, 2: 36.3}
-        fix_wall_fence_conflict_with_road(road_fc, track_fc, wall_fc, wall_road_distance_rules, wall_track_distance_rules, working_gdb, logger, 'RCS', 'TCS')
+        fix_wall_fence_conflict_with_road(road_fc, track_fc, wall_fc, wall_road_distance_rules, wall_track_distance_rules, working_gdb, logger, 
+                                          val_dict['Built_fix_wall_fence_road_class_field'], val_dict['Built_fix_wall_fence_track_class_field'])
         # # Merge Buildings that are too close between Buildings and Street
-        merge_buildings_too_closed_between_building_and_street("TA0060_Road_L", "BA0010_Residential_Building_A", fc_list, working_gdb, logger)
+        merge_buildings_too_closed_between_building_and_street(dynamic_fc_names.Road_L, dynamic_fc_names.Residential_Building_A, fc_list, working_gdb, logger)
         # # Align State Boundary in Reference to River Bank Line 
-        align_feature_with_reference_fc("DA0040_State_Coverage_L", "HH0041_River_Bank_L", fc_list, working_gdb, logger)
+        align_feature_with_reference_fc(dynamic_fc_names.State_Coverage_L, dynamic_fc_names.River_Bank_L, fc_list, working_gdb, logger)
         # Move Buildings in accordance with Historical Sites
         move_feature_1_around_feature_2_to_specific_distance(fc_list, 
-                                                             ["BJ0380_Historical_Site_A"], 
-                                                             ["BA0010_Residential_Building_A", "BA0010_Residential_Building_P"], 
-                                                             working_gdb, logger, min_distance = "12.5")
-        residential_building_polygon = [fc for fc in fc_list if 'BA0010_Residential_Building_A' in fc][0]
+                                                             [dynamic_fc_names.Historical_Site_A], 
+                                                             [dynamic_fc_names.Residential_Building_A, dynamic_fc_names.Residential_Building_P], 
+                                                             working_gdb, logger, min_distance = val_dict['Built_move_feature_around_feature_minimum_distance'])
+        residential_building_polygon = [fc for fc in fc_list if dynamic_fc_names.Residential_Building_A in fc][0]
         residential_building_side_tolerance = 35
         
         if has_features(residential_building_polygon):
             main_enlarge_building_polygon_side(residential_building_polygon, residential_building_side_tolerance, working_gdb)
         # # Terrace Buildings to Build-up Area
-        terrace_buildings_to_builtup_area(fc_list, 'BA0010_Residential_Building_A', 'TA0060_Road_L', 'BJ0073_Town_Built_up_A', working_gdb)
+        terrace_buildings_to_builtup_area(fc_list, dynamic_fc_names.Residential_Building_A, dynamic_fc_names.Road_L, dynamic_fc_names.Town_Built_up_A, working_gdb)
 
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()

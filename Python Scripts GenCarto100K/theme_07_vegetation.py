@@ -36,8 +36,9 @@ def transfer_features_with_dict(fc_list, veg_transfer_veg_features):
             # decide whether to continue or raise; continuing is often nicer in batch runs
             continue
     return None
-
-def gen_vegetation(fc_list, vegetation_min_area, vegetation_eliminate_area, veg_lyrs_list, veg_transfer_veg_features, veg_field_values, working_gdb, logger):
+# Before 05th March 2026
+# def gen_vegetation(fc_list, vegetation_min_area, vegetation_eliminate_area, veg_lyrs_list, veg_transfer_veg_features, veg_field_values, working_gdb, logger):
+def gen_vegetation(fc_list, val_dict, veg_lyrs_list, veg_transfer_veg_features, veg_field_values, working_gdb, logger):
     arcpy.AddMessage('Starting vegetation features generalization.....')
     arcpy.env.overwriteOutput = True
     try:
@@ -71,7 +72,7 @@ def gen_vegetation(fc_list, vegetation_min_area, vegetation_eliminate_area, veg_
         fields_to_add = []
         existing_field_names = set()
 
-        reserved_fields = {"OID", "Geometry", "SHAPE_Length", "SHAPE_Area"}
+        reserved_fields = {val_dict['Reserve_Field1'], val_dict['Reserve_Field2'], val_dict['Reserve_Field3'], val_dict['Reserve_Field4']}
 
         # Loop through all input feature classes
         for fc in input_fcs:
@@ -105,10 +106,10 @@ def gen_vegetation(fc_list, vegetation_min_area, vegetation_eliminate_area, veg_
         arcpy.AddMessage("All unique fields have been added to the feature class.")
         merged_fcs = arcpy.management.Append(input_fcs, created_fcs, 'NO_TEST')
         merge_feature_layer = arcpy.management.MakeFeatureLayer(merged_fcs, "merged_layer")
-        layer_selection_clause = f"SHAPE_Area < {vegetation_min_area}"
+        layer_selection_clause = f"SHAPE_Area < {val_dict['Veg_minimum_area']}"
         selected_layer = arcpy.management.SelectLayerByAttribute(merge_feature_layer, "NEW_SELECTION", layer_selection_clause)
         eliminate_layer = arcpy.management.Eliminate(selected_layer, "V_Merge_Eliminate", "LENGTH")
-        eliminate_part_feature = arcpy.management.EliminatePolygonPart(eliminate_layer, "V_Merge_Eliminate_Part", "AREA", f"{vegetation_eliminate_area}" , None, "CONTAINED_ONLY")
+        eliminate_part_feature = arcpy.management.EliminatePolygonPart(eliminate_layer, "V_Merge_Eliminate_Part", "AREA", f"{val_dict['Veg_eliminate_area']}" , None, "CONTAINED_ONLY")
         # dissolving the eliminate_part_feature 
         dissolve_feature = arcpy.management.Dissolve(eliminate_part_feature, "VegDissolve", ["trace_fld"])
         arcpy.AddMessage(f"Completed dissolve after elimination.")
@@ -135,13 +136,13 @@ def gen_vegetation(fc_list, vegetation_min_area, vegetation_eliminate_area, veg_
                 arcpy.management.CalculateField(in_table=fc, field='Feature_Code', expression=f"'{field_val}'",expression_type="PYTHON3")
 
         # Erase vegetation overlap
-        enlarge_fcs_1 = [fc for a_lyr in ['VC1110_Grass_A', 'VC1100_Riung_A', 'VC1090_Scrub_Shrub_A'] for fc in fc_list if str(a_lyr) in fc]
-        erase_fcs_1 = [fc for a_lyr in ['VA1030_Coconut_A', 'VA1060_Oil_Palm_A', 'VA9010_Sundry_Tree_A',
-                                        'VA9020_Sundry_Non_Tree_A', 'VA2060_Paddy_A', 'VB3020_Rubber_Trees_A', 
-                                        'VB0000_Forest_A'] for fc in fc_list if str(a_lyr) in fc]
-        enlarge_fcs_2 = [fc for a_lyr in ['VA1030_Coconut_A', 'VA1060_Oil_Palm_A', 'VA9010_Sundry_Tree_A',
-                                          'VA9020_Sundry_Non_Tree_A', 'VA2060_Paddy_A'] for fc in fc_list if str(a_lyr) in fc]
-        erase_fcs_2 = [fc for a_lyr in ['VB3020_Rubber_Trees_A', 'VB0000_Forest_A'] for fc in fc_list if str(a_lyr) in fc]
+        enlarge_fcs_1 = [fc for a_lyr in [resolve_lyr().Grass_A, resolve_lyr().Riung_A, resolve_lyr().Scrub_Shrub_A] for fc in fc_list if str(a_lyr) in fc]
+        erase_fcs_1 = [fc for a_lyr in [resolve_lyr().Coconut_A, resolve_lyr().Oil_Palm_A, resolve_lyr().Sundry_Tree_A,
+                                        resolve_lyr().Sundry_Non_Tree_A, resolve_lyr().Paddy_A, resolve_lyr().Rubber_Trees_A, 
+                                        resolve_lyr().Forest_A] for fc in fc_list if str(a_lyr) in fc]
+        enlarge_fcs_2 = [fc for a_lyr in [resolve_lyr().Coconut_A, resolve_lyr().Oil_Palm_A, resolve_lyr().Sundry_Tree_A,
+                                          resolve_lyr().Sundry_Non_Tree_A, resolve_lyr().Paddy_A] for fc in fc_list if str(a_lyr) in fc]
+        erase_fcs_2 = [fc for a_lyr in [resolve_lyr().Rubber_Trees_A, resolve_lyr().Forest_A] for fc in fc_list if str(a_lyr) in fc]
 
         for fc in enlarge_fcs_1:
             erase_polygons_by_replace(fc, erase_fcs_1, None, working_gdb)

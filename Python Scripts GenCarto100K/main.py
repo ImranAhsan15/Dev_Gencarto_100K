@@ -52,6 +52,8 @@ if(DEV_MODE):
     importlib.reload(theme_11_load_data)
     importlib.reload(LG)
 
+
+
 def main():
     try:
         # Calling logger
@@ -271,7 +273,6 @@ def main():
             remove_backlane_length = val_dict['Transport_remove_backlane_length']
             remove_backlane_tolerance = val_dict['Transport_remove_backlane_distance']
 
-        
             # Built up config value
             min_size_bldg1 = val_dict['Built_min_size_bldg1']
             sql_bldg = val_dict['Built_sql_bldg']
@@ -308,6 +309,8 @@ def main():
             utility_create_one_point = val_dict['Utility_create_one_point_each_unique_value']
             utility_update_val = val_dict['Utility_update_val']
             utility_unique_field = val_dict['Utility_unique_field']
+            utility_powerline_val = val_dict['Utility_powerline_val']
+            utility_aggregate_val = val_dict['Utility_aggregate_val']
             
             # Hypsography config value
             hypso_dissolved_field = val_dict['Hypso_dissolved_field']
@@ -447,13 +450,7 @@ def main():
             os.makedirs(backup_path_ext, exist_ok=True)
             backup_path_edit_ext = os.path.join(log_dir, "Backup", "00-AFTExt", "Edit")
             os.makedirs(backup_path_edit_ext, exist_ok=True)
-
-            backup_gdb_loc = os.path.join(backup_path_ext, os.path.basename(in_feature_loc))
-            if not os.path.exists(backup_gdb_loc) and os.path.isdir(in_feature_loc):
-                os.makedirs(backup_gdb_loc)         
-            common_utils.backup_data(in_feature_loc, backup_gdb_loc, logger)
-
-
+            # common_utils.backup_data(in_feature_loc, backup_path_ext, logger)
             # Get feature classes
             fc_list = sorted(common_utils.get_fcs(in_feature_loc, dataset_name, logger))
 
@@ -462,10 +459,10 @@ def main():
 
             ## Import the Map file
             imported_map = common_utils.import_mapx(map_name_data_preparation, logger, map_name_data_preparation)
-
-            ## Data cleaning
-            theme_01_data_prep.data_cleaning_all_funcs(aoi, fc_list, in_feature_loc, working_gdb, buffer_distance, vertex_limit, buffer_distance_point, feature_count, not_include_fields, 
-                            fcs_trim_extend, extend_val, trim_val, buffer_points_25K, feature_to_split, bau_field_fc, trans_build_up_buildings, seg_length, logger)
+            
+            # # Data Cleaning - AFter 04th March
+            theme_01_data_prep.data_cleaning_all_funcs(aoi, fc_list, in_feature_loc, working_gdb, val_dict, not_include_fields, 
+                            fcs_trim_extend, buffer_points_25K, feature_to_split, bau_field_fc, trans_build_up_buildings, seg_length, logger)
             logger.info(f'Data Prep Theme ran successfully. Starting Backup.....')
             
             # Backup features data
@@ -495,10 +492,8 @@ def main():
             # Get changed road type
             change_road_type = trans_changed_road_type.split(",")
             # Transportation Feature to point
-            theme_02_transportation.gen_transportation(fc_list, working_gdb, hierarchy_file, in_feature_loc, hierarchy_field, collapse_sql, collapse_size, carto_partition, seg_length, group_sql_rd1, group_sql_rd2,
-                       minimum_length_min, minimum_length_max, visible_field, ref_scale, generalize_operations, simple_tolerance, smooth_tolerance, trans_common_express, min_size, trans_delete_input,
-                       trans_create_one_point, trans_unique_field, group_sql_track, minimum_length, minimum_width, additional_criteria_trans, railway_sql, merge_field,
-                       merge_distance, trans_update_val, change_road_type, trans_build_up_buildings, trans_topology_features,remove_backlane_tolerance,remove_backlane_length,logger)
+            theme_02_transportation.gen_transportation(fc_list, working_gdb, hierarchy_file, in_feature_loc, collapse_sql, carto_partition, generalize_operations, railway_sql, 
+                                                       change_road_type, trans_build_up_buildings, trans_topology_features, val_dict, logger)
             logger.info(f'Transportation Theme ran successfully. Starting Backup.....')
             # Backup features data
             backup_path = os.path.join(log_dir, "Backup", "02-AFTTrans", "Auto")
@@ -522,14 +517,10 @@ def main():
             # Get Generalize operation
             generalize_operations = hydro_generalized_operation.split(" ")
             # Hydrography Feature Generalisation
-            theme_03_hydrography.gen_hydrography(fc_list, hydro_prep_fc_list, name_fld, remove_short_line_line_length, working_gdb, hydro_input_polygon_fc, hydro_center_line_fc, hydro_np_polygon_width, 
-                            hydro_np_polygon_percentage, visible_field, hydro_replace_fc, generalize_operations, hydro_simple_tolerance, hydro_smooth_tolerance, hydro_trim_update_val, in_feature_loc, hydro_remove_small_poly_exp,
-                            hydro_remove_small_poly_mim_area, hydro_enlarge_poly_mim_size, hydro_enlarge_poly_buffer_dist, hydro_remove_near_poly_list, hydro_remove_near_poly_delete_size, 
-                            hydro_remove_near_poly_min_size, hydro_remove_near_poly_dist, hydro_remove_near_poly_sql, hydro_enlarge_poly_sql, hydro_enlarge_untouch_poly_buffer_dist, 
-                            hydro_enlarge_poly_list, hydro_trim_between_polygon_min_area, hydro_trim_between_polygon_distance, hydro_remove_small_poly_list, hydro_remove_small_sql, 
-                            hydro_remove_small_min_size, hydro_erase_poly_list, hydro_erase_poly_max_gap_area, hydro_convert_ungr_river_min_length, increase_hydro_line_min_length, 
-                            remove_close_parallel_per_min, remove_close_parallel_per_max, remove_close_dist, remove_close_tolerance, hydro_line_dangle_min_length, hydro_small_line_fc_list, hydro_small_point_fc_list, 
-                            hydro_small_fc_min_length, hydro_delete_input, hydro_create_one_point, hydro_unique_field, hydro_delete_small_pools, hydro_delete_small_pool_min_area, hydro_replace_poly_with_line_smooth_tolerance, logger)
+            theme_03_hydrography.gen_hydrography(fc_list, hydro_prep_fc_list, working_gdb, hydro_input_polygon_fc, hydro_center_line_fc, 
+                            hydro_replace_fc, generalize_operations, in_feature_loc, hydro_remove_near_poly_list, 
+                            hydro_enlarge_poly_list, hydro_remove_small_poly_list,  hydro_erase_poly_list,  hydro_small_line_fc_list, hydro_small_point_fc_list, 
+                            hydro_delete_small_pools, val_dict, logger)
             logger.info(f'Hydrography Theme ran successfully. Starting Backup.....')
             # # # Backup features data
             backup_path = os.path.join(log_dir, "Backup", "03-AFTHydro", "Auto")
@@ -551,11 +542,8 @@ def main():
             # Get feature classes
             fc_list = sorted(common_utils.get_fcs(in_feature_loc, dataset_name, logger))
             # Built-Up Feature Generalisation
-            theme_04_buildup.gen_buildup(fc_list, small_bldg_2_point_a, small_bldg_2_point_p, min_size_bldg1, sql_bldg, build_delete_input, build_create_one_point, build_unique_field, 
-                        working_gdb, min_size_bldg2, features_in_cemetery, enlarge_min_size, enlarge_val, enlarge_barrier_features, delete_small_bldgs, del_min_area, 
-                        enlarge_building_features, enlarge_bldg_min_width, enlarge_bldg_min_length, enlarge_bldg_additional_criteria, simpl_bldg_distance, delineate_building_layers, 
-                        delineate_edge_features, delineate_grp_dist, delineate_min_detail_size, delineate_min_bldg_count, in_feature_loc, delineate_ref_scale, del_small_recreation_fc_min_size, 
-                        delete_small_features, erase_sql, simplification_tolerance, logger)
+            theme_04_buildup.gen_buildup(fc_list, small_bldg_2_point_a, small_bldg_2_point_p, working_gdb,  features_in_cemetery, enlarge_barrier_features, delete_small_bldgs,  
+                        enlarge_building_features, delineate_building_layers, delineate_edge_features, in_feature_loc, delete_small_features, val_dict, logger)
             logger.info(f'Built-up Theme ran successfully. Starting Backup.....')
             # Backup features data
             backup_path = os.path.join(log_dir, "Backup", "04-AFTBuiltUp", "Auto")
@@ -577,10 +565,13 @@ def main():
             imported_map = common_utils.import_mapx(map_name_utility, logger, map_name_utility)
             # Get feature classes
             fc_list = sorted(common_utils.get_fcs(in_feature_loc, dataset_name, logger))
-            # Utility Feature Generalisation  
-            theme_05_utility.gen_utility(fc_list, utility_area_features, utility_point_features, utility_compare_features, utility_min_size_sewerage, utility_min_size_building, utility_min_size, utility_beffer_dist, 
-                        utility_dist, utility_dist_shorter, utility_addi_criteria_sewerage, utility_addi_criteria, utility_merge_field, working_gdb, utility_unique_field, utility_update_val,
-                        utility_delete_input, utility_create_one_point, utility_merge_clusters, logger)
+            # # Utility Feature Generalisation
+            # # Before 05th March 2026  
+            # theme_05_utility.gen_utility(fc_list, utility_area_features, utility_point_features, utility_compare_features, utility_min_size_sewerage, utility_min_size_building, utility_min_size, utility_beffer_dist, 
+            #             utility_dist, utility_dist_shorter, utility_addi_criteria_sewerage, utility_addi_criteria, utility_merge_field, working_gdb, utility_unique_field, utility_update_val,
+            #             utility_delete_input, utility_create_one_point, utility_merge_clusters, logger)
+            # # After 05th March 2026
+            theme_05_utility.gen_utility(fc_list, utility_area_features, utility_point_features, utility_compare_features, val_dict, utility_merge_clusters, working_gdb, logger)
             logger.info(f'Utilities Theme ran successfully. Starting Backup.....')
             # Backup features data
             backup_path = os.path.join(log_dir, "Backup", "05-AFTUtil", "Auto")
@@ -603,8 +594,11 @@ def main():
             # Get feature classes
             fc_list = sorted(common_utils.get_fcs(in_feature_loc, dataset_name, logger))
             # Hypsography Feature Generalisation 
-            theme_06_hypsography.gen_hypsography(fc_list, hypso_compare_features, hypso_dissolved_field, hypso_dist, hypso_parallel_per, hypso_min_length, hypso_smoothing_tolerance, hypso_increase_factor, hypso_size_max, 
-                            hypso_size_min, working_gdb, logger)
+            # # Before 05th March 2026
+            # theme_06_hypsography.gen_hypsography(fc_list, hypso_compare_features, hypso_dissolved_field, hypso_dist, hypso_parallel_per, hypso_min_length, hypso_smoothing_tolerance, hypso_increase_factor, hypso_size_max, 
+            #                 hypso_size_min, working_gdb, logger)
+            # # After 05th March 2026
+            theme_06_hypsography.gen_hypsography(fc_list, hypso_compare_features, val_dict, working_gdb, logger)
             logger.info(f'Hypsography Theme ran successfully. Starting Backup.....')
             # Backup features data
             backup_path = os.path.join(log_dir, "Backup", "06-AFTHypso", "Auto")
@@ -626,8 +620,12 @@ def main():
             imported_map = common_utils.import_mapx(map_name_vegetation, logger, map_name_vegetation)
             # Get feature classes
             fc_list = sorted(common_utils.get_fcs(in_feature_loc, dataset_name, logger))
-            # # Vegetation Feature Generalisation  
-            theme_07_vegetation.gen_vegetation(fc_list, vegetation_min_area, vegetation_eliminate_area, veg_lyrs_list, veg_transfer_veg_features, veg_field_values, working_gdb, logger)
+            # # Vegetation Feature Generalisation
+            # # Before 05th March 2026  
+            # theme_07_vegetation.gen_vegetation(fc_list, vegetation_min_area, vegetation_eliminate_area, veg_lyrs_list, veg_transfer_veg_features, veg_field_values, working_gdb, logger)
+            # # After 05th March 2026
+            theme_07_vegetation.gen_vegetation(fc_list, val_dict, veg_lyrs_list, veg_transfer_veg_features, veg_field_values, working_gdb, logger)
+            
             logger.info(f'Vegetation Theme ran successfully. Starting Backup.....')
             # # Closing All Map Views
             common_utils.close_active_map_views(logger)
@@ -665,49 +663,49 @@ def main():
             # LG.clear_map_contents(map_name1)
             create_vegetation_symbol_detail = [
                 {
-                    "name": "VA1060_Oil_Palm_A",
+                    "name": common_utils.resolve_lyr().Oil_Palm_A,
                     "x_anchor": X_anchor_offset_VA1060_Oil_Palm_A,
                     "y_anchor": Y_anchor_offset_VA1060_Oil_Palm_A,
                     "marker_width": marker_width_VA1060_Oil_Palm_A,
                     "marker_height": marker_height_VA1060_Oil_Palm_A
                 }, 
                 {
-                    "name": "VA1030_Coconut_A",
+                    "name": common_utils.resolve_lyr().Coconut_A,
                     "x_anchor": X_anchor_offset_VA1030_Coconut_A,
                     "y_anchor": Y_anchor_offset_VA1030_Coconut_A,
                     "marker_width": marker_width_VA1030_Coconut_A,
                     "marker_height": marker_height_VA1030_Coconut_A
                 },
                 {
-                    "name": "HF0070_Rocks_A",
+                    "name": common_utils.resolve_lyr().Rocks_A,
                     "x_anchor": X_anchor_offset_HF0070_Rocks_A,
                     "y_anchor": Y_anchor_offset_HF0070_Rocks_A,
                     "marker_width": marker_width_HF0070_Rocks_A,
                     "marker_height": marker_height_HF0070_Rocks_A
                 },
                 {
-                    "name": "GF4100_Rock_Outcrop_A",
+                    "name": common_utils.resolve_lyr().Rock_Outcrop_A,
                     "x_anchor": X_anchor_offset_GF4100_Rock_Outcrop_A,
                     "y_anchor": Y_anchor_offset_GF4100_Rock_Outcrop_A,
                     "marker_width": marker_width_GF4100_Rock_Outcrop_A,
                     "marker_height": marker_height_GF4100_Rock_Outcrop_A
                 },
                 {
-                    "name": "GF4200_Rock_Boulders_A",
+                    "name": common_utils.resolve_lyr().Rock_Boulders_A,
                     "x_anchor": X_anchor_offset_GF4200_Rock_Boulders_A,
                     "y_anchor": Y_anchor_offset_GF4200_Rock_Boulders_A,
                     "marker_width": marker_width_GF4200_Rock_Boulders_A,
                     "marker_height": marker_width_GF4200_Rock_Boulders_A
                 },
                 {
-                    "name": "GD3100_Quarry_Pit_A",
+                    "name": common_utils.resolve_lyr().Quarry_Pit_A,
                     "x_anchor": X_anchor_offset_GD3100_Quarry_Pit_A,
                     "y_anchor": Y_anchor_offset_GD3100_Quarry_Pit_A,
                     "marker_width": marker_width_GD3100_Quarry_Pit_A,
                     "marker_height": marker_height_GD3100_Quarry_Pit_A
                 },
                 {
-                    "name": "VB3020_Rubber_Trees_A",
+                    "name": common_utils.resolve_lyr().Rubber_Trees_A,
                     "x_anchor": X_anchor_offset_VB3020_Rubber_Trees_A,
                     "y_anchor": Y_anchor_offset_VB3020_Rubber_Trees_A,
                     "marker_width": marker_width_VB3020_Rubber_Trees_A,
@@ -715,13 +713,17 @@ def main():
                 }
             ]
             # Apply Carto Symbology
-            theme_08_apply_carto_symbology.apply_carto_symbology(fc_list, attribution_fc_list, express_list, query_list, field_list, intersecting_fc_list, working_gdb, query_acs, visible_field, 
-                    distance_acs, mx_no_close_fcs_l, mx_no_close_fcs_m, mx_no_close_fcs_u, in_feature_loc, feature_count_acs, vst_workspace, specification, hierarchy_file, hierarchy_field, 
-                    prep_line_resolve_fcs_list, carto_partition, symbology_file_path, imported_map.name, apply_symbology_layers_list, create_vegetation_symbol_detail, apply_carto_map_scale, apply_carto_map_unit, logger)
-            # Layer grouping and reordering
-            # sheet_name = "group_layer_mapping"
-            # LG.layer_grouping(map_name1, excel_file, sheet_name, logger)
-            # LG.reorder_group_layers(map_name1, excel_file, sheet_name, logger)
+            # # Before 05th March 2026
+            # theme_08_apply_carto_symbology.apply_carto_symbology(fc_list, attribution_fc_list, express_list, query_list, field_list, intersecting_fc_list, working_gdb, query_acs, visible_field, 
+            #         distance_acs, mx_no_close_fcs_l, mx_no_close_fcs_m, mx_no_close_fcs_u, in_feature_loc, feature_count_acs, vst_workspace, specification, hierarchy_file, hierarchy_field, 
+            #         prep_line_resolve_fcs_list, carto_partition, symbology_file_path, imported_map.name, apply_symbology_layers_list, create_vegetation_symbol_detail, apply_carto_map_scale, apply_carto_map_unit, logger)
+            # # After 05th March 2026
+            theme_08_apply_carto_symbology.apply_carto_symbology(fc_list, attribution_fc_list, express_list, query_list, field_list, intersecting_fc_list, working_gdb, 
+                    in_feature_loc, vst_workspace, hierarchy_file, prep_line_resolve_fcs_list, carto_partition, symbology_file_path, imported_map.name, apply_symbology_layers_list, create_vegetation_symbol_detail, val_dict,logger)
+            # # Layer grouping and reordering
+            # # sheet_name = "group_layer_mapping"
+            # # LG.layer_grouping(map_name1, excel_file, sheet_name, logger)
+            # # LG.reorder_group_layers(map_name1, excel_file, sheet_name, logger)
             logger.info(f'Apply Carto Symbology Theme ran successfully. Starting Backup.....')
             # Closing All Map Views
             common_utils.close_active_map_views(logger)
@@ -759,10 +761,14 @@ def main():
             # LG.clear_map_contents(map_name1)
             # Get CartoPartition from input workspace
             carto_partition = f'{in_feature_loc}\\CartoPartitionA'
-            theme_09a_resolve_conflict_lines.resolve_conflict_lines(fc_list, in_feature_loc, input_line_layers, ln_lyr_ex, symbology_file_path, ref_scale, hierarchy_field, working_gdb, res_con_line_delete, carto_partition,
-                        edge_features, river_ex, road_query_rlc, name_fld, distance_b, distance_s, min_area, additional_criteria, visible_field, distance_rcl, min_length, res_con_line_erase_input_fcs,
-                        embank_list, compare_fcs_embank, orient_fld, offset_dist_l, offset_dist_u, offset_dist_benc_l, offset_dist_benc_u, perpendicular_k, perpendicular_b, bench_query,
-                        bridge_query, footprint_fcs, resolve_line_compare, road_query, log_dir, imported_map.name, logger)
+            # # Before 05th March 2026
+            # theme_09a_resolve_conflict_lines.resolve_conflict_lines(fc_list, in_feature_loc, input_line_layers, ln_lyr_ex, symbology_file_path, ref_scale, hierarchy_field, working_gdb, res_con_line_delete, carto_partition,
+            #             edge_features, river_ex, road_query_rlc, name_fld, distance_b, distance_s, min_area, additional_criteria, visible_field, distance_rcl, min_length, res_con_line_erase_input_fcs,
+            #             embank_list, compare_fcs_embank, orient_fld, offset_dist_l, offset_dist_u, offset_dist_benc_l, offset_dist_benc_u, perpendicular_k, perpendicular_b, bench_query,
+            #             bridge_query, footprint_fcs, resolve_line_compare, road_query, log_dir, imported_map.name, logger)
+            # # After 05th March 2026
+            theme_09a_resolve_conflict_lines.resolve_conflict_lines(fc_list, in_feature_loc, input_line_layers, symbology_file_path, working_gdb, carto_partition,
+                        edge_features, embank_list, compare_fcs_embank, bridge_query, footprint_fcs, resolve_line_compare, road_query, log_dir, imported_map.name, val_dict, logger)
             # Apply symbology for all layers in the map
             # theme_08_apply_carto_symbology.calc_vst_on_workspace(fc_list, symbology_file_path, apply_symbology_layers_list, map_name1, in_feature_loc)
             # Layer grouping and reordering
@@ -802,10 +808,14 @@ def main():
             # # map_name1 = common_utils.create_map_add_layers(map_name_resolve_polygons)
             # # Clear map contents
             # # LG.clear_map_contents(map_name1)
-            theme_09b_resolve_conflict_polygons.resolve_conflict_polygons(fc_list, build_up_area_fcs, express_val_mx, express_val_mn, visible_field, search_distance, query, input_building_layers, input_barrier_layers, bb_lyr_ex, 
-                            bb_lyr_ex_his, hierarchy_field, visible_field, symbology_file_path, ref_scale, minimum_size, bld_gap, ap_src_dis_mn, ap_src_dis_mx, orient_dir, g1_align_features, 
-                            g4_align_features, g5_input_points, g5_align_features, g6_align_features, g7_input_points, g7_align_features, input_primary, input_secondary, in_prim_sql, 
-                            max_gap_area, fill_option, working_gdb, imported_map.name, orient_field, log_dir, logger)
+            # # Before 05th March 2026
+            # theme_09b_resolve_conflict_polygons.resolve_conflict_polygons(fc_list, build_up_area_fcs, express_val_mx, express_val_mn, visible_field, search_distance, query, input_building_layers, input_barrier_layers, bb_lyr_ex, 
+            #                 bb_lyr_ex_his, hierarchy_field, visible_field, symbology_file_path, ref_scale, minimum_size, bld_gap, ap_src_dis_mn, ap_src_dis_mx, orient_dir, g1_align_features, 
+            #                 g4_align_features, g5_input_points, g5_align_features, g6_align_features, g7_input_points, g7_align_features, input_primary, input_secondary, in_prim_sql, 
+            #                 max_gap_area, fill_option, working_gdb, imported_map.name, orient_field, log_dir, logger)
+            # # After 05th March 2026
+            theme_09b_resolve_conflict_polygons.resolve_conflict_polygons(fc_list, build_up_area_fcs, input_building_layers, input_barrier_layers, symbology_file_path, g1_align_features, 
+                            g4_align_features, g5_input_points, g5_align_features, g6_align_features, g7_input_points, g7_align_features, input_primary, input_secondary, working_gdb, imported_map.name, log_dir, val_dict, logger)
             # # #Apply symbology for all layers in the map
             # # # theme_08_apply_carto_symbology.calc_vst_on_workspace(fc_list, symbology_file_path, apply_symbology_layers_list, map_name1, in_feature_loc)
             # # #Layer grouping and reordering
@@ -848,41 +858,35 @@ def main():
             # Detect and write conflicts: Structure to Structure
             Structure2Structure = list(filter(str.strip, Structure2Structure))
             Structure2Structure = [fc for struct in Structure2Structure for fc in fc_list if str(struct) in fc]
-            theme_10_detect_conflict.detect_write_conflicts(in_feature_loc, Structure2Structure, dc_express, Structure2Structure, dc_distance, rev_workspace, dc_reviewer_session, dc_severity, dc_ref_scale, 
-                                carto_partition, imported_map.name, symbology_file_path, logger, working_gdb)
-            
+            theme_10_detect_conflict.detect_write_conflicts(in_feature_loc, Structure2Structure, Structure2Structure, rev_workspace, carto_partition, imported_map.name, symbology_file_path, val_dict, logger, working_gdb)
+                                    
             # Detect and write conflicts: Structure to Lines
             Structure2Lines = list(filter(str.strip, Structure2Lines))
             Structure2Lines = [fc for s2l in Structure2Lines for fc in fc_list if str(s2l) in fc]
-            theme_10_detect_conflict.detect_write_conflicts(in_feature_loc, Structure2Structure, dc_express, Structure2Lines, dc_distance, rev_workspace, dc_reviewer_session, dc_severity, dc_ref_scale, 
-                                carto_partition, imported_map.name, symbology_file_path, logger, working_gdb)
+            theme_10_detect_conflict.detect_write_conflicts(in_feature_loc, Structure2Structure, Structure2Structure, rev_workspace, carto_partition, imported_map.name, symbology_file_path, val_dict, logger, working_gdb)
             
             # Detect and write conflicts: Lines to Lines
             Lines2Lines = list(filter(str.strip, Lines2Lines))
             Lines2Lines = [fc for struct in Lines2Lines for fc in fc_list if str(struct) in fc]
-            theme_10_detect_conflict.detect_write_conflicts(in_feature_loc, Lines2Lines, dc_express, Lines2Lines, dc_distance, rev_workspace, dc_reviewer_session, dc_severity, dc_ref_scale, 
-                                carto_partition, imported_map.name, symbology_file_path, logger, working_gdb)
+            theme_10_detect_conflict.detect_write_conflicts(in_feature_loc, Lines2Lines, Lines2Lines, rev_workspace, carto_partition, imported_map.name, symbology_file_path, val_dict, logger, working_gdb)
             
             # # Detect and write conflicts: Polygon to Polygon G1
             G1_Poly2Poly = list(filter(str.strip, G1_Poly2Poly))
             G1_Poly2Poly = [fc for struct in G1_Poly2Poly for fc in fc_list if str(struct) in fc]
-            theme_10_detect_conflict.detect_write_conflicts(in_feature_loc, G1_Poly2Poly, dc_express, G1_Poly2Poly, dc_distance, rev_workspace, dc_reviewer_session, dc_severity, dc_ref_scale, 
-                                carto_partition, imported_map.name, symbology_file_path, logger, working_gdb)
+            theme_10_detect_conflict.detect_write_conflicts(in_feature_loc, G1_Poly2Poly, G1_Poly2Poly, rev_workspace, carto_partition, imported_map.name, symbology_file_path, val_dict, logger, working_gdb)
             
             # Detect and write conflicts: Polygon to Polygon G2
             G2_Poly2Poly = list(filter(str.strip, G2_Poly2Poly))
             G2_Poly2Poly = [fc for struct in G2_Poly2Poly for fc in fc_list if str(struct) in fc]
-            theme_10_detect_conflict.detect_write_conflicts(in_feature_loc, G2_Poly2Poly, dc_express, G2_Poly2Poly, dc_distance, rev_workspace, dc_reviewer_session, dc_severity, dc_ref_scale, 
-                                carto_partition, imported_map.name, symbology_file_path, logger, working_gdb)
+            theme_10_detect_conflict.detect_write_conflicts(in_feature_loc, G2_Poly2Poly, G2_Poly2Poly, rev_workspace, carto_partition, imported_map.name, symbology_file_path, val_dict, logger, working_gdb)
             
             # Detect and write conflicts: Polygon to Polygon G3
             G3_Poly2Poly = list(filter(str.strip, G3_Poly2Poly))
             G3_Poly2Poly = [fc for struct in G3_Poly2Poly for fc in fc_list if str(struct) in fc]
-            theme_10_detect_conflict.detect_write_conflicts(in_feature_loc, G3_Poly2Poly, dc_express, G3_Poly2Poly, dc_distance, rev_workspace, dc_reviewer_session, dc_severity, dc_ref_scale, 
-                                carto_partition, imported_map.name, symbology_file_path, logger, working_gdb)
+            theme_10_detect_conflict.detect_write_conflicts(in_feature_loc, G3_Poly2Poly, G3_Poly2Poly, rev_workspace, carto_partition, imported_map.name, symbology_file_path, val_dict, logger, working_gdb)
             
             # Apply Layer Definition on Building Feature Classes
-            common_utils.apply_layer_definition(df_query_input_lyr, "INVISIBILITY = 0 OR INVISIBILITY IS NULL", map_name_detect_conflict)
+            common_utils.apply_layer_definition(df_query_input_lyr, val_dict['detect_conf_layer_definition'], map_name_detect_conflict)
             # Apply symbology for all layers in the map
             # theme_08_apply_carto_symbology.calc_vst_on_workspace(fc_list, symbology_file_path, apply_symbology_layers_list, map_name1, in_feature_loc)
             # Layer grouping and reordering

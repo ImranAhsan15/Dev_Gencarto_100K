@@ -1,5 +1,6 @@
 # import required python modules
 import arcpy
+import arcgisscripting
 import traceback
 import math
 import os
@@ -1189,8 +1190,12 @@ def resolve_conflicts_points_polygon(fc_list, input_building_layers, input_barri
         #Clear selection from all layers
         for lyr in fc_layers:
             if lyr.isFeatureLayer:
-                arcpy.management.SelectLayerByAttribute(lyr, "CLEAR_SELECTION")
-        arcpy.AddMessage("Cleared selection from all layers")
+                try:
+                    arcpy.management.SelectLayerByAttribute(lyr, "CLEAR_SELECTION")
+                except arcgisscripting.ExecuteError as e:
+                    arcpy.AddMessage(f"Warning: could not clear selection from '{lyr.name}' - {e}")
+                    continue
+        arcpy.AddMessage("Cleared selection from all valid layers")
 
         # Set Environment
         arcpy.env.overwriteOutput = 1
@@ -1455,26 +1460,6 @@ def erase_features(input_primary, input_secondary, working_gdb, max_gap_area, fi
         error_message = f"Erase features error: {e}\nTraceback details:\n{tb}"
         arcpy.AddMessage(error_message)
 
-def fix_veg_after_resolve_conflict(fc_list, input_primary, input_secondary, in_prim_sql, max_gap_area, fill_option, invisibility_field, working_gdb):
-    try:
-        # Get feature classes
-        input_primary = list(filter(str.strip, input_primary))
-        input_primary = [fc for in_prim in input_primary for fc in fc_list if str(in_prim) in fc]
-        input_secondary = list(filter(str.strip, input_secondary))
-        input_secondary = [fc for in_second in input_secondary for fc in fc_list if str(in_second) in fc]
-        river_coverage_A = [fc for fc in fc_list if 'HH0042_River_Coverage_A' in fc][0]
-
-        # Convert polygons
-        for in_p in input_primary:
-            convert_polygon(in_p, input_secondary, max_gap_area, in_prim_sql, working_gdb)
-        # Erase features and Fill gaps
-        input_primary.append(river_coverage_A)
-        erase_features(input_primary, input_secondary, working_gdb, max_gap_area, fill_option, invisibility_field)
-
-    except Exception as e:
-        tb = traceback.format_exc()
-        error_message = f"Fix vegetation after resolving conflicts error: {e}\nTraceback details:\n{tb}"
-        arcpy.AddMessage(error_message)
 
 def determine(input_lines, input_polygon, out_table, line_field, poly_field, working_gdb):
     try:
@@ -3703,7 +3688,7 @@ def init_layer_name_resolver(excel_path: str) -> None:
     v = Validator(excel_file=excel_path)  # adjust if your ctor differs
     _LAYER_NAMES = v.get_layer_names("common_layer_names")
 
-def resolve_layer_name() -> LayerNames:
+def resolve_lyr() -> LayerNames:
     """Zero-arg accessor usable anywhere after initialization."""
     if _LAYER_NAMES is None:
         raise RuntimeError(

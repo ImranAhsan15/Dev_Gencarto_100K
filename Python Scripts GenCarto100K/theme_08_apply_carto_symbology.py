@@ -198,8 +198,8 @@ def embankment_cutting(fc_list, intersecting_fc_list, working_gdb):
     try:
         intersecting_fc_list = list(filter(str.strip, intersecting_fc_list))
         intersecting_fc_list = [fc for intersect_fc in intersecting_fc_list for fc in fc_list if str(intersect_fc) in fc]
-        cutting = [fc for fc in fc_list if 'RA0070_Cutting_L' in fc][0]
-        embankment = [fc for fc in fc_list if 'RA0080_Embankment_L' in fc][0]
+        cutting = [fc for fc in fc_list if resolve_lyr().Cutting_L in fc][0]
+        embankment = [fc for fc in fc_list if resolve_lyr().Embankment_L in fc][0]
         split_at_intersection(cutting, intersecting_fc_list, working_gdb)
         split_at_intersection(embankment, intersecting_fc_list, working_gdb)
 
@@ -213,11 +213,11 @@ def prep_4_line_resolve(fc_list, query, visible_field, distance, mx_no_close_fcs
         prep_line_resolve_fcs_list = list(filter(str.strip, prep_line_resolve_fcs_list))
         prep_line_resolve_fcs_list = [fc for prep_line in prep_line_resolve_fcs_list for fc in fc_list if str(prep_line) in fc]
         # Required feature class
-        generalised_bldg = [fc for fc in fc_list if 'BJ0500_Generalised_Buildings_A' in fc][0]
-        town_built_up = [fc for fc in fc_list if 'BJ0073_Town_Built_up_A' in fc][0]
-        cutting = [fc for fc in fc_list if 'RA0070_Cutting_L' in fc][0]
+        generalised_bldg = [fc for fc in fc_list if resolve_lyr().Generalised_Buildings_A in fc][0]
+        town_built_up = [fc for fc in fc_list if resolve_lyr().Town_Built_up_A in fc][0]
+        cutting = [fc for fc in fc_list if resolve_lyr().Cutting_L in fc][0]
         feature_layer_cutting = arcpy.management.MakeFeatureLayer(cutting, "cutting_layer")
-        embankment = [fc for fc in fc_list if 'RA0080_Embankment_L' in fc][0]
+        embankment = [fc for fc in fc_list if resolve_lyr().Embankment_L in fc][0]
 
         feature_layer_embankment = arcpy.management.MakeFeatureLayer(embankment, "embankment_layer")
         sel_generalised_bldg_em = arcpy.management.SelectLayerByLocation(feature_layer_embankment, "WITHIN", generalised_bldg, "", "NEW_SELECTION")
@@ -234,7 +234,7 @@ def prep_4_line_resolve(fc_list, query, visible_field, distance, mx_no_close_fcs
         for in_features in prep_line_resolve_fcs_list:
             if has_features(in_features):
                 fc_name = arcpy.da.Describe(in_features)['name']
-                if "TA0060_Road_L" in in_features:
+                if resolve_lyr().Road_L in in_features:
                     desc = arcpy.da.Describe(in_features)
                     oid_fld_name = desc["OIDFieldName"]
                     feature_layer = arcpy.management.MakeFeatureLayer(in_features, f"feature_layer_{fc_name}", query)
@@ -249,7 +249,7 @@ def prep_4_line_resolve(fc_list, query, visible_field, distance, mx_no_close_fcs
                     append_layer = arcpy.management.Append(joined_layer, feature_layer, 'NO_TEST')
                     arcpy.management.RepairGeometry(append_layer)
 
-                elif "TA0110_Track_L" in in_features:
+                elif resolve_lyr().Track_L in in_features:
                     desc = arcpy.da.Describe(in_features)
                     oid_fld_name = desc["OIDFieldName"]
                     feature_layer = arcpy.management.MakeFeatureLayer(in_features, f"feature_layer_{fc_name}", query)
@@ -264,7 +264,7 @@ def prep_4_line_resolve(fc_list, query, visible_field, distance, mx_no_close_fcs
                     append_layer = arcpy.management.Append(joined_layer, feature_layer, 'NO_TEST')
                     arcpy.management.RepairGeometry(append_layer)
 
-                elif "HH0190_Irrigation_Canal_L" in in_features:
+                elif resolve_lyr().Irrigation_Canal_L in in_features:
                     desc = arcpy.da.Describe(in_features)
                     oid_fld_name = desc["OIDFieldName"]
                     feature_layer = arcpy.management.MakeFeatureLayer(in_features, f"feature_layer_{fc_name}", query)
@@ -288,35 +288,104 @@ def prep_4_line_resolve(fc_list, query, visible_field, distance, mx_no_close_fcs
                         arcpy.AddMessage(error_message)
                         return False
         # Hide close feature by count
-        if "feature_layer_RA0080_Embankment_L" in compare_layers:
-            ind = compare_layers.index("feature_layer_RA0080_Embankment_L")
+        if f"feature_layer_{resolve_lyr().Embankment_L}" in compare_layers:
+            ind = compare_layers.index(f"feature_layer_{resolve_lyr().Embankment_L}")
             compare_layers.pop(ind)
-            hide_near_lines_by_count("feature_layer_RA00_Embankment_L", visible_field, distance, mx_no_close_fcs_m, compare_layers, working_gdb)
-        if "feature_layer_RA0070_Cutting_L" in compare_layers:
-            ind = compare_layers.index("feature_layer_RA0070_Cutting_L")
+            hide_near_lines_by_count(f"feature_layer_{resolve_lyr().Embankment_L}", visible_field, distance, mx_no_close_fcs_m, compare_layers, working_gdb)
+        if f"feature_layer_{resolve_lyr().Cutting_L}" in compare_layers:
+            ind = compare_layers.index(f"feature_layer_{resolve_lyr().Cutting_L}")
             compare_layers.pop(ind)
-            hide_near_lines_by_count("feature_layer_RA0070_Cutting_L", visible_field, distance, mx_no_close_fcs_m, compare_layers, working_gdb)
-        if "feature_layer_HH0190_Irrigation_Canal_L" in compare_layers:
-            ind = compare_layers.index("feature_layer_HH0190_Irrigation_Canal_L")
+            hide_near_lines_by_count(f"feature_layer_{resolve_lyr().Cutting_L}", visible_field, distance, mx_no_close_fcs_m, compare_layers, working_gdb)
+        if f"feature_layer_{resolve_lyr().Irrigation_Canal_L}" in compare_layers:
+            ind = compare_layers.index(f"feature_layer_{resolve_lyr().Irrigation_Canal_L}")
             compare_layers.pop(ind)
-            hide_near_lines_by_count("feature_layer_HH0190_Irrigation_Canal_L", visible_field, distance, mx_no_close_fcs_u, compare_layers, working_gdb)
-        if "feature_layer_BJ0400_Fence_L" in compare_layers:
-            ind = compare_layers.index("feature_layer_BJ0400_Fence_L")
+            hide_near_lines_by_count(f"feature_layer_{resolve_lyr().Irrigation_Canal_L}", visible_field, distance, mx_no_close_fcs_u, compare_layers, working_gdb)
+        if f"feature_layer_{resolve_lyr().Fence_L}" in compare_layers:
+            ind = compare_layers.index(f"feature_layer_{resolve_lyr().Fence_L}")
             compare_layers.pop(ind)
-            hide_near_lines_by_count("feature_layer_BJ0400_Fence_L", visible_field, distance, mx_no_close_fcs_l, compare_layers, working_gdb)
-        if "feature_layer_BJ0390_Wall_L" in compare_layers:
-            ind = compare_layers.index("feature_layer_BJ0390_Wall_L")
+            hide_near_lines_by_count(f"feature_layer_{resolve_lyr().Fence_L}", visible_field, distance, mx_no_close_fcs_l, compare_layers, working_gdb)
+        if f"feature_layer_{resolve_lyr().Wall_L}" in compare_layers:
+            ind = compare_layers.index(f"feature_layer_{resolve_lyr().Wall_L}")
             compare_layers.pop(ind)
-            hide_near_lines_by_count("feature_layer_BJ0390_Wall_L", visible_field, distance, mx_no_close_fcs_l, compare_layers, working_gdb)
+            hide_near_lines_by_count(f"feature_layer_{resolve_lyr().Wall_L}", visible_field, distance, mx_no_close_fcs_l, compare_layers, working_gdb)
 
     except Exception as e:
         tb = traceback.format_exc()
         error_message = f"Preparation for line resolving error: {e}\nTraceback details:\n{tb}"
         arcpy.AddMessage(error_message)
 
+# start here of additional lines for 100k from below 100k_ACP
+def split_explode_lines(fc_list,apply_symbology_layers_list,working_gdb):
+    try:
+        
+        apply_symbology_fc_name = list(filter(str.strip, apply_symbology_layers_list))
+        apply_symbology_fc_list = [fc for sym_app_lyr in apply_symbology_fc_name for fc in fc_list if str(sym_app_lyr) in fc]
+        # Set environment variables
+        arcpy.env.overwriteOutput = True
+        scratch = working_gdb
 
+        polyline_fc_list = []
+        clean_list = []
+        update_list = []
 
-def split_explode_lines(fc_list, working_gdb):
+        # Loop through each feature class path
+        for fc in apply_symbology_fc_list:
+            # Get the shape type
+            shape_type = arcpy.Describe(fc).shapeType
+            if shape_type == "Polyline":
+                polyline_fc_list.append(fc)
+
+        vis_field = "INVISIBILITY"
+        delete = "DELETE_INVISIBLE"
+
+        try:
+            fc_list_line = polyline_fc_list
+
+            where = vis_field + " = 0 OR " + vis_field + " IS NULL"
+
+            for fc_path in fc_list_line:
+
+                fc_name = arcpy.Describe(fc_path).name
+                arcpy.AddMessage("Processing " + fc_name)
+
+                # Check for feature classes with no features
+
+                split_fc = scratch + "\\" + fc_name + "_split"
+                explode_fc = scratch + "\\" + fc_name + "_explode"
+                layer = fc_name + "_layer"
+
+                clean_list.append(explode_fc)
+                clean_list.append(split_fc)
+                clean_list.append(layer)
+
+                arcpy.management.MakeFeatureLayer(fc_path, layer, where)
+
+                if int(arcpy.management.GetCount(layer)[0]) >= 1:
+
+                    arcpy.AddMessage("  ...Splitting the lines")
+                    arcpy.management.FeatureToLine(layer, split_fc)
+                    arcpy.AddMessage("  ...Exploding the lines")
+                    arcpy.management.MultipartToSinglepart(split_fc, explode_fc)
+
+                    if delete == "DELETE_INVISIBLE":
+                        arcpy.management.DeleteFeatures(fc_path)
+                    else:
+                        arcpy.management.DeleteFeatures(layer)
+                    arcpy.management.Append(explode_fc, fc_path, "NO_TEST")
+
+        finally:
+            for item in clean_list:
+                if arcpy.Exists(item):
+                    arcpy.management.Delete(item)
+
+    except Exception as e:
+        tb = traceback.format_exc()
+        error_message = f"Split and Explode error: {e}\nTraceback details:\n{tb}"
+        arcpy.AddMessage(error_message)
+
+    # end here of additional lines for 100k_ACP
+
+def split_explode_lines_50K(fc_list, working_gdb):
     arcpy.AddMessage('Splitting and exploding lines ....')
     try:
         for fc in fc_list:
@@ -384,6 +453,7 @@ def generate_near_and_calculate_orientation(
     in_features,
     near_features,
     near_table_name,
+    val_dict,
     logger,
     output_gdb=None,
     search_radius=None,
@@ -415,7 +485,7 @@ def generate_near_and_calculate_orientation(
     # --- Step 1: Ensure NEAR_DIST and NEAR_ANGLE fields exist ---
     existing_fields = [f.name.upper() for f in in_feature_fields]
     required_fields = [
-        ("Orientation_Degree", "DOUBLE")
+        (val_dict['Applycarto_Required_Field'], val_dict['Applycarto_Field_Type'])
     ]
 
     for field_name, field_type in required_fields:
@@ -539,9 +609,9 @@ def vegetation_symbol_create(fc_list, map_name_symbology, layer_details, map_sca
         poly_layer_name_part = poly_layer_name[:-1]
         point_name = f"{poly_layer_name_part}P"
 
-        road_data = [fc for fc in fc_list if "TA0062_Road_Surface_Physical_A" in fc][0]
+        road_data = [fc for fc in fc_list if resolve_lyr().Road_Surface_Physical_A in fc][0]
 
-        track_data = [fc for fc in fc_list if "TA0330_Track_Surface_Physical_A" in fc][0]
+        track_data = [fc for fc in fc_list if resolve_lyr().Track_Surface_Physical_A in fc][0]
 
         point_data = next((fc for fc in fc_list if os.path.basename(fc) == point_name), None)
 
@@ -591,9 +661,9 @@ def vegetation_symbol_create(fc_list, map_name_symbology, layer_details, map_sca
         layer_list = maps.listLayers()
         poly_layer = [layer for layer in layer_list if layer.name == layer_details["name"]][0]
         arcpy.AddMessage(f"poly_layer: {poly_layer}")
-        road_layer = [layer for layer in layer_list if layer.name == "TA0062_Road_Surface_Physical_A"][0]
+        road_layer = [layer for layer in layer_list if layer.name == resolve_lyr().Road_Surface_Physical_A][0]
         arcpy.AddMessage(f"road_layer: {road_layer}")
-        track_layer = [layer for layer in layer_list if layer.name == "TA0330_Track_Surface_Physical_A"][0]
+        track_layer = [layer for layer in layer_list if layer.name == resolve_lyr().Track_Surface_Physical_A][0]
         arcpy.AddMessage(f"track_layer: {track_layer}")
         point_layer = [layer for layer in layer_list if layer.name == point_name][0]
         arcpy.AddMessage(f"point_layer: {point_layer}")
@@ -669,83 +739,13 @@ def vegetation_symbol_create(fc_list, map_name_symbology, layer_details, map_sca
         error_message = f'vegetation_symbol_create error: {e}\nTraceback details:\n{tb}'
         logger.error(error_message)
 
-
-# start here of additional lines for 100k from below 100k_ACP
-def split_explode_lines_100k(fc_list,apply_symbology_layers_list,working_gdb):
-    try:
-        
-        apply_symbology_fc_name = list(filter(str.strip, apply_symbology_layers_list))
-        apply_symbology_fc_list = [fc for sym_app_lyr in apply_symbology_fc_name for fc in fc_list if str(sym_app_lyr) in fc]
-        # Set environment variables
-        arcpy.env.overwriteOutput = True
-        scratch = working_gdb
-
-        polyline_fc_list = []
-        clean_list = []
-        update_list = []
-
-        # Loop through each feature class path
-        for fc in apply_symbology_fc_list:
-            # Get the shape type
-            shape_type = arcpy.Describe(fc).shapeType
-            if shape_type == "Polyline":
-                polyline_fc_list.append(fc)
-
-        vis_field = "INVISIBILITY"
-        delete = "DELETE_INVISIBLE"
-
-        try:
-            fc_list_line = polyline_fc_list
-
-            where = vis_field + " = 0 OR " + vis_field + " IS NULL"
-
-            for fc_path in fc_list_line:
-                fields = [f.name.upper() for f in arcpy.ListFields(fc_path)]
-                if vis_field.upper() in fields:
-
-                    fc_name = arcpy.Describe(fc_path).name
-                    arcpy.AddMessage("Processing " + fc_name)
-
-                    # Check for feature classes with no features
-
-                    split_fc = scratch + "\\" + fc_name + "_split"
-                    explode_fc = scratch + "\\" + fc_name + "_explode"
-                    layer = fc_name + "_layer"
-
-                    clean_list.append(explode_fc)
-                    clean_list.append(split_fc)
-                    clean_list.append(layer)
-
-                    arcpy.management.MakeFeatureLayer(fc_path, layer, where)
-
-                    if int(arcpy.management.GetCount(layer)[0]) >= 1:
-
-                        arcpy.AddMessage("  ...Splitting the lines")
-                        arcpy.management.FeatureToLine(layer, split_fc)
-                        arcpy.AddMessage("  ...Exploding the lines")
-                        arcpy.management.MultipartToSinglepart(split_fc, explode_fc)
-
-                        if delete == "DELETE_INVISIBLE":
-                            arcpy.management.DeleteFeatures(fc_path)
-                        else:
-                            arcpy.management.DeleteFeatures(layer)
-                        arcpy.management.Append(explode_fc, fc_path, "NO_TEST")
-
-        finally:
-            for item in clean_list:
-                if arcpy.Exists(item):
-                    arcpy.management.Delete(item)
-
-    except Exception as e:
-        tb = traceback.format_exc()
-        error_message = f"Split and Explode error: {e}\nTraceback details:\n{tb}"
-        arcpy.AddMessage(error_message)
-
-    # end here of additional lines for 100k_ACP
-
-def apply_carto_symbology(fc_list, attribution_fc_list, express_list, query_list, field_list, intersecting_fc_list, working_gdb, query, visible_field, distance, mx_no_close_fcs_l, 
-                          mx_no_close_fcs_m, mx_no_close_fcs_u, feature_loc, feature_count, vst_workspace, specification, hierarchy_file, hierarchy_fld_name, prep_line_resolve_fcs_list, 
-                          carto_partition, symbology_file_path, map_name, apply_symbology_layers_list, create_vegetation_symbol_detail, map_scale, map_unit, logger):
+# # Before 05th March 2026
+# def apply_carto_symbology(fc_list, attribution_fc_list, express_list, query_list, field_list, intersecting_fc_list, working_gdb, query, visible_field, distance, mx_no_close_fcs_l, 
+#                           mx_no_close_fcs_m, mx_no_close_fcs_u, feature_loc, feature_count, vst_workspace, specification, hierarchy_file, hierarchy_fld_name, prep_line_resolve_fcs_list, 
+#                           carto_partition, symbology_file_path, map_name, apply_symbology_layers_list, create_vegetation_symbol_detail, map_scale, map_unit, logger):
+# # After 05th March 2026
+def apply_carto_symbology(fc_list, attribution_fc_list, express_list, query_list, field_list, intersecting_fc_list, working_gdb, feature_loc, vst_workspace, hierarchy_file, prep_line_resolve_fcs_list, 
+                          carto_partition, symbology_file_path, map_name, apply_symbology_layers_list, create_vegetation_symbol_detail, val_dict, logger):
     arcpy.AddMessage('Starting carto symbolisation application .....')
     logger.info('Starting carto symbolisation application .....')
     # Set the workspace
@@ -758,34 +758,34 @@ def apply_carto_symbology(fc_list, attribution_fc_list, express_list, query_list
         logger.info('Applying Attribution for ApplyCarto .....')
         embankment_cutting(fc_list, intersecting_fc_list, working_gdb)
         # Prep for line resolve
-        prep_4_line_resolve(fc_list, query, visible_field, distance, mx_no_close_fcs_l, mx_no_close_fcs_m, mx_no_close_fcs_u, prep_line_resolve_fcs_list, working_gdb)
+        prep_4_line_resolve(fc_list, val_dict['Applycarto_query_acs'], val_dict['Resolve_conflict_build_visible_field'], val_dict['Applycarto_distance_between_features'], val_dict['Applycarto_maximum_number_of_close_features_l'], val_dict['Applycarto_maximum_number_of_close_features_m'], val_dict['Applycarto_maximum_number_of_close_features_u'], prep_line_resolve_fcs_list, working_gdb)
         # Start Additional 100k
         # Split and Explode lines
-        split_explode_lines_100k(fc_list, apply_symbology_layers_list, working_gdb)
+        split_explode_lines(fc_list, apply_symbology_layers_list, working_gdb)
         # End additional 100k
         # Calculating values For Tidal Gate Symbology
-        HJ0070_Tidal_Gate_P_fc = [fc for fc in fc_list if  "HJ0070_Tidal_Gate_P" in fc][0]
-        HH0041_River_Bank_L_fc = [fc for fc in fc_list if "HH0041_River_Bank_L" in fc][0]
-        HM0030_Water_Flow_P_fc = [fc for fc in fc_list if  "HM0030_Water_Flow_P" in fc][0]
+        HJ0070_Tidal_Gate_P_fc = [fc for fc in fc_list if  resolve_lyr().Tidal_Gate_P in fc][0]
+        HH0041_River_Bank_L_fc = [fc for fc in fc_list if resolve_lyr().River_Bank_L in fc][0]
+        HM0030_Water_Flow_P_fc = [fc for fc in fc_list if  resolve_lyr().Water_Flow_P in fc][0]
 
         # arcpy.AddMessage("Calculating Values for Tidal Gate Symbologies...")
         generate_near_and_join_tidal_gate(in_features=HJ0070_Tidal_Gate_P_fc, near_features=HH0041_River_Bank_L_fc, near_table_name="HJ0070_Tidal_Gate_River_Bank_NearT2", logger = logger, output_gdb = working_gdb)
         
-        generate_near_and_calculate_orientation(in_features=HM0030_Water_Flow_P_fc, near_features=HH0041_River_Bank_L_fc, near_table_name="HM0030_Water_flow_River_Bank_Near", logger = logger, output_gdb = working_gdb)
+        generate_near_and_calculate_orientation(in_features=HM0030_Water_Flow_P_fc, near_features=HH0041_River_Bank_L_fc, near_table_name=resolve_lyr().Water_flow_River_Bank_Near, val_dict=val_dict, logger = logger, output_gdb = working_gdb)
         # # Create carto partition
         aprx = arcpy.mp.ArcGISProject('CURRENT')
         fc_layers = None
         maps = aprx.listMaps(map_name)
         if(maps):
             fc_layers = [lyr for lyr in maps[0].listLayers() if not lyr.isGroupLayer and lyr.isFeatureLayer] 
-        arcpy.AddMessage(f'create_carto_partition \n\n\n fc_layers: {fc_layers} \n\n feature_loc: {feature_loc} \n\n\n feature_count: {feature_count}')
-        create_carto_partition(fc_layers, feature_loc, feature_count)
+        arcpy.AddMessage(f'create_carto_partition \n\n\n fc_layers: {fc_layers} \n\n feature_loc: {feature_loc} \n\n\n feature_count: {val_dict['Applycarto_feature_count']}')
+        create_carto_partition(fc_layers, feature_loc, val_dict['Applycarto_feature_count'])
         # # Calculate VST on workspace
         # calc_vst_on_workspace(fc_list, symbology_file_path, apply_symbology_layers_list, map_name, feature_loc)
         # Populate hierarchy
-        populate_hierarchy(hierarchy_file, feature_loc, hierarchy_fld_name, working_gdb)
+        populate_hierarchy(hierarchy_file, feature_loc, val_dict['Resolve_conflict_build_hierarchy_field'], working_gdb)
         for vegetation_fc in create_vegetation_symbol_detail:
-            vegetation_symbol_create(fc_list, map_name, vegetation_fc, map_scale, map_unit, logger)
+            vegetation_symbol_create(fc_list, map_name, vegetation_fc, val_dict['ApplyCarto_Map_Scale'], val_dict['ApplyCarto_Map_Unit_of_Dataset'], logger)
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         tb = traceback.format_exc()
