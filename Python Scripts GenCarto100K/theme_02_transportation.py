@@ -204,57 +204,63 @@ def remove_short_road_in_terrace_house(road_fc, bldg_fc, search_tolerance, worki
     arcpy.env.workspace = working_gdb
     try:
         arcpy.AddMessage("Applying remove back lane function") 
-        # Get length field
-        length_field = arcpy.da.Describe(road_fc)['lengthFieldName']
-        name_query = f"({name_field} = '' or {name_field} = ' ' or {name_field} IS NULL)"
-        # Create make feature layer for road and building
-        copy_road_lyr = arcpy.management.CopyFeatures(road_fc, f"{working_gdb}\\copy_road_lyr")
-        arcpy.management.MakeFeatureLayer(road_fc, "road_layer")
-        # Select building features with RET <= 3 (Terrace houses)
-        arcpy.management.SelectLayerByAttribute(in_layer_or_view=bldg_fc, selection_type="NEW_SELECTION", where_clause="RET <= 3")
-        # Dissolve selected building features
-        dissolved_terrace_bldg_lyr = arcpy.management.Dissolve(in_features=bldg_fc, out_feature_class=f"{working_gdb}\\dissolved_terrace_bldg_lyr")
-        arcpy.management.MakeFeatureLayer(dissolved_terrace_bldg_lyr, "dissolved_terrace_bldg_lyr")
-        # Select features within a distance
-        arcpy.management.SelectLayerByLocation(in_layer="road_layer", overlap_type="WITHIN_A_DISTANCE", select_features="dissolved_terrace_bldg_lyr", search_distance=f"{search_tolerance} Meters",
-            selection_type="NEW_SELECTION")
-        # Select feature by attribute
-        if count_features("road_layer")>0:
-            arcpy.cartography.ThinRoadNetwork(in_features=road_fc, minimum_length=length_tolerance, invisibility_field=invisibility_field_2, hierarchy_field=hierarchy_field)
-            warnings = arcpy.GetMessages(1)
-            # Extract all txt paths from the warning text
-            txt_files = re.findall(r'[A-Za-z]:\\[^\n]*\.txt', warnings)
-            sharedgeom_file = None
-            for file in txt_files:
-                if "SharedGeom" in file:
-                    sharedgeom_file = file
-                    break
-            arcpy.AddMessage(f"SharedGeom file: {sharedgeom_file}")
-            if sharedgeom_file != None:
-                # Wait until ArcGIS finishes writing the file
-                while not os.path.exists(sharedgeom_file):
-                    time.sleep(1)
-                # Read ObjectIDs
-                object_ids = []
-                with open(sharedgeom_file, "r") as f:
-                    text = f.read()
-                    ids = re.findall(r'OBJECTID\s*=\s*(\d+)', text)
-                    object_ids = [int(i) for i in ids]
-                # convert list → SQL string
-                oid_string = ",".join(map(str, object_ids))
-                query = f"OBJECTID NOT IN ({oid_string})"
-                if len(object_ids)>0: 
-                    where_clause=f"{length_field} < {length_tolerance} And {road_class_field} = {road_class_type} And {name_query} And {invisibility_field_2} = 1 And {query}"
-                    arcpy.AddMessage(f"{where_clause}")
-                    arcpy.management.SelectLayerByAttribute(in_layer_or_view="road_layer", selection_type="SUBSET_SELECTION", where_clause=f"{length_field} < {length_tolerance} And {road_class_field} = {road_class_type} And {name_query} And {invisibility_field_2} = 1 And {query}")
+        if length_tolerance != 0:
+            # Get length field
+            length_field = arcpy.da.Describe(road_fc)['lengthFieldName']
+            name_query = f"({name_field} = '' or {name_field} = ' ' or {name_field} IS NULL)"
+            # Create make feature layer for road and building
+            copy_road_lyr = arcpy.management.CopyFeatures(road_fc, f"{working_gdb}\\copy_road_lyr")
+            arcpy.management.MakeFeatureLayer(road_fc, "road_layer")
+            # Select building features with RET <= 3 (Terrace houses)
+            arcpy.management.SelectLayerByAttribute(in_layer_or_view=bldg_fc, selection_type="NEW_SELECTION", where_clause="RET <= 3")
+            # Dissolve selected building features
+            dissolved_terrace_bldg_lyr = arcpy.management.Dissolve(in_features=bldg_fc, out_feature_class=f"{working_gdb}\\dissolved_terrace_bldg_lyr")
+            arcpy.management.MakeFeatureLayer(dissolved_terrace_bldg_lyr, "dissolved_terrace_bldg_lyr")
+            # Select features within a distance
+            arcpy.management.SelectLayerByLocation(in_layer="road_layer", overlap_type="WITHIN_A_DISTANCE", select_features="dissolved_terrace_bldg_lyr", search_distance=f"{search_tolerance} Meters",
+                selection_type="NEW_SELECTION")
+            # Select feature by attribute
+            if count_features("road_layer")>0:
+                arcpy.cartography.ThinRoadNetwork(in_features=road_fc, minimum_length=length_tolerance, invisibility_field=invisibility_field_2, hierarchy_field=hierarchy_field)
+                warnings = arcpy.GetMessages(1)
+                # Extract all txt paths from the warning text
+                txt_files = re.findall(r'[A-Za-z]:\\[^\n]*\.txt', warnings)
+                sharedgeom_file = None
+                for file in txt_files:
+                    if "SharedGeom" in file:
+                        sharedgeom_file = file
+                        break
+                arcpy.AddMessage(f"SharedGeom file: {sharedgeom_file}")
+                if sharedgeom_file != None:
+                    # Wait until ArcGIS finishes writing the file
+                    while not os.path.exists(sharedgeom_file):
+                        time.sleep(1)
+                    # Read ObjectIDs
+                    object_ids = []
+                    with open(sharedgeom_file, "r") as f:
+                        text = f.read()
+                        ids = re.findall(r'OBJECTID\s*=\s*(\d+)', text)
+                        object_ids = [int(i) for i in ids]
+                    # convert list → SQL string
+                    oid_string = ",".join(map(str, object_ids))
+                    query = f"OBJECTID NOT IN ({oid_string})"
+                    if len(object_ids)>0: 
+                        where_clause=f"{length_field} < {length_tolerance} And {road_class_field} = {road_class_type} And {name_query} And {invisibility_field_2} = 1 And {query}"
+                        arcpy.AddMessage(f"{where_clause}")
+                        arcpy.management.SelectLayerByAttribute(in_layer_or_view="road_layer", selection_type="SUBSET_SELECTION", where_clause=f"{length_field} < {length_tolerance} And {road_class_field} = {road_class_type} And {name_query} And {invisibility_field_2} = 1 And {query}")
+                        arcpy.AddMessage(f"deleting {count_features("road_layer")} features")
+                        arcpy.management.DeleteFeatures("road_layer")
+                        arcpy.AddMessage("Remove backlane function completed successfully with sharedgeom file")
+                else:
+                    arcpy.management.SelectLayerByAttribute(in_layer_or_view="road_layer", selection_type="SUBSET_SELECTION", where_clause=f"{length_field} < {length_tolerance} And {road_class_field} = {road_class_type} And {name_query} And {invisibility_field} = 1")
+                    # Delete features
                     arcpy.AddMessage(f"deleting {count_features("road_layer")} features")
                     arcpy.management.DeleteFeatures("road_layer")
-            else:
-                arcpy.management.SelectLayerByAttribute(in_layer_or_view="road_layer", selection_type="SUBSET_SELECTION", where_clause=f"{length_field} < {length_tolerance} And {road_class_field} = {road_class_type} And {name_query} And {invisibility_field} = 1")
-                # Delete features
-                arcpy.AddMessage(f"deleting {count_features("road_layer")} features")
-                arcpy.management.DeleteFeatures("road_layer")
-            
+                    arcpy.AddMessage("Remove backlane function completed successfully")
+        else:
+            arcpy.AddMessage("Leangth value with 0 meter cannot be processed, change the the value in config file")
+            arcpy.AddMessage("Skipping Remove backlane function")
+
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         tb = traceback.format_exc()
