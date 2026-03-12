@@ -1,0 +1,11 @@
+20260312T090004 Error for Gen carto 100k
+'Utility_powerline_val'
+20260312T090428 Error for Data cleaning for all funcs
+'dataprep_delete_dngl_sql'
+20260312T104407 Error for Transportation generalisation
+'Transport_delete_dangle_sql'
+20260312T113740 Error for Road feature remove in terrace area
+Failed to execute. Parameters are not valid.
+ERROR 000398: Value must be positive
+Failed to execute (ThinRoadNetwork).
+
