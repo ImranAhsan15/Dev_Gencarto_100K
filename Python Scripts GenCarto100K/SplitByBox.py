@@ -116,7 +116,7 @@ def straight_line(pnt_data, line_data, OFFSETDIST, working_gdb):
     except Exception as e:
         tb = traceback.format_exc()
         error_message = f"Straight lines (Split hydro) error: {e}\nTraceback details:\n{tb}"
-        arcpy.AddMessage(error_message)
+        arcpy.AddError(error_message)
 
 def create_near_polys(polygons, spat_ref, working_gdb):
     try:
@@ -161,7 +161,7 @@ def create_near_polys(polygons, spat_ref, working_gdb):
     except Exception as e:
         tb = traceback.format_exc()
         error_message = f"Create near polygons error: {e}\nTraceback details:\n{tb}"
-        arcpy.AddMessage(error_message)
+        arcpy.AddError(error_message)
 
 def split(polygon, centerline, width, working_gdb):
     arcpy.env.overwriteOutput = True
@@ -188,7 +188,7 @@ def split(polygon, centerline, width, working_gdb):
     except Exception as e:
         tb = traceback.format_exc()
         error_message = f"Split (Split hydro) error: {e}\nTraceback details:\n{tb}"
-        arcpy.AddMessage(error_message)
+        arcpy.AddError(error_message)
 
 
 

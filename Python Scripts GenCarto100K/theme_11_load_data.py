@@ -3,6 +3,8 @@ import traceback
 import sys
 from common_utils import *
 
+# # Loading Data into Enterprise Geodatabase
+# # Obsolete on 01st March 2026
 def load_data_into_edb(in_workspace, aoi_sheet, out_workspace, version, working_gdb, logger):
     arcpy.AddMessage('Starting Loading data into EDB.....')
     # Set environments
@@ -21,7 +23,7 @@ def load_data_into_edb(in_workspace, aoi_sheet, out_workspace, version, working_
         # Get required features and data
         fc_name_list, in_fcs_dict = get_fcs_load_data(in_workspace, wksp_type)
         out_fc_name_list, out_fcs_dict = get_fcs_load_data(out_workspace, wksp_type)
-        split_list = split_fcs_load_data(in_workspace)
+        split_list = split_fcs_load_data(working_gdb)
         
         # Determine which feature classes from the input are also in the output
         for fc_name in fc_name_list:
@@ -121,5 +123,6 @@ def load_data_into_edb(in_workspace, aoi_sheet, out_workspace, version, working_
         exc_type, exc_value, exc_traceback = sys.exc_info()
         tb = traceback.format_exc()
         error_message = f"Load Data into Ent DB error: {e}\nTraceback details:\n{tb}"
+        arcpy.AddError(error_message)
         logger.error(error_message)
         simplified_msgs('Load Data into Ent DB', f'{exc_value}\n')

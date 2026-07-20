@@ -3,14 +3,14 @@ import traceback
 import sys
 from common_utils import *
 
-def remove_closed_lines(working_db, input_lines, sql, distance, per, dangles, delete, visible_field, check_connect, connect_angle, comp_lines):
+def remove_closed_lines(working_db, input_lines, sql, distance, per, dangles, delete, visible_field, check_connect, connect_angle, comp_lines, val_dict):
     if not comp_lines:
         comp_lines = input_lines
 
     if delete == 'false' and not visible_field:
         arcpy.AddError("Must populate visibile field")
 
-    percent_parallel = per/100
+    percent_parallel = per/val_dict['Hypso_percent_parallel_val']
 
     # Define environment variables
     arcpy.env.overwriteOutput = 1
@@ -30,9 +30,10 @@ def remove_closed_lines(working_db, input_lines, sql, distance, per, dangles, de
             arcpy.management.SelectLayerByAttribute(line_lyr, "CLEAR_SELECTION")
             arcpy.AddMessage(str(len(values)) + "Features have dangles")
             if len(values) >= 1:
+                hypso_field_name = val_dict['Hypso_field_name']
                 # Convert list of Target FID values to a SQL statement
-                where = "OBJECTID = "
-                where += " OR OBJECTID = ".join(values)
+                where = f"{hypso_field_name} = "
+                where += f" OR {hypso_field_name} = ".join(values)
                 arcpy.management.SelectLayerByAttribute(line_lyr, "New_Selection", where)
 
         proc_cnt = int(arcpy.management.GetCount(line_lyr)[0])
@@ -82,7 +83,7 @@ def remove_closed_lines(working_db, input_lines, sql, distance, per, dangles, de
                     geo_dict[row[0]] = [row[1], row[2]]
             line_ignore = []
             length_field = arcpy.da.Describe(input_lines)['lengthFieldName']
-            order = "ORDER BY " + length_field
+            order = f"{val_dict['Hypso_order_by']} {length_field}"
             if delete == 'false':
                 fields = [length_field, "OID@", "shape@", "BEARING", visible_field]
             else:
@@ -205,19 +206,19 @@ def remove_closed_lines(working_db, input_lines, sql, distance, per, dangles, de
     except Exception as e:
         tb = traceback.format_exc()
         error_message = f"Delete close lines error: {e}\nTraceback details:\n{tb}"
-        arcpy.AddMessage(error_message)
+        arcpy.AddError(error_message)
 
-def thin_cuttings_and_embankments(working_gdb, fc_list, distance, minimum_length, percent_parallel):
+def thin_cuttings_and_embankments(working_gdb, fc_list, distance, minimum_length, percent_parallel, val_dict):
     # Set environment
     arcpy.env.workspace = working_gdb
     arcpy.env.overwriteOutput = 1
     arcpy.AddMessage(f"{working_gdb}")
     try:
         # Get the feature classes from the workspace
-        embankment_fc = [fc for fc in fc_list if 'RA0080_Embankment_L' in fc][0]
-        cutting_fc = [fc for fc in fc_list if 'RA0070_Cutting_L' in fc][0]
+        embankment_fc = [fc for fc in fc_list if resolve_lyr().Embankment_L in fc][0]
+        cutting_fc = [fc for fc in fc_list if resolve_lyr().Cutting_L in fc][0]
         # start here of additional lines for 100k from below 100k_TCE
-        cliff_precipitous = [fc for fc in fc_list if 'RA0060_Cliff_Precipitous_L' in fc][0]
+        cliff_precipitous = [fc for fc in fc_list if resolve_lyr().Cliff_Precipitous_L in fc][0]
         # end here of additional lines for 100k_TCE
         # add unit to distance
         distance_str =  f"{distance} Meters"
@@ -227,13 +228,13 @@ def thin_cuttings_and_embankments(working_gdb, fc_list, distance, minimum_length
         arcpy.cartography.SimplifyLine(embankment_fc, embankment_simplified, "BEND_SIMPLIFY", distance_str, "FLAG_ERRORS", "KEEP_COLLAPSED_POINTS", "NO_CHECK", None, "NO_CHECK")
         arcpy.AddMessage(f"Simplified {embankment_fc} to {embankment_simplified}")
         # Remove closed lines from the simplified feature class
-        remove_closed_lines(working_gdb, embankment_simplified, None, distance, percent_parallel, "false", "true", "", "true", 10, None)
+        remove_closed_lines(working_gdb, embankment_simplified, None, distance, percent_parallel, val_dict['Hypso_dangles'], val_dict['Hypso_delete'], val_dict['Hypso_visible_field'], val_dict['Hypso_check_connect'], val_dict['Hypso_connect_angle'], None, val_dict)
         # Fc name
         fc_name_cut = arcpy.da.Describe(cutting_fc)["name"]
         cutting_simplified = f"{working_gdb}\\{fc_name_cut}_simplified"
         arcpy.cartography.SimplifyLine(cutting_fc, cutting_simplified, "BEND_SIMPLIFY", distance_str, "FLAG_ERRORS", "KEEP_COLLAPSED_POINTS", "NO_CHECK", None, "NO_CHECK")
         arcpy.AddMessage(f"Simplified {cutting_fc} to {cutting_simplified}")
-        remove_closed_lines(working_gdb, cutting_simplified, None, distance, percent_parallel, "false", "true","", "true", 10, None)
+        remove_closed_lines(working_gdb, cutting_simplified, None, distance, percent_parallel, val_dict['Hypso_dangles'], val_dict['Hypso_delete'], val_dict['Hypso_visible_field'], val_dict['Hypso_check_connect'], val_dict['Hypso_connect_angle'], None, val_dict)
         
         # start here of additional lines for 100k from below 100k_TCE
         # cliff_precipitous Fc name
@@ -242,12 +243,10 @@ def thin_cuttings_and_embankments(working_gdb, fc_list, distance, minimum_length
         arcpy.cartography.SimplifyLine(cliff_precipitous, cliff_precipitous_simplified, "BEND_SIMPLIFY", distance_str,
                                        "FLAG_ERRORS", "KEEP_COLLAPSED_POINTS", "NO_CHECK", None, "NO_CHECK")
         arcpy.AddMessage(f"Simplified {cliff_precipitous} to {cliff_precipitous_simplified}")
-        remove_closed_lines(working_gdb, cliff_precipitous_simplified, None, distance, percent_parallel, "false",
-                            "true", "", "true", 10, None)
+        remove_closed_lines(working_gdb, cliff_precipitous_simplified, None, distance, percent_parallel, val_dict['Hypso_dangles'], val_dict['Hypso_delete'], val_dict['Hypso_visible_field'], val_dict['Hypso_check_connect'], val_dict['Hypso_connect_angle'], None, val_dict)
 
         # Remove closed lines from the simplified cutting feature class comparing to the embankment feature class
-        remove_closed_lines(working_gdb, cutting_simplified, None, distance, percent_parallel, "false", "true", "",
-                            "true", 10, embankment_simplified)
+        remove_closed_lines(working_gdb, cutting_simplified, None, distance, percent_parallel, val_dict['Hypso_dangles'], val_dict['Hypso_delete'], val_dict['Hypso_visible_field'], val_dict['Hypso_check_connect'], val_dict['Hypso_connect_angle'], embankment_simplified, val_dict)
         arcpy.AddMessage(f"Removed closed lines from {cutting_simplified} comparing to {embankment_simplified}")
 
         # Feature layer creation, feature deleted from main fc and feature append
@@ -276,7 +275,7 @@ def thin_cuttings_and_embankments(working_gdb, fc_list, distance, minimum_length
     except Exception as e:
         tb = traceback.format_exc()
         error_message = f"Error in thin_cuttings_and_embankments function: {e}\nTraceback details:\n{tb}"
-        arcpy.AddMessage(error_message)
+        arcpy.AddError(error_message)
 
 def smooth_contours(fc_list, working_gdb, smoothing_tolerance):
     # Set the workspace
@@ -284,7 +283,7 @@ def smooth_contours(fc_list, working_gdb, smoothing_tolerance):
     arcpy.env.overwriteOutput = True
 
     try:
-        contour_fc = [fc for fc in fc_list if 'RA0010_Contour_Line_L' in fc][0]
+        contour_fc = [fc for fc in fc_list if resolve_lyr().Contour_Line_L in fc][0]
         # Make a feature layer
         layer_name = "contour_line_lyr"
         arcpy.management.MakeFeatureLayer(contour_fc, layer_name)
@@ -304,16 +303,15 @@ def smooth_contours(fc_list, working_gdb, smoothing_tolerance):
     except Exception as e:
         tb = traceback.format_exc()
         error_message = f"Smooth contours error: {e}\nTraceback details:\n{tb}"
-        arcpy.AddMessage(error_message)
+        arcpy.AddError(error_message)
 
 def enlarge_hypso_polygons(working_gdb, fc_list, minimum_size_m, minimum_size_m2, increase):
     try:
         arcpy.env.overwriteOutput = True
         # Get feature classes
-        mines_fc = [fc for fc in fc_list if 'GD2000_Mine_A' in fc][0]
-        rock_fc = [fc for fc in fc_list if 'GF4100_Rock_Outcrop_A' in fc][0]
-        geoscience_fc_list = [fc for fc in fc_list for fcs in ['GD3100_Quarry Pit_A', 'GG2100_Geohazard_Site_A', 'GG2110_Landslide_Site_A', 'GF3100_Mud_Volcano_A']  if fcs in fc]
-
+        mines_fc = [fc for fc in fc_list if resolve_lyr().Mine_A in fc][0]
+        rock_fc = [fc for fc in fc_list if resolve_lyr().Rock_Outcrop_A in fc][0]
+        geoscience_fc_list = [fc for fc in fc_list for fcs in [ resolve_lyr().Quarry_Pit_A, resolve_lyr().Geohazard_Site_A, resolve_lyr().Landslide_Site_A, resolve_lyr().Mud_Volcano_A ]  if fcs in fc]
         barrier_fcs = []
         sql = None
         intersect_fc = None
@@ -328,16 +326,16 @@ def enlarge_hypso_polygons(working_gdb, fc_list, minimum_size_m, minimum_size_m2
     except Exception as e:
         tb = traceback.format_exc()
         error_message = f"Error in enlarging polygons: {str(e)} \nTraceback details:\n{tb}"
-        arcpy.AddMessage(error_message)
+        arcpy.AddError(error_message)
 
 def dissolve_touching_polygons(fc_list, working_gdb, dissolve_field):
     # Set environment
     arcpy.env.workspace = working_gdb
     arcpy.env.overwriteOutput = True
     # Get required feature Class
-    mines_fc = [fc for fc in fc_list if 'GD2000_Mine_A' in fc][0]
-    rock_fc = [fc for fc in fc_list if 'GF4100_Rock_Outcrop_A' in fc][0]
-    geoscience_fc_list = [fc for fc in fc_list for fcs in ['GD3100_Quarry Pit_A', 'GG2100_Geohazard_Site_A', 'GG2110_Landslide_Site_A', 'GF3100_Mud_Volcano_A']  if fcs in fc]
+    mines_fc = [fc for fc in fc_list if resolve_lyr().Mine_A in fc][0]
+    rock_fc = [fc for fc in fc_list if resolve_lyr().Rock_Outcrop_A in fc][0]
+    geoscience_fc_list = [fc for fc in fc_list for fcs in [resolve_lyr().Quarry_Pit_A, resolve_lyr().Geohazard_Site_A, resolve_lyr().Landslide_Site_A, resolve_lyr().Mud_Volcano_A]  if fcs in fc]
 
     try:
         sql=None
@@ -353,16 +351,16 @@ def dissolve_touching_polygons(fc_list, working_gdb, dissolve_field):
     except Exception as e:
         tb = traceback.format_exc()
         error_message = f"Dissolve touching polygons error: {e}\nTraceback details:\n{tb}"
-        arcpy.AddMessage(error_message)
+        arcpy.AddError(error_message)
 
 def erase_veg_hypso(fc_list, working_gdb, hypso_compare_features, logger):
     # Set Environment
     arcpy.env.workspace = working_gdb
     arcpy.env.overwriteOutput = True
 
-    mines_fc = [fc for fc in fc_list if 'GD2000_Mine_A' in fc][0]
-    rock_fc = [fc for fc in fc_list if 'GF4100_Rock_Outcrop_A' in fc][0]
-    geoscience_fc_list = [fc for fc in fc_list for fcs in ['GD3100_Quarry Pit_A', 'GG2100_Geohazard_Site_A', 'GG2110_Landslide_Site_A', 'GF3100_Mud_Volcano_A']  if fcs in fc]
+    mines_fc = [fc for fc in fc_list if resolve_lyr().Mine_A in fc][0]
+    rock_fc = [fc for fc in fc_list if resolve_lyr().Rock_Outcrop_A in fc][0]
+    geoscience_fc_list = [fc for fc in fc_list for fcs in [ resolve_lyr().Quarry_Pit_A, resolve_lyr().Geohazard_Site_A, resolve_lyr().Landslide_Site_A, resolve_lyr().Mud_Volcano_A]  if fcs in fc]
 
     hypso_compare_features = list(filter(str.strip, hypso_compare_features))
     hypso_compare_features = [fc for a_lyr in hypso_compare_features for fc in fc_list if str(a_lyr) in fc]
@@ -380,30 +378,62 @@ def erase_veg_hypso(fc_list, working_gdb, hypso_compare_features, logger):
     except Exception as e:
         tb = traceback.format_exc()
         error_message = f"Hypso erase vegetation error: {e}\nTraceback details:\n{tb}"
-        arcpy.AddMessage(error_message)
+        arcpy.AddError(error_message)
         logger.error(error_message)
-    
 
-def gen_hypsography(fc_list, hypso_compare_features, hypso_dissolved_field, hypso_dist, hypso_parallel_per, hypso_min_length, hypso_smoothing_tolerance, hypso_increase_factor, hypso_size_max, 
-                            hypso_size_min, working_gdb, logger):
+def calculate_contoure_line_type(fc_list, working_gdb, logger) -> None:
+    arcpy.env.overwriteOutput = True
+    arcpy.env.workspace = working_gdb
+    contour_l_fc = resolve_lyr().Contour_Line_L
+    if(contour_l_fc):
+        contour_l_fc = [fc for fc in fc_list if contour_l_fc in fc][0]
+    lyr_name = "contours_lyr"
+        
+    # Make a feature layer (required for selection-based workflows)
+    arcpy.management.MakeFeatureLayer(contour_l_fc, lyr_name)
+    # 1) CLI = 0  -> CLT = 0
+    arcpy.management.SelectLayerByAttribute(lyr_name, "NEW_SELECTION", "CLI = 0")
+    arcpy.management.CalculateField(lyr_name, "CLT", 0, "PYTHON3")
+
+    # 2) CLI IN (1,2,3) -> CLT = 9
+    arcpy.management.SelectLayerByAttribute(lyr_name, "NEW_SELECTION", "CLI IN (1, 2, 3)")
+    arcpy.management.CalculateField(lyr_name, "CLT", 9, "PYTHON3")
+
+    
+    # 3) CLI IN (4,5,6,7) -> CLT = 8
+    arcpy.management.SelectLayerByAttribute(lyr_name, "NEW_SELECTION", "CLI IN (4, 5, 6, 7)")
+    arcpy.management.CalculateField(lyr_name, "CLT", 8, "PYTHON3")
+
+    # Clear selection
+    arcpy.management.SelectLayerByAttribute(lyr_name, "CLEAR_SELECTION")
+
+    logger.info(f"Calculating Contour Line Type was successful for {contour_l_fc}")
+
+    return None
+
+# # Hypsography Generalization
+def gen_hypsography(fc_list, hypso_compare_features, val_dict, working_gdb, logger):
     arcpy.AddMessage('Starting hypsography features generalization.....')
     # Set Environment
     arcpy.env.overwriteOutput = True
     try:
         # Thin Cuttings and Embankments
-        thin_cuttings_and_embankments(working_gdb, fc_list, hypso_dist, hypso_min_length, hypso_parallel_per)
+        thin_cuttings_and_embankments(working_gdb, fc_list, val_dict['Hypso_distance'], val_dict['Hypso_minimum_length'], val_dict['Hypso_parallel_percent'], val_dict)
         # Smooth contour
-        smooth_contours(fc_list, working_gdb, hypso_smoothing_tolerance)
+        smooth_contours(fc_list, working_gdb, val_dict['Hypso_smoothing_tolerance'])
         # Enlarge hypso polygons
-        enlarge_hypso_polygons(working_gdb, fc_list, hypso_size_min, hypso_size_max, hypso_increase_factor)
+        enlarge_hypso_polygons(working_gdb, fc_list, val_dict['Hypso_minimum_size'], val_dict['Hypso_miximum_size'], val_dict['Hypso_increase_factor'])
         # Dissolve hypso polygons
-        dissolve_touching_polygons(fc_list, working_gdb, hypso_dissolved_field)
+        dissolve_touching_polygons(fc_list, working_gdb, val_dict['Hypso_dissolved_field'])
         # Erase vegetation hypso
         erase_veg_hypso(fc_list, working_gdb, hypso_compare_features, logger)
+        # # Calculate Countour Line Type from Contour Line Index
+        calculate_contoure_line_type(fc_list, working_gdb, logger)
       
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info() 
         tb = traceback.format_exc()
         error_message = f"Hypsography generalisation error: {e}\nTraceback details:\n{tb}"
+        arcpy.AddError(error_message)
         logger.error(error_message)
         simplified_msgs('Hypsography generalisation', f'{exc_value}\n')

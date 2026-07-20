@@ -1,6 +1,9 @@
+from __future__ import annotations
 # import required python modules
 import pandas as pd
 import openpyxl
+from dataclasses import dataclass
+from typing import Dict, Iterator, Tuple, Any, Optional
 
 class ParamValues:
     def __init__(self, excel_file):
@@ -58,6 +61,8 @@ class ParamValues:
         fc_dict['hydro_small_line_fc_list'] = hydro_small_line_fc_list
         hydro_small_point_fc_list = list(excel_data["3_Hydrography"].loc[excel_data["3_Hydrography"]["Feature Usage Notes"] == "Feature 2 Point Point", "FeatureClass"])
         fc_dict['hydro_small_point_fc_list'] = hydro_small_point_fc_list
+        hydro_delete_small_pools = list(excel_data["3_Hydrography"].loc[excel_data["3_Hydrography"]["Function Name"] == "Hydro Delete Small Pools", "FeatureClass"])
+        fc_dict['hydro_delete_small_pools'] = hydro_delete_small_pools
 
         # Built-up Generalization
         small_bldg_2_point_a = list(excel_data["4_Built Environment"].loc[excel_data["4_Built Environment"]["Feature Usage Notes"] == "Polygon", "FeatureClass"])
@@ -84,6 +89,12 @@ class ParamValues:
         fc_dict['veg_lyrs_list'] = veg_lyrs_list
         veg_field_values = list(excel_data["7_Vegetation"].loc[excel_data["7_Vegetation"]["Rule Type"] == "Calculate", "Value"])
         fc_dict['veg_field_values'] = veg_field_values
+        veg_transfer_veg_features = dict(zip(excel_data["7_Vegetation"]
+                .loc[excel_data["7_Vegetation"]["Function Name"].eq("Transfer Feature"),"FeatureClass"],
+                excel_data["7_Vegetation"].loc[excel_data["7_Vegetation"]["Function Name"].eq("Transfer Feature"),"Feature Usage Notes"]
+            )
+        )
+        fc_dict['veg_transfer_veg_features'] = veg_transfer_veg_features
 
         # Utility
         utility_area_features = list(excel_data["5_Utility"].loc[excel_data["5_Utility"]["Feature Usage Notes"] == "Polygon", "FeatureClass"])
@@ -92,6 +103,8 @@ class ParamValues:
         fc_dict['utility_point_features'] = utility_point_features
         utility_compare_features = list(excel_data["5_Utility"].loc[excel_data["5_Utility"]["Feature Usage Notes"] == "Compare Features", "FeatureClass"])
         fc_dict['utility_compare_features'] = utility_compare_features
+        utility_merge_clusters = list(excel_data["5_Utility"].loc[excel_data["5_Utility"]["Feature Usage Notes"] == "Merge Clusters", "FeatureClass"])
+        fc_dict['utility_merge_clusters'] = utility_merge_clusters
 
         # Hypsography
         hypso_compare_features = list(excel_data["6_Hypsography"].loc[excel_data["6_Hypsography"]["Function Name"] == "Erase Vegetation Hypso", "FeatureClass"])
@@ -110,6 +123,8 @@ class ParamValues:
         fc_dict['G2_Poly2Poly'] = G2_Poly2Poly
         G3_Poly2Poly = list(excel_data["10_DetectConflicts"].loc[excel_data["10_DetectConflicts"]["Function Name"] == "G3_Poly2Poly", "FeatureClass"])
         fc_dict['G3_Poly2Poly'] = G3_Poly2Poly
+        df_query_input_lyr = list(excel_data["10_DetectConflicts"].loc[excel_data["10_DetectConflicts"]["Function Name"] == "Apply_layer_definition", "FeatureClass"])
+        fc_dict['df_query_input_lyr'] = df_query_input_lyr
 
         # Resolve conflicts buildings
         built_up_area_fcs = list(excel_data["9b_ResolveConflictsBuildings"].loc[excel_data["9b_ResolveConflictsBuildings"]["Function Name"] == "Hide Buildings Under Generalized and Town Built-Up Area", "FeatureClass"])
@@ -136,6 +151,8 @@ class ParamValues:
         fc_dict['input_primary'] = input_primary
         input_secondary = list(excel_data["9b_ResolveConflictsBuildings"].loc[excel_data["9b_ResolveConflictsBuildings"]["Feature Usage Notes"] == "Compare features", "FeatureClass"])
         fc_dict['input_secondary'] = input_secondary
+        df_query_input_lyr_9b = list(excel_data["9b_ResolveConflictsBuildings"].loc[excel_data["9b_ResolveConflictsBuildings"]["Function Name"] == "Apply_layer_definition", "FeatureClass"])
+        fc_dict['df_query_input_lyr_9b'] = df_query_input_lyr_9b
 
         # Resolve conflicts lines
         input_line_layers = list(excel_data["9a_ResolveConflictsLines"].loc[excel_data["9a_ResolveConflictsLines"]["Feature Usage Notes"] == "Input Line Layers", "FeatureClass"])
@@ -170,9 +187,22 @@ class ParamValues:
         fc_dict['prep_line_resolve_fcs_list'] = prep_line_resolve_fcs_list
         apply_symbology_layers_list = list(excel_data["8_ApplyCartoSymbology"].loc[excel_data["8_ApplyCartoSymbology"]["Function Name"] == "Calculate VST on Workspace", "FeatureClass"])
         fc_dict['apply_symbology_layers_list'] = apply_symbology_layers_list
+
+        align_bridge_point_all = list(excel_data["8_ApplyCartoSymbology"].loc[excel_data["8_ApplyCartoSymbology"]["Function Name"] == "Align Bridge Point", "FeatureClass"])
+        fc_dict['align_bridge_point_input'] = str(align_bridge_point_all[0]) if align_bridge_point_all else None
+        
+        align_bridge_point_waterbody = list(excel_data["8_ApplyCartoSymbology"].loc[
+            (excel_data["8_ApplyCartoSymbology"]["Function Name"] == "Align Bridge Point") & 
+            (excel_data["8_ApplyCartoSymbology"]["Feature Usage Notes"].str.contains("Waterbody", na=False, case=False)), "FeatureClass"])
+        fc_dict['align_bridge_point_waterbody'] = align_bridge_point_waterbody
+        
+        align_bridge_point_surface = list(excel_data["8_ApplyCartoSymbology"].loc[
+            (excel_data["8_ApplyCartoSymbology"]["Function Name"] == "Align Bridge Point") & 
+            (excel_data["8_ApplyCartoSymbology"]["Feature Usage Notes"].str.contains("SurfaceLine", na=False, case=False)), "FeatureClass"])
+        fc_dict['align_bridge_point_surface'] = align_bridge_point_surface
         return fc_dict
     
-    def get_param_vals(self):
+    def get_param_vals_(self):
         val_dict = {}
         # Read Excel Data
         rule_book = openpyxl.load_workbook(self.excel_file)
@@ -535,5 +565,102 @@ class ParamValues:
         versions = wb.cell(row=2, column=10).value
         val_dict['versions'] = versions
         return val_dict
+    
+    def get_param_vals(self):
+        sheet_list = ['1_DataPreparation', '2_Transportation', '3_Hydrography', '4_Built Environment',
+                    '5_Utility', '6_Hypsography', '7_Vegetation', '8_ApplyCartoSymbology', '9a_ResolveConflictsLines',
+                    '9b_ResolveConflictsBuildings', '10_DetectConflicts', '11_LoadDataFinal100K']
+        # Load workbook and select sheet
+        val_dict = {}
+        wb = openpyxl.load_workbook(self.excel_file, data_only=True)
+        for sheet_name in sheet_list:
+            if sheet_name not in wb.sheetnames:
+                raise ValueError(f"Sheet '{sheet_name}' not found. Available sheets: {wb.sheetnames}")
+            ws = wb[sheet_name]
+            # Iterate row by row
+            for row in ws.iter_rows(values_only=True):
+                for i, cell_value in enumerate(row):
+                    if cell_value is not None and str(cell_value).strip():
+                        # If the key value in empty in excell then assign ""
+                        next_val = row[i + 1] if i + 1 < len(row) else ""
+                        if next_val is None:
+                            next_val = ""
+                        val_dict[str(cell_value).strip()] = next_val
+
+        return val_dict
 
 
+@dataclass
+class LayerNames:
+    _map: Dict[str, Any]
+
+    def __getattr__(self, name: str) -> Any:
+        try:
+            return self._map[name]
+        except KeyError as e:
+            raise AttributeError(f"No such layer key: {name!r}") from e
+
+    def __getitem__(self, key: str) -> Any:
+        return self._map[key]
+
+    def get(self, key: str, default: Any = None) -> Any:
+        return self._map.get(key, default)
+
+    def keys(self):
+        return self._map.keys()
+
+    def items(self):
+        return self._map.items()
+
+    def __iter__(self) -> Iterator[str]:
+        return iter(self._map)
+
+    def __len__(self) -> int:
+        return len(self._map)
+
+
+def _is_nan(x: Any) -> bool:
+    return pd.isna(x)
+
+
+def _as_key(x: Any) -> Optional[str]:
+    if x is None or _is_nan(x):
+        return None
+    s = str(x).strip()
+    return s or None
+
+
+class Validator:
+    def __init__(self, excel_file: str):
+        self.excel_file = excel_file
+
+    def get_layer_names(self, excel_sheet_name: str) -> LayerNames:
+        df = pd.read_excel(
+            self.excel_file,
+            sheet_name=excel_sheet_name,
+            usecols="A:B",          # only columns A, B
+            engine="openpyxl",
+            header=0,
+            dtype=object,
+        )
+
+        mapping: Dict[str, Any] = {}
+
+        for a, b in df.itertuples(index=False, name=None):
+            key_a = _as_key(a)
+            val_b = None if _is_nan(b) else b
+
+            # skip empty rows
+            if key_a is None and val_b is None:
+                continue
+
+            if not key_a:
+                continue
+
+            # Optional: protect against conflicting duplicates
+            if key_a in mapping and mapping[key_a] != val_b:
+                raise ValueError(f"Duplicate/conflicting key {key_a!r}: {mapping[key_a]!r} vs {val_b!r}")
+
+            mapping[key_a] = val_b
+
+        return LayerNames(mapping)

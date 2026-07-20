@@ -1,5 +1,6 @@
-# import required python modules
+
 import arcpy
+import arcgisscripting
 import traceback
 import math
 import os
@@ -10,7 +11,10 @@ import logging
 import arcpy.reviewer
 from datetime import datetime
 import glob
-
+from get_param_vals import Validator, LayerNames
+from collections import defaultdict
+from pathlib import Path
+import csv
 
 def error_msgs(log_dir):
     try:
@@ -34,9 +38,9 @@ def error_msgs(log_dir):
         return logger
     
     except Exception as e:
-            tb = traceback.format_exc()
-            error_message = f"Logger error message error: {e}\nTraceback details:\n{tb}"
-            arcpy.AddMessage(error_message)
+        tb = traceback.format_exc()
+        error_message = f"Logger error message error: {e}\nTraceback details:\n{tb}"
+        arcpy.AddError(error_message)
 
 def has_features(fc):
     with arcpy.da.SearchCursor(fc, ['OID@']) as cursor:
@@ -61,8 +65,7 @@ def simplified_msgs(error_method, custom_message):
     except Exception as e:
             tb = traceback.format_exc()
             error_message = f"Simplified message error: {e}\nTraceback details:\n{tb}"
-            arcpy.AddMessage(error_message)
-
+            arcpy.AddError(error_message)
 
 def get_fcs(in_workspace, dataset_name, logger):
     """ gets a list of all feature classes in a database, includes feature
@@ -82,9 +85,9 @@ def get_fcs(in_workspace, dataset_name, logger):
         exc_type, exc_value, exc_traceback = sys.exc_info()
         tb = traceback.format_exc()
         error_message = f'Create feature classes error: {e}\nTraceback details:\n{tb}'
+        arcpy.AddError(error_message)
         logger.error(error_message)
         simplified_msgs('Create feature classes', f'{exc_value}\n')
-
 
 def backup_data(src, dest, logger, ignore=None):
     '''
@@ -106,14 +109,16 @@ def backup_data(src, dest, logger, ignore=None):
         else:
             if not src.endswith(".lock"): 
                 shutil.copy2(src, dest)
-    except IOError as e:
-        logger.error(arcpy.AddMessage(e))
+
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         tb = traceback.format_exc()
         error_message = f'Backup data error: {e}\nTraceback details:\n{tb}'
+        arcpy.AddError(error_message)
         logger.error(error_message)
         simplified_msgs('Backup data', f'{exc_value}\n')
+    except IOError as e:
+        logger.error(arcpy.AddMessage(e))
 
 def get_fields(featureclass, not_include_fields, logger):
     # Set environment variables
@@ -137,6 +142,7 @@ def get_fields(featureclass, not_include_fields, logger):
         exc_type, exc_value, exc_traceback = sys.exc_info()
         tb = traceback.format_exc()
         error_message = f"Get fields error: {e}\nTraceback details:\n{tb}"
+        arcpy.AddError(error_message)
         logger.error(error_message)
         simplified_msgs('Get fields', f'{exc_value}\n')
 
@@ -184,6 +190,7 @@ def find_dangles(split_layer, update_field, working_gdb, logger):
         exc_type, exc_value, exc_traceback = sys.exc_info()
         tb = traceback.format_exc()
         error_message = f"Find dangles error: {e}\nTraceback details:\n{tb}"
+        arcpy.AddError(error_message)
         logger.error(error_message)
         simplified_msgs('Find dangles', f'{exc_value}\n')
 
@@ -222,7 +229,7 @@ def create_new_geo(temp_fc, has_z):
     except Exception as e:
         tb = traceback.format_exc()
         error_message = f"Create new geo error: {e}\nTraceback details:\n{tb}"
-        arcpy.AddMessage(error_message)
+        arcpy.AddError(error_message)
 
 
 
@@ -306,8 +313,8 @@ def create_new_geo(temp_fc, has_z):
 #         arcpy.AddError("ArcPy Error Message: {0}".format(arcpy.GetMessages(2)))
 
 
-# Mahmud vai's rebuild_features
-def rebuild_features(line_lyr, output_lyr, shape_type, unique_ids, left_field, working_gdb, right_field):
+# Mahmud vai's rebuild_features - modified in the next function definition
+def rebuild_features_(line_lyr, output_lyr, shape_type, unique_ids, left_field, working_gdb, right_field):
     """ reconstructs polygon geometries from a line feature class that has
     left and right polygon id values """
     # Set environment
@@ -352,7 +359,7 @@ def rebuild_features(line_lyr, output_lyr, shape_type, unique_ids, left_field, w
 
         # Dissolve the line features to create one or more closed lines
         fields_not_required_for_dislve = ["OBJECTID", "Shape", "created_user", "created_date", "last_edited_user", "last_edited_date", "InLine_FID", "MaxSimpTol", "MinSimpTol",
-                                     "Shape_Length", "Shape_Area"]
+                                     "Shape_Length", "Shape_Area"] 
         fields_list_selected_fcs = [field.name for field in (arcpy.da.Describe(line_lyr))['fields'] if field.name not in fields_not_required_for_dislve
                                and ("FID_" not in field.name and "LEFT_FID" not in field.name and "RIGHT_FID" not in field.name)]
         temp_fc = arcpy.management.Dissolve(line_lyr, f"{scratch}\\Temp_FC", fields_list_selected_fcs, "", "SINGLE_PART", "DISSOLVE_LINES")
@@ -383,10 +390,93 @@ def rebuild_features(line_lyr, output_lyr, shape_type, unique_ids, left_field, w
     except Exception as e:
         tb = traceback.format_exc()
         error_message = f"Rebuild features error: {e}\nTraceback details:\n{tb}"
-        arcpy.AddMessage(error_message)
-    except arcpy.ExecuteError:
-        arcpy.AddError("ArcPy Error Message: {0}".format(arcpy.GetMessages(2)))
+        arcpy.AddError(error_message)
 
+def rebuild_features(line_lyr, output_lyr, shape_type, unique_ids, left_field, working_gdb, right_field):
+    """ reconstructs polygon geometries from a line feature class that has
+    left and right polygon id values """
+    # Set environment
+    arcpy.env.overwriteOutput = 1
+    arcpy.env.workspace = arcpy.env.scratchGDB
+    scratch = arcpy.env.scratchGDB
+    # arcpy.AddMessage(f"output_lyr rebld: {output_lyr}")
+    try:
+        dup_lyr = arcpy.management.MakeFeatureLayer(line_lyr, "dup_lyr")
+
+        # Get information about geometry of output (spatial ref and if has Z)
+        spatial_ref = arcpy.da.Describe(output_lyr)['spatialReference']
+        has_z = arcpy.da.Describe(output_lyr)['hasZ']
+
+        oid_field = arcpy.da.Describe(output_lyr)['OIDFieldName']
+        name = arcpy.da.Describe(output_lyr)['name']
+
+        # Select the generalized lines relating to an input feature
+        if len(unique_ids) > 1:
+            arcpy.AddMessage("Creating new geometry")
+            query = f"{left_field } IN {tuple(unique_ids)}"
+            query_p =f"{query} OR {right_field} IN {tuple(unique_ids)}"
+        else:
+            arcpy.AddMessage("Creating new geometry")
+            query = f"{left_field } = {unique_ids[0]}"
+            query_p =f"{query} OR {right_field} = {unique_ids[0]}"
+        arcpy.AddMessage(f"query: {query}")
+        if shape_type == "Polyline":
+            arcpy.management.SelectLayerByAttribute(line_lyr, "NEW_SELECTION", query)
+        if shape_type == "Polygon":
+            arcpy.management.SelectLayerByAttribute(line_lyr, "NEW_SELECTION", query_p)
+
+            # If a line has the same value for both the left and right ID
+            # This means that there is a feature that overlaps the original
+            # feature.  These lines and any identical lines need to be
+            # removed from the selection.
+            if len(unique_ids) > 1:
+                remove_query = f"{left_field } IN {tuple(unique_ids)} AND {right_field} IN {tuple(unique_ids)}"
+            else:
+                remove_query = f"{left_field } = {unique_ids[0]} AND {right_field} = {unique_ids[0]}"
+            arcpy.management.SelectLayerByAttribute(dup_lyr, "NEW_SELECTION", remove_query)
+            arcpy.management.SelectLayerByLocation(line_lyr, "ARE_IDENTICAL_TO", dup_lyr, None, "REMOVE_FROM_SELECTION")
+
+        # Dissolve the line features to create one or more closed lines
+        fields_not_required_for_dislve = ["OBJECTID", "Shape", "created_user", "created_date", "last_edited_user", "last_edited_date", "InLine_FID", "MaxSimpTol", "MinSimpTol",
+                                     "Shape_Length", "Shape_Area"]
+        fields_list_selected_fcs = [field.name for field in (arcpy.da.Describe(line_lyr))['fields'] if field.name not in fields_not_required_for_dislve
+                               and ("FID_" not in field.name and "LEFT_FID" not in field.name and "RIGHT_FID" not in field.name)]
+        temp_fc = arcpy.management.Dissolve(line_lyr, f"{scratch}\\Temp_FC", fields_list_selected_fcs, "", "SINGLE_PART", "DISSOLVE_LINES")
+
+         # Create the new polygon or line geometries
+        if shape_type == "Polygon":
+            #Create a geometry array from the dissolved line
+            arcpy.management.FeatureToPolygon(temp_fc, "new_geo")
+            arcpy.management.Dissolve("new_geo", "final_new_geo", "", "", "SINGLE_PART", "DISSOLVE_LINES")
+        elif shape_type == "Polyline":
+            arcpy.management.FeatureToLine(temp_fc, "new_geo", attributes = "ATTRIBUTES")
+            arcpy.management.Dissolve("new_geo", "final_new_geo", fields_list_selected_fcs, "", "SINGLE_PART", "DISSOLVE_LINES")
+
+        # Update the geometries in the output feature class
+        if len(unique_ids) > 1:
+            query = f"{oid_field } IN {tuple(unique_ids)}"
+        else:
+            query = f"{oid_field } = {unique_ids[0]}"
+        # Create a layer from the output feature class to update
+        arcpy.management.MakeFeatureLayer(output_lyr, "output_lyr")
+        
+        fms = arcpy.FieldMappings()
+        fms.addTable(output_lyr)
+        # Select the features to be updated
+        arcpy.management.SelectLayerByAttribute("output_lyr", "NEW_SELECTION", query)
+        arcpy.analysis.SpatialJoin(output_lyr, "final_new_geo" , "TEMP_OUT_SPATIALJOIN", field_mapping=fms)
+       
+        # arcpy.management.DeleteField("TEMP_OUT_SPATIALJOIN", output_lyr_required_fields, "KEEP_FIELDS")
+        # # Delete the selected features
+        arcpy.management.DeleteFeatures(output_lyr)
+        # # Append the new geometry with attributes to the selected features
+        arcpy.management.Append("TEMP_OUT_SPATIALJOIN", output_lyr, "NO_TEST")
+        
+
+    except Exception as e:
+        tb = traceback.format_exc()
+        error_message = f"Rebuild features error: {e}\nTraceback details:\n{tb}"
+        arcpy.AddError(error_message)
 
 def get_fcs_as_dict(in_workspace, dataset=""):
     """ gets a list of all feature classes in a database, includes feature
@@ -411,7 +501,7 @@ def get_fcs_as_dict(in_workspace, dataset=""):
     except Exception as e:
         tb = traceback.format_exc()
         error_message = f"Get fcs as dict error: {e}\nTraceback details:\n{tb}"
-        arcpy.AddMessage(error_message)
+        arcpy.AddError(error_message)
 
 
 def parse_file(file_path, params):
@@ -432,7 +522,7 @@ def parse_file(file_path, params):
     except Exception as e:
         tb = traceback.format_exc()
         error_message = f"Parse file error: {e}\nTraceback details:\n{tb}"
-        arcpy.AddMessage(error_message)
+        arcpy.AddError(error_message)
 
 def populate_hierarchy(hierarchy_file, workspace, field_name, working_gdb):
     """ Build a query to find all features with the same name as this record"""
@@ -449,8 +539,7 @@ def populate_hierarchy(hierarchy_file, workspace, field_name, working_gdb):
         params = [fcs, queries, values]
 
         fcs, queries, values = parse_file(hierarchy_file, params)
-        fc_dict = get_fcs_as_dict(workspace, dataset="Topo")
-
+        fc_dict = get_fcs_as_dict(workspace, dataset="")
         cnt = 0
         for fc in fcs:
             fc = fc.upper()
@@ -470,7 +559,76 @@ def populate_hierarchy(hierarchy_file, workspace, field_name, working_gdb):
     except Exception as e:
         tb = traceback.format_exc()
         error_message = f"Populate hierarchy error: {e}\nTraceback details:\n{tb}"
+        arcpy.AddError(error_message)
+
+"""Newly added updated function for hierarchy population"""
+
+def parse_file_new(file_path):
+    arcpy.AddMessage("Hierarchy file parsing.....")
+    rows = []
+    try:
+        with open(file_path, "r", encoding="utf-8-sig", newline="") as f:
+            reader = csv.reader(f)
+            for row_num, row in enumerate(reader, start=1):
+                if not row or len(row) < 3:
+                    continue
+                    
+                fc = row[0].strip()
+                query = row[1].strip()
+                val = row[2].strip()
+
+                if not fc:
+                    continue
+                rows.append((fc, query, int(val), row_num))
+                
+        return rows
+
+    except Exception as e:
+        tb = traceback.format_exc()
+        arcpy.AddMessage(f"Parse file error: {e}\nTraceback details:\n{tb}")
+        return []
+
+def populate_hierarchy_new(hierarchy_file, workspace, field_name, working_gdb):
+    """ Build a query to find all features with the same name as this record and populate the Hierarchy field"""
+    arcpy.AddMessage("Start Populate Hierarchy")
+    try:
+        # Set environment
+        arcpy.env.overwriteOutput = True
+        arcpy.env.workspace = working_gdb
+        
+        rule_set = parse_file_new(hierarchy_file)
+
+        fc_dict = get_fcs_as_dict(workspace, dataset="")
+
+        cnt = 0
+        for element in rule_set:
+            fc = element[0]
+            query = element[1]
+            value = element[2]
+
+            fc_upper = fc.upper()
+            if fc_upper in fc_dict:
+                fc_path = fc_dict[fc_upper]
+        
+                feature_layer = arcpy.management.MakeFeatureLayer(fc_path, f"{fc_upper}_lyr_{cnt}")
+                selected_fcs = arcpy.management.SelectLayerByAttribute(feature_layer, "NEW_SELECTION", query)
+                count = int(arcpy.management.GetCount(selected_fcs).getOutput(0))
+                arcpy.AddMessage(f"Selected Count: {count}")
+                if count >= 1:
+                    arcpy.SetProgressorLabel(f'Populating Hierarchy: Updating {str(count)} features with value {str(value)}')
+                    arcpy.AddMessage("Updating " + str(count) + " features with value " + str(value))
+                    arcpy.management.CalculateField(selected_fcs, field_name, value, "PYTHON3")
+                    arcpy.management.SelectLayerByAttribute(feature_layer, "CLEAR_SELECTION")
+                cnt += 1
+            else:
+                arcpy.AddMessage(f"{fc} not found in the GDB")
+        arcpy.AddMessage("Ended Populating Hierarchy")
+    except Exception as e:
+        tb = traceback.format_exc()
+        error_message = f"Populate hierarchy error: {e}\nTraceback details:\n{tb}"
         arcpy.AddMessage(error_message)
+
+"""Newly added updated functions for hierarchy population"""
 
 
 def flag_loops(input_line, working_gdb, hier_field):
@@ -527,7 +685,7 @@ def flag_loops(input_line, working_gdb, hier_field):
     except Exception as e:
         tb = traceback.format_exc()
         error_message = f"Merge parallel powerlines error: {e}\nTraceback details:\n{tb}"
-        arcpy.AddMessage(error_message)
+        arcpy.AddError(error_message)
 
 
 def delete_dangles(hydro_lyr, dangles, seg_length, compare_fcs, working_gdb):
@@ -576,7 +734,7 @@ def delete_dangles(hydro_lyr, dangles, seg_length, compare_fcs, working_gdb):
     except Exception as e:
             tb = traceback.format_exc()
             error_message = f"Delete dangles error: {e}\nTraceback details:\n{tb}"
-            arcpy.AddMessage(error_message)
+            arcpy.AddError(error_message)
 
 def process_fc(in_fc, fcs, fc_paths):
     """prep features classes and convert to line if necessary"""
@@ -601,7 +759,7 @@ def process_fc(in_fc, fcs, fc_paths):
     except Exception as e:
         tb = traceback.format_exc()
         error_message = f"Process fc error: {e}\nTraceback details:\n{tb}"
-        arcpy.AddMessage(error_message)
+        arcpy.AddError(error_message)
 
 def unique_query(output_layer, main_field, left_field, right_field):
     """ build a string of the object IDs for the features that were modified
@@ -623,6 +781,8 @@ def unique_query(output_layer, main_field, left_field, right_field):
             unique_ids.remove(-1)
         if 0 in unique_ids:
             unique_ids.remove(0)
+        if None in unique_ids:
+            unique_ids.remove(None)
 
         if len(unique_ids) < 1:
             arcpy.AddWarning("Unable to find any features to update")
@@ -641,16 +801,22 @@ def unique_query(output_layer, main_field, left_field, right_field):
     except Exception as e:
             tb = traceback.format_exc()
             error_message = f"Unique query error: {e}\nTraceback details:\n{tb}"
-            arcpy.AddMessage(error_message)
+            arcpy.AddError(error_message)
 
 def find_id_fields(name, fields):
     """ determines the count of which field contains the feature class ids"""
     try:
         cnt = 0
         id_cnt = -1
+        # Normalize the name: uppercase and replace dots with underscores
+        norm_name = name.upper().replace('.', '_')
+        # Normalize the base name (portion after any dots)
+        base_name = name.split('.')[-1].upper()
+
         # Determine the fields that store the left and right ID
         for field in fields:
-            if name in field.name:
+            norm_field = field.name.upper()
+            if norm_name in norm_field or base_name in norm_field:
                 # The fields proceeding the L and R fields will contain the feature class name
                 id_cnt = cnt
             cnt += 1
@@ -660,7 +826,7 @@ def find_id_fields(name, fields):
     except Exception as e:
             tb = traceback.format_exc()
             error_message = f"Find ID fields error: {e}\nTraceback details:\n{tb}"
-            arcpy.AddMessage(error_message)
+            arcpy.AddError(error_message)
 
 
 # def feature2point_bldg(inFc, point_fc, min_size, delete_input, one_point, unique_field, working_gdb, sql_bldg):
@@ -775,21 +941,22 @@ def merge_parallel_roads(line_fc, Where_clause, Merge_Field, Merge_Distance, upd
     arcpy.env.overwriteOutput = True
     try:
         if update:
-            if ":" in Change_road_type:
-                splitvals = Change_road_type.split(":")
-                val = str(splitvals[0])
-                Change_road_type = val.strip()
-            else:
-                Change_road_type = Change_road_type
+            if Change_road_type:
+                if ":" in Change_road_type:
+                    splitvals = Change_road_type.split(":")
+                    val = str(splitvals[0])
+                    Change_road_type = val.strip()
+                else:
+                    Change_road_type = Change_road_type
 
         # Outputs:
         split = f"{working_gdb}\\splitroads"
         unsplit = f"{working_gdb}\\unsplitout"
         mergeOut = f"{working_gdb}\\mergeout"
         # Field Name
-        field_name = f"{working_gdb}\\MDR_Type"
+        field_name = "MDR_Type"
 
-        Merge_crit = str(Merge_Distance) + "Meters"
+        Merge_crit = str(Merge_Distance) + " Meters"
 
         road_lyr = arcpy.management.MakeFeatureLayer(line_fc, "roadlyr", Where_clause)
         count1 = int(arcpy.management.GetCount(road_lyr).getOutput(0))
@@ -805,72 +972,83 @@ def merge_parallel_roads(line_fc, Where_clause, Merge_Field, Merge_Distance, upd
             arcpy.AddMessage("Splitting lines at vertices...")
             arcpy.management.SplitLine(road_lyr, split)
 
-            # Add MDR field to query on
+            #Add MDR field to query on
             arcpy.AddMessage("Adding MDR field...")
             arcpy.management.AddField(split, field_name, 'LONG', '#', '#', '#', '#', 'NULLABLE', 'NON_REQUIRED', '#')
 
+
+
             # Merge Divided Roads - merges based on a provided distance
             arcpy.AddMessage("Merge divided roads...")
-            arcpy.AddMessage(f"Merge_crit: {Merge_crit}, Merge_Distance: {Merge_Distance}")
             arcpy.cartography.MergeDividedRoads(split, Merge_Field, Merge_crit, mergeOut, "")
             arcpy.management.RepairGeometry(mergeOut)
             mergelyr = arcpy.management.MakeFeatureLayer(mergeOut, "mergelayer", "", "", "")
 
-            # Selet the features in the merge that represent new geometry and add to split features
+
+
+            #Selet the features in the merge that represent new geometry and add to split features
             arcpy.management.SelectLayerByAttribute(mergelyr, "NEW_SELECTION", "MDR_Type = 1")
-            ##merge_cnt = int(arcpy.management.GetCount(mergelyr).getOutput(0))
-            if has_features(mergelyr):
+            merge_cnt = int(arcpy.management.GetCount(mergelyr).getOutput(0))
+            if merge_cnt >= 1:
                 # Calculate the new type of transportation
                 if update:
                     arcpy.AddMessage("Calculate field to the new type...")
                     arcpy.management.CalculateField(mergelyr, Merge_Field, Change_road_type, 'VB', '#')
 
-                # Unsplit the features
+
+                #Unsplit the features
                 arcpy.AddMessage("Dissolving lines at vertices...")
+
                 arcpy.management.UnsplitLine(mergeOut, unsplit, [Merge_Field])
                 arcpy.management.RepairGeometry(mergeOut)
-
-                # Unsplit drops all the attributes, so replace the geometry of the
+                #Unsplit drops all the attributes, so replace the geometry of the
                 # features in the split layer with the merged geometry.
-                with arcpy.da.SearchCursor(unsplit, ['OID@', 'SHAPE@']) as cursor:
+                with arcpy.da.SearchCursor(unsplit, ['oid@', 'SHAPE@']) as cursor:
                     for row in cursor:
                         geo = row[1]
                         arcpy.management.SelectLayerByLocation(mergelyr, "WITHIN", geo, "", "NEW_SELECTION")
                         cnt = 0
-                        with arcpy.da.UpdateCursor(mergelyr, ['OID@', 'SHAPE@']) as up_cursor:
+                        with arcpy.da.UpdateCursor(mergelyr, ['oid@', 'SHAPE@']) as up_cursor:
                             for up_row in up_cursor:
                                 if cnt == 0:
-                                    # Replace the geometry for the first record
+                                    #replace the geometry for the first record
                                     up_row[1] = geo
                                     up_cursor.updateRow(up_row)
                                     cnt += 1
                                 else:
-                                    # Delete the other rows
+                                    #delete the other rows
                                     up_cursor.deleteRow()
 
-                # Compare the results of the unsplit to the original feature class
+
+
+                #Compare the results of the unsplit to the original feature class
                 arcpy.AddMessage("Finding features in input that will be replaced")
                 updategeo = [row[0] for row in arcpy.da.SearchCursor(mergeOut, 'SHAPE@')]
                 orig_geos = [row[0] for row in arcpy.da.SearchCursor(road_lyr, 'SHAPE@')]
                 ids = []
-                with arcpy.da.UpdateCursor(road_lyr, ['OID@', 'SHAPE@']) as cursor:
+                with arcpy.da.UpdateCursor(road_lyr, ['oid@', 'SHAPE@']) as cursor:
                     for row in cursor:
                         geo = row[1]
                         match = False
+                        cnt = 0
                         for geom in updategeo:
                             if geom and geo:
+                                print(geom)
+                                print(geo)
                                 if geo.equals(geom):
                                     match = True
 
                         if not match:
+                            arcpy.AddMessage(str(row[0]) + " no match deleteing")
                             cursor.deleteRow()
 
                 arcpy.AddMessage("Finding merged features to add to input feature class")
 
-                with arcpy.da.SearchCursor(mergeOut, ['OID@', 'SHAPE@']) as cursor:
+                with arcpy.da.SearchCursor(mergeOut, ['oid@', 'SHAPE@']) as cursor:
                     for row in cursor:
                         geo = row[1]
                         match = False
+                        cnt = 0
                         for geom in orig_geos:
                             if geom and geo:
                                 if geo.equals(geom):
@@ -882,12 +1060,13 @@ def merge_parallel_roads(line_fc, Where_clause, Merge_Field, Merge_Distance, upd
                 if len(ids) >= 1:
                     where = "OBJECTID = "
                     where += " OR OBJECTID = ".join(ids)
+                    arcpy.AddMessage(where)
 
                     arcpy.management.SelectLayerByAttribute(mergelyr, "NEW_SELECTION", where)
-                    #count = int(arcpy.management.GetCount(mergelyr).getOutput(0))
-                    if has_features(mergelyr):
-                        arcpy.AddMessage("Adding  merged features to input.")
-                        arcpy.management.Append(mergelyr, line_fc, "NO_TEST")
+                    count = int(arcpy.management.GetCount(mergelyr).getOutput(0))
+                    if count >= 1:
+                        arcpy.AddMessage("Adding " + str(count) + " merged features to input.")
+                        arcpy.management.Append(mergelyr, road_lyr, "NO_TEST")
             else:
                 arcpy.AddMessage("No features were close enough to be merged.")
         else:
@@ -898,7 +1077,7 @@ def merge_parallel_roads(line_fc, Where_clause, Merge_Field, Merge_Distance, upd
     except Exception as e:
         tb = traceback.format_exc()
         error_message = f"Merge parallel roads error: {e}\nTraceback details:\n{tb}"
-        arcpy.AddMessage(error_message)
+        arcpy.AddError(error_message)
 
 def get_fcs_load_data(in_workspace, wksp_type):
     try:
@@ -909,14 +1088,15 @@ def get_fcs_load_data(in_workspace, wksp_type):
         # Set environment variables
         arcpy.env.workspace = in_workspace
         # Get dataset name
-        dataset_name = 'Topo'
-        datasets = arcpy.ListDatasets("*Topo*")
+        dataset_name = ''
+        datasets = arcpy.ListDatasets(dataset_name)
         if len(datasets) == 1:
             dataset_name = datasets[0]
         else:
-            arcpy.AddError("Unable to determine name of Topo dataset")
+            arcpy.AddMessage("No dataset is applicable")
         # Get feature classes name
-        fc_classes = arcpy.ListFeatureClasses("", "", dataset_name)
+        fc_classes = arcpy.ListFeatureClasses("", "")
+
         for fc in fc_classes:
             desc = arcpy.da.Describe(fc)
             if wksp_type == "RemoteDatabase":
@@ -924,20 +1104,19 @@ def get_fcs_load_data(in_workspace, wksp_type):
                 database, owner, featureclass = fullname.split(",")
                 fcname = featureclass.strip()
                 fc_name_list.append(fcname)
-                fc_path = os.path.join(in_workspace, dataset_name, fc)
+                fc_path = os.path.join(in_workspace, fc)
                 fcs_dict[fcname] = fc_path
             else:
                 fcname = desc['name']
                 fc_name_list.append(fcname)
-                fc_path = os.path.join(in_workspace, dataset_name, fc)
+                fc_path = os.path.join(in_workspace, fc)
                 fcs_dict[fcname] = fc_path
-
         return fc_name_list, fcs_dict
     
     except Exception as e:
         tb = traceback.format_exc()
         error_message = f"Get fcs load data error: {e}\nTraceback details:\n{tb}"
-        arcpy.AddMessage(error_message)
+        arcpy.AddError(error_message)
 
 
 def split_fcs_load_data(in_workspace):
@@ -952,70 +1131,28 @@ def split_fcs_load_data(in_workspace):
     except Exception as e:
         tb = traceback.format_exc()
         error_message = f"Split fcs load data error: {e}\nTraceback details:\n{tb}"
-        arcpy.AddMessage(error_message)
+        arcpy.AddError(error_message)
 
 def prepFcs(detec_conflict_fc_list, database_path, map_name, symbology_file_path, query='', symbology=''):
     try:
         arcpy.env.workspace = "memory"
         layer_list = []
-
-        # Filter out any "CartoPartition" feature classes at the start
-        detec_conflict_fc_list = [fc for fc in detec_conflict_fc_list if "CartoPartition" not in str(fc)]
         # Get current map
         aprx = arcpy.mp.ArcGISProject('CURRENT')
         maps = aprx.listMaps(map_name)[0]
+        all_layers = maps.listLayers()
+      
+        
+        detec_conflict_fc_list =  [lyr for lyr in all_layers for fc in detec_conflict_fc_list if lyr.name in fc and not lyr.isGroupLayer ]
+        for lyr in detec_conflict_fc_list:
+            arcpy.AddMessage(f"Prepping: {lyr.name}")
 
-        # Preload symbology path (no map usage)
-        sym_path = None
-        if symbology == "NO_OUTLINE":
-            layer_path = os.path.dirname(database_path)
-            candidate = os.path.join(layer_path, "no_outline.lyrx")
-            if arcpy.Exists(candidate):
-                sym_path = candidate
-            else:
-                arcpy.AddMessage(f"Symbology layer file not found at: {candidate}")
-
-        for fc in detec_conflict_fc_list:
-            desc = arcpy.da.Describe(fc)
-            fcName = desc['name']
-            geo_type = desc['shapeType']
-            
-            arcpy.AddMessage("Prepping " + fcName)
-
-            if has_features (fc):
-                layer = maps.addDataFromPath(fc)
-                # Apply NO_OUTLINE symbology for polygons if requested
-                arcpy.AddMessage("  ...Setting layer symbology to use outlines")
-                if sym_path and geo_type == "Polygon":
-                    symbology_layerx = maps.addDataFromPath(sym_path)
-                    in_symbology = symbology_layerx.symbology
-                    layer.symbology = in_symbology
-                    maps.removeLayer(symbology_layerx)
-                    layer_list.append(layer)
-                else:
-                    arcpy.AddMessage("  ...Setting layer symbology to not use outlines")
-                    # Add layers into map
-                    fc_name = os.path.basename(fc)
-                    layer = maps.addDataFromPath(fc)
-                    # Getting layrx files
-                    lyrx = [k for k in glob.glob(os.path.join(symbology_file_path + "\*.lyrx"))]
-                    # Applying symbology
-                    for symbology_layer in lyrx:
-                        if fc_name in symbology_layer:
-                            symbology_layerx = maps.addDataFromPath(symbology_layer)
-                            in_symbology = symbology_layerx.symbology
-                            layer.symbology = in_symbology
-                            maps.removeLayer(symbology_layerx)
-                            layer_list.append(layer)
-
-        # Keep original call pattern
-        layer_list = make_unique_layers(layer_list, map_name)
-        return layer_list
+        return detec_conflict_fc_list
 
     except Exception as e:
         tb = traceback.format_exc()
         error_message = f"Prep fcs error: {e}\nTraceback details:\n{tb}"
-        arcpy.AddMessage(error_message)
+        arcpy.AddError(error_message)
 
 def write2Rev(conflict_fc, rev_workspace, rev_session, severity):
     try:
@@ -1046,22 +1183,34 @@ def write2Rev(conflict_fc, rev_workspace, rev_session, severity):
     except Exception as e:
         tb = traceback.format_exc()
         error_message = f"Write to rev error: {e}\nTraceback details:\n{tb}"
-        arcpy.AddMessage(error_message)
+        arcpy.AddError(error_message)
 
-def hide_blgs_under_built_up_area(fc_list, build_up_area_fcs, express_val_mx, express_val_mn, field_name, search_distance, query):
+def hide_blgs_under_built_up_area(fc_list, build_up_area_fcs, express_val_mx, express_val_mn, field_name, search_distance, query, map_name = None):
+    dynamic_fc_names = resolve_lyr()
     try:
+        aprx = arcpy.mp.ArcGISProject('CURRENT')
+        active_map = aprx.activeMap
+        if(map_name):
+            active_map = aprx.listMaps(map_name)[0]
+        fc_layers = active_map.listLayers()
         # Get feature classes
         build_up_area_fcs = list(filter(str.strip, build_up_area_fcs))
-        build_up_area_fcs = [fc for built in build_up_area_fcs for fc in fc_list if str(built) in fc and (str(built) != 'B_Town_Built_Up_A' or str(built) != 'B_Generalised_Buildings_A')]
-        b_town_built_up_A = [fc for fc in fc_list if 'BJ0073_Town_Built_up_A' in fc][0]
+        build_up_area_fcs = [fc for built in build_up_area_fcs for fc in fc_list if str(built) in fc and str(built) not in {dynamic_fc_names.Town_Built_up_A, dynamic_fc_names.Generalised_Buildings_A}]
+        b_town_built_up_A = [fc for fc in fc_layers if dynamic_fc_names.Town_Built_up_A in fc.name][0]
         # Get feature class and make feature layer
-        b_town_built_up_A = arcpy.management.MakeFeatureLayer(b_town_built_up_A, "b_town_built_up_A")
-        b_generalised_buildings_A = [fc for fc in fc_list if 'BJ0500_Generalised_Buildings_A' in fc][0]
-        b_generalised_buildings_A = arcpy.management.MakeFeatureLayer(b_generalised_buildings_A, "b_generalised_buildings_A")
-        b_Buildings_P = [fc for fc in fc_list for key in ['BA0010_Residential_Building_P','BC0010_Industrial_Building_P','BE0010_Educational_Building_P','BF0010_Building_Of_Worship_P'] if key in fc]
+        # b_town_built_up_A = arcpy.management.MakeFeatureLayer(b_town_built_up_A, "b_town_built_up_A")
+        # b_town_built_up_A = maps.listLayers("BJ0073_Town_Built_up_A")
+        b_generalised_buildings_A = [fc for fc in fc_layers if dynamic_fc_names.Generalised_Buildings_A in fc.name][0]
+        # b_generalised_buildings_A = arcpy.management.MakeFeatureLayer(b_generalised_buildings_A, "BJ0500_Generalised_Buildings_A")
+        # b_generalised_buildings_A = maps.listLayers( "BJ0500_Generalised_Buildings_A")
+        b_Buildings_P = [fc for fc in fc_list for key in [dynamic_fc_names.Residential_Building_P,
+                                                          dynamic_fc_names.Industrial_Building_P,
+                                                          dynamic_fc_names.Educational_Building_P,
+                                                          dynamic_fc_names.Building_Of_Worship_P] if key in fc]
         for b_Building_fc in b_Buildings_P:
-            layer_name = arcpy.da.Describe(b_Building_fc)['name']
-            b_Buildings_P_lyr = arcpy.management.MakeFeatureLayer(b_Building_fc, layer_name)
+            # layer_name = arcpy.da.Describe(b_Building_fc)['name']
+            #b_Buildings_P_lyr = arcpy.management.MakeFeatureLayer(b_Building_fc, layer_name)
+            b_Buildings_P_lyr = [fc for fc in fc_layers if os.path.basename(b_Building_fc) in fc.name][0]
             # Get all field names from the current feature class
             all_fields = [f.name for f in arcpy.ListFields(b_Building_fc)]
 
@@ -1073,25 +1222,34 @@ def hide_blgs_under_built_up_area(fc_list, build_up_area_fcs, express_val_mx, ex
 
             # Feature selection for B_Buildings_P
             selected_fcs_gen = arcpy.management.SelectLayerByAttribute(b_Buildings_P_lyr, 'NEW_SELECTION', query)
-            # Calculate Field
-            arcpy.management.CalculateField(in_table=selected_fcs_gen, field=field_name, expression=express_val_mn, expression_type='PYTHON3')
 
-        for fc in build_up_area_fcs:
-            fc_name = arcpy.da.Describe(fc)["name"]
-            fc_lyr = arcpy.management.MakeFeatureLayer(fc, f"{fc_name}_layer")
-            # Feature selection for B_Town_Built_Up_A
-            selected_fcs_town = arcpy.management.SelectLayerByLocation(fc_lyr, 'INTERSECT', b_town_built_up_A, search_distance, 'NEW_SELECTION')
             # Calculate Field
-            arcpy.management.CalculateField(in_table=selected_fcs_town, field=field_name, expression=express_val_mx, expression_type='PYTHON3')
-            # Feature selection for B_Generalised_Buildings_A
-            selected_fcs_gen = arcpy.management.SelectLayerByLocation(fc_lyr, 'INTERSECT', b_generalised_buildings_A, search_distance, 'NEW_SELECTION')
-            # Calculate Field
-            arcpy.management.CalculateField(in_table=selected_fcs_gen, field=field_name, expression=express_val_mx, expression_type='PYTHON3')
+            arcpy.management.CalculateField(in_table=b_Buildings_P_lyr, field=field_name, expression=express_val_mn, expression_type='PYTHON3')
+        # arcpy.AddMessage(f"search_distance: {search_distance} and b_town_built_up_A: {b_town_built_up_A}")
+        if has_features(b_town_built_up_A) and has_features(b_generalised_buildings_A):
+            for fc in build_up_area_fcs:
+                if has_features(fc):
+                    fc_name = arcpy.da.Describe(fc)["name"]
+                    arcpy.AddMessage(f'Processing: "{fc_name}" for hiding buildings under built-up area')
+                    matches = [fc for fc in fc_layers if fc.name in fc_name and not fc.isGroupLayer]
+                    if matches:
+                        fc_lyr = matches[0]
+                    else:
+                        arcpy.AddWarning(f'Layer: "{fc_name}" is in the GDB, but Could not find a layer for "{fc_name}" in the Map Layers. Skipping this feature class.')
+                        continue
+                    # Feature selection for B_Town_Built_Up_A
+                    selected_fcs_town = arcpy.management.SelectLayerByLocation(fc_lyr, 'INTERSECT', b_town_built_up_A, search_distance, 'NEW_SELECTION')
+                    # Calculate Field
+                    arcpy.management.CalculateField(in_table=fc_lyr, field=field_name, expression=express_val_mx, expression_type='PYTHON3')
+                    # Feature selection for B_Generalised_Buildings_A
+                    selected_fcs_gen = arcpy.management.SelectLayerByLocation(fc_lyr, 'INTERSECT', b_generalised_buildings_A, search_distance, 'NEW_SELECTION')
+                    # Calculate Field
+                    arcpy.management.CalculateField(in_table=fc_lyr, field=field_name, expression=express_val_mx, expression_type='PYTHON3')
 
     except Exception as e:
         tb = traceback.format_exc()
         error_message = f"Hide buildings under built-up area error: {e}\nTraceback details:\n{tb}"
-        arcpy.AddMessage(error_message)
+        arcpy.AddError(error_message)
 
 
 def apply_symbology(feature_layer, symbology_field_in, symbology_file_path, map_name, fc_name):
@@ -1114,63 +1272,102 @@ def apply_symbology(feature_layer, symbology_field_in, symbology_file_path, map_
     except Exception as e:
         tb = traceback.format_exc()
         error_message = f"Apply symbology error: {e}\nTraceback details:\n{tb}"
-        arcpy.AddMessage(error_message)
-
+        arcpy.AddError(error_message)
 
 def resolve_conflicts_points_polygon(fc_list, input_building_layers, input_barrier_layers, bb_lyr_ex, bb_lyr_ex_his, hierarchy_field, invisibility_field, symbology_file_path, ref_scale, 
                                      minimum_size, bld_gap, working_gdb, map_name):
     try:
+        aprx = arcpy.mp.ArcGISProject('CURRENT')
+        maps = aprx.listMaps(map_name)[0]
+        fc_layers = maps.listLayers()
+        
+        #Clear selection from all layers
+        for lyr in fc_layers:
+            if lyr.isFeatureLayer and not lyr.isGroupLayer:
+                try:
+                    arcpy.management.SelectLayerByAttribute(lyr, "CLEAR_SELECTION")
+                except arcgisscripting.ExecuteError as e:
+                    arcpy.AddWarning(f"Warning: could not clear selection from '{lyr.name}' - {e}. --> Check this layer in the map whether the datasorce is broken or any other mismatch for this layer in both GDB and Map.")
+                    continue
+        arcpy.AddMessage("Cleared selection from all valid layers")
+
         # Set Environment
         arcpy.env.overwriteOutput = 1
         arcpy.env.workspace = working_gdb
         # Get feature classes
         input_building_layers = list(filter(str.strip, input_building_layers))
-        input_building_layers = [fc for bld_lyr in input_building_layers for fc in fc_list if str(bld_lyr) in fc]
+        input_building_layers = [fc for bld_lyr in input_building_layers for fc in fc_layers if str(bld_lyr) in fc.name]
         input_barrier_layers = list(filter(str.strip, input_barrier_layers))
-        input_barrier_layers = [fc for bar_lyr in input_barrier_layers for fc in fc_list if str(bar_lyr) in fc]
+        input_barrier_layers = [fc for bar_lyr in input_barrier_layers for fc in fc_layers if str(bar_lyr) in fc.name]
+        
         # Set bolean
-        bolean = False
+        bolean = "false"
         building_list = []
         barrier_list = []
 
-        # Make barrier feature layers
+        # Make barrier feature list
         for br_lyr in input_barrier_layers:
-            fc_name = arcpy.da.Describe(br_lyr)['aliasName']
-            basename = os.path.basename(br_lyr)
-            barrier_list.append(fc_name)
-            apply_symbology(br_lyr, hierarchy_field, symbology_file_path, map_name, basename)
+            barrier_list.append(br_lyr.name)
        
-        # Make building feature layers
+        # Make building feature list
         for b_lyr in input_building_layers:
-            fc_name = arcpy.da.Describe(b_lyr)['aliasName']
-            basename = os.path.basename(b_lyr)
-            building_list.append(fc_name)
-            apply_symbology(b_lyr, hierarchy_field, symbology_file_path, map_name, basename)
+            building_list.append(b_lyr.name)
 
         # Get the map layers
-        aprx = arcpy.mp.ArcGISProject('CURRENT')
-        maps = aprx.listMaps(map_name)[0]
-        # Get the feature layer
-        fc_layers = maps.listLayers()
-        fc_layers = make_unique_layers(fc_layers, map_name)
-        building_layers = [lyr for lyr in fc_layers for fc in building_list if str(lyr.name) in fc]
-        barrier_layers = [lyr for lyr in fc_layers for fc in barrier_list if str(lyr.name) in fc]
-        in_barriers = [[com_layer, f"{bolean}", f"{bld_gap} Meters"] for com_layer in barrier_layers]
+        # fc_layers = make_unique_layers(fc_layers, map_name)
+        fc_building_layers = [lyr for lyr in fc_layers for fc in building_list if str(lyr.name) == fc and has_features(lyr)]
+        fc_barrier_layers = [lyr for lyr in fc_layers for fc in barrier_list if str(lyr.name) == fc and has_features(lyr)]
+        in_barriers = [[com_layer, bolean, f"{bld_gap} Meters"] for com_layer in fc_barrier_layers]
 
         # Set the reference scale
         arcpy.env.referenceScale = ref_scale
+        arcpy.AddMessage(f".....Reference Scale set to: {ref_scale}")
+        
         # Execute Resolve Building Conflicts
-        if len(building_layers) > 0:
+        if len(fc_building_layers) > 0:
             arcpy.AddMessage(".....Starting Resolve Building Conflict")
-            arcpy.cartography.ResolveBuildingConflicts(building_layers, invisibility_field, in_barriers, bld_gap, minimum_size, hierarchy_field)
-
+            arcpy.cartography.ResolveBuildingConflicts(fc_building_layers, invisibility_field, in_barriers, f"{bld_gap} Meters", f"{minimum_size} Meters", hierarchy_field)
+            arcpy.AddMessage(".....Completed Resolve Building Conflict")
     except Exception as e:
         tb = traceback.format_exc()
         error_message = f"Resolve conflicts for point and polygon error: {e}\nTraceback details:\n{tb}"
-        arcpy.AddMessage(error_message)
+        arcpy.AddError(error_message)
 
-def align_points(point_fcs, align_fcs, distance, orient, ref_scale, hierarchy_field, symbology_file_path, map_name):
+def sort_layers_keep_top_group_order(m, layers):
+    """
+    Keep TOP-LEVEL group order as in TOC,
+    but sort all layers within each top-level group alphabetically (ignore subgroups).
+    """
+
+    def top_group_key(lyr):
+        parts = str(lyr.longName).split("\\")
+        # If inside a group, parts[0] is the top-level group name.
+        # If not in any group, treat as root group "".
+        return parts[0] if len(parts) > 1 else ""
+
+    # Determine top-level group order from the TOC (first appearance)
+    group_rank = {}
+    r = 0
+    for lyr in m.listLayers():
+        g = top_group_key(lyr)
+        if g not in group_rank:
+            group_rank[g] = r
+            r += 1
+
+    # Sort: top-level group order first, then layer name
+    return sorted(
+        layers,
+        key=lambda lyr: (
+            group_rank.get(top_group_key(lyr), 10**9),
+            str(lyr.name).lower(),
+        ),
+    )
+
+def align_points(point_fcs, align_fcs, distance, orient, ref_scale, hierarchy_field, symbology_file_path, orient_f, working_gdb, map_name):  #changed 2026-01-27
     try:
+        # Set Environment
+        arcpy.env.workspace = working_gdb 
+
         # Set the reference scale to 1:50,000
         arcpy.env.referenceScale = ref_scale
         # Set spatial reference
@@ -1180,28 +1377,17 @@ def align_points(point_fcs, align_fcs, distance, orient, ref_scale, hierarchy_fi
         points_fc_list = []
         align_fcs_list = []
 
-        # Create layers for all input feature classes
+        # Create layers list for all input feature classes
         arcpy.AddMessage("Creating layers for points")
         for Point_fc in point_fcs:
-            fc_name = arcpy.da.Describe(Point_fc)['aliasName']
-            basename = os.path.basename(Point_fc)
+            fc_name = arcpy.da.Describe(Point_fc)['name']
             points_fc_list.append(fc_name)
-            feature_count = count_features(Point_fc)
-            if feature_count >= 1:
-                apply_symbology(Point_fc, hierarchy_field, symbology_file_path, map_name, basename)
-            else:
-                arcpy.AddMessage("No features in " + str(Point_fc))
-        # Create layers for all input feature classes
+
+        # Create layers list for all allign feature classes
         arcpy.AddMessage("Creating layers for lines and polys")
         for align_fc in align_fcs:
-            fc_name = arcpy.da.Describe(align_fc)['aliasName']
-            basename = os.path.basename(align_fc)
+            fc_name = arcpy.da.Describe(align_fc)['name']
             align_fcs_list.append(fc_name)
-            feature_count = count_features(align_fc)
-            if feature_count >= 1:
-                apply_symbology(align_fc, hierarchy_field, symbology_file_path, map_name, basename)
-            else:
-                arcpy.AddMessage("No features in " + str(align_fc))
         
         # Get the map layers
         aprx = arcpy.mp.ArcGISProject('CURRENT')
@@ -1210,19 +1396,30 @@ def align_points(point_fcs, align_fcs, distance, orient, ref_scale, hierarchy_fi
         # Get the feature layer
         fc_layers = maps.listLayers()
         fc_layers = make_unique_layers(fc_layers, map_name)
-        pt_lyrs = [lyr for lyr in fc_layers for fc in points_fc_list if str(lyr.name) in fc]
-        align_lyrs = [lyr for lyr in fc_layers for fc in align_fcs_list if str(lyr.name) in fc]
+        pt_lyrs = [lyr for lyr in fc_layers for fc in points_fc_list if str(lyr.name) == fc]      
+        align_lyrs = [lyr for lyr in fc_layers for fc in align_fcs_list if str(lyr.name) == fc]
+
+        # --- NEW: sort the align lyrs lists alphabetically by layer name (case-insensitive) ---
+        sorted_align_lyrs = sort_layers_keep_top_group_order(maps, align_lyrs)
+
+        for algn_lyr in sorted_align_lyrs:
+            arcpy.AddMessage("Align layers to be used: " + str(algn_lyr.name))
+        # --------------------------------------------------------------------------
+
         if len(pt_lyrs) >= 1 and len(align_lyrs) >= 1:
             for pt_lyr in pt_lyrs:
-                for align_lyr in align_lyrs:
+                arcpy.management.CalculateField(pt_lyr, f"{orient_f}", "None", "PYTHON3")
+                for align_lyr in sorted_align_lyrs:
+                    arcpy.management.SelectLayerByAttribute(pt_lyr, "NEW_SELECTION", f"{orient_f} IS NULL") 
                     arcpy.AddMessage("Aligning " + str(pt_lyr) + " to " + str(align_lyr))
-                    arcpy.cartography.AlignMarkerToStrokeOrFill(pt_lyr, align_lyr, distance, orient)
+                    arcpy.cartography.AlignMarkerToStrokeOrFill(pt_lyr, align_lyr, f"{distance} Meters", orient)
+                    arcpy.AddMessage("Completed aligning " + str(pt_lyr) + " to " + str(align_lyr))
+                arcpy.management.SelectLayerByAttribute(pt_lyr, "CLEAR_SELECTION")
 
     except Exception as e:
         tb = traceback.format_exc()
         error_message = f"Align points error: {e}\nTraceback details:\n{tb}"
-        arcpy.AddMessage(error_message)
-
+        arcpy.AddError(error_message)
 
 def convert_polygon(in_p, secondary_list, minimum_area, in_prim_sql, working_gdb):
     '''
@@ -1261,7 +1458,7 @@ def convert_polygon(in_p, secondary_list, minimum_area, in_prim_sql, working_gdb
         # Use Describe object and get Shape Area field
         area_field = arcpy.da.Describe(in_p)['areaFieldName']
         query = f"{area_field} >= {minimum_area}"
-        arcpy.AddMessage(f"Applying minimum area filter with query: {query}")
+        arcpy.AddMessage(f"Applying minimum area filter with query: {query} for layer: {input_layer}")
 
         # Apply selection based on the minimum area
         arcpy.management.SelectLayerByAttribute(input_layer, "NEW_SELECTION", query)
@@ -1294,14 +1491,14 @@ def convert_polygon(in_p, secondary_list, minimum_area, in_prim_sql, working_gdb
         clean_list = [input_layer]
         arcpy.management.Delete(clean_list)
 
+    except Exception as e:
+        tb = traceback.format_exc()
+        error_message = f"Convert polygons error: {e}\nTraceback details:\n{tb}"
+        arcpy.AddError(error_message)
     except arcpy.ExecuteError:
         arcpy.AddError("ArcPy Error Message: {0}".format(arcpy.GetMessages(2)))
     except Exception as exc:
         arcpy.AddError(str(exc))
-    except Exception as e:
-        tb = traceback.format_exc()
-        error_message = f"Convert polygons error: {e}\nTraceback details:\n{tb}"
-        arcpy.AddMessage(error_message)
 
 def erase_features(input_primary, input_secondary, working_gdb, max_gap_area, fill_option, invisibility_field):
     try:
@@ -1325,10 +1522,11 @@ def erase_features(input_primary, input_secondary, working_gdb, max_gap_area, fi
                     arcpy.management.RepairGeometry(in_sec, "DELETE_NULL", "ESRI")
                     # Erase Features
                     veg_erase = arcpy.analysis.Erase(in_sec, in_pri, "veg_erase")
-                    # Delete features
-                    arcpy.management.DeleteFeatures(in_sec)
-                    # Append erased feature with empty feature
-                    arcpy.management.Append(veg_erase, in_sec, "NO_TEST")
+                    if count_features(veg_erase) > 0:
+                        # Delete features
+                        arcpy.management.DeleteFeatures(in_sec)
+                        # Append erased feature with empty feature
+                        arcpy.management.Append(veg_erase, in_sec, "NO_TEST")
                     if "HH0020_Lake_A" in in_pri:
                         fill_gaps_lake.append(in_pri)
                         fill_gaps_lake.append(in_sec)
@@ -1354,28 +1552,8 @@ def erase_features(input_primary, input_secondary, working_gdb, max_gap_area, fi
     except Exception as e:
         tb = traceback.format_exc()
         error_message = f"Erase features error: {e}\nTraceback details:\n{tb}"
-        arcpy.AddMessage(error_message)
+        arcpy.AddError(error_message)
 
-def fix_veg_after_resolve_conflict(fc_list, input_primary, input_secondary, in_prim_sql, max_gap_area, fill_option, invisibility_field, working_gdb):
-    try:
-        # Get feature classes
-        input_primary = list(filter(str.strip, input_primary))
-        input_primary = [fc for in_prim in input_primary for fc in fc_list if str(in_prim) in fc]
-        input_secondary = list(filter(str.strip, input_secondary))
-        input_secondary = [fc for in_second in input_secondary for fc in fc_list if str(in_second) in fc]
-        river_coverage_A = [fc for fc in fc_list if 'HH0042_River_Coverage_A' in fc][0]
-
-        # Convert polygons
-        for in_p in input_primary:
-            convert_polygon(in_p, input_secondary, max_gap_area, in_prim_sql, working_gdb)
-        # Erase features and Fill gaps
-        input_primary.append(river_coverage_A)
-        erase_features(input_primary, input_secondary, working_gdb, max_gap_area, fill_option, invisibility_field)
-
-    except Exception as e:
-        tb = traceback.format_exc()
-        error_message = f"Fix vegetation after resolving conflicts error: {e}\nTraceback details:\n{tb}"
-        arcpy.AddMessage(error_message)
 
 def determine(input_lines, input_polygon, out_table, line_field, poly_field, working_gdb):
     try:
@@ -1464,7 +1642,7 @@ def determine(input_lines, input_polygon, out_table, line_field, poly_field, wor
     except Exception as e:
         tb = traceback.format_exc()
         error_message = f"Detemine error: {e}\nTraceback details:\n{tb}"
-        arcpy.AddMessage(error_message)
+        arcpy.AddError(error_message)
 
 def reconnect_touching(input_polygon, input_lines, out_table, delete):
     # Set environment
@@ -1573,7 +1751,7 @@ def reconnect_touching(input_polygon, input_lines, out_table, delete):
     except Exception as e:
         tb = traceback.format_exc()
         error_message = f"Reconnecting touching error: {e}\nTraceback details:\n{tb}"
-        arcpy.AddMessage(error_message)
+        arcpy.AddError(error_message)
 
 def recreate_boundary_lines(boundary_line, polygon, topology_fcs=[]):
    # Set enviornments to override outputs and define temp workspace
@@ -1637,7 +1815,7 @@ def recreate_boundary_lines(boundary_line, polygon, topology_fcs=[]):
     except Exception as e:
         tb = traceback.format_exc()
         error_message = f"Recreate boundary lines error: {e}\nTraceback details:\n{tb}"
-        arcpy.AddMessage(error_message)
+        arcpy.AddError(error_message)
 
 def getAttributeValue(dataset, objectid, field):
     try:
@@ -1657,7 +1835,7 @@ def getAttributeValue(dataset, objectid, field):
     except Exception as e:
             tb = traceback.format_exc()
             error_message = f"Get attribute value error: {e}\nTraceback details:\n{tb}"
-            arcpy.AddMessage(error_message)
+            arcpy.AddError(error_message)
 
 def trim_polygon_within_distance(input_poly, name_fld, compare_feature, distance, min_area, delete, working_gdb):
     # Environment variables
@@ -1879,7 +2057,7 @@ def trim_polygon_within_distance(input_poly, name_fld, compare_feature, distance
     except Exception as e:
         tb = traceback.format_exc()
         error_message = f"Trim polygon within distance error: {e}\nTraceback details:\n{tb}"
-        arcpy.AddMessage(error_message)
+        arcpy.AddError(error_message)
 
 def make_unique_layers(layer_list, map_name):
     aprx = arcpy.mp.ArcGISProject('CURRENT')
@@ -1938,7 +2116,7 @@ def extendPolyLineToPoint(layer, extension_pt):
     except Exception as e:
         tb = traceback.format_exc()
         error_message = f"Extend polyline to point error: {e}\nTraceback details:\n{tb}"
-        arcpy.AddMessage(error_message)
+        arcpy.AddError(error_message)
 
 
 def ConvertEnclosed(primaryFCLyr, secondaryFCLyrs, working_gdb):
@@ -2016,7 +2194,7 @@ def ConvertEnclosed(primaryFCLyr, secondaryFCLyrs, working_gdb):
     except Exception as e:
         tb = traceback.format_exc()
         error_message = f"Convert enclosed error: {e}\nTraceback details:\n{tb}"
-        arcpy.AddMessage(error_message)
+        arcpy.AddError(error_message)
 
 
 def ConvertOverlapping(primaryFCLyr, secondaryFCLyrs, working_gdb):
@@ -2150,7 +2328,7 @@ def ConvertOverlapping(primaryFCLyr, secondaryFCLyrs, working_gdb):
     except Exception as e:
         tb = traceback.format_exc()
         error_message = f"Convert overlapping error: {e}\nTraceback details:\n{tb}"
-        arcpy.AddMessage(error_message)
+        arcpy.AddError(error_message)
 
 def feature2point(working_gdb, inFc, point_fc, min_size, delete_input, one_point, unique_field, sql):
     # Set the workspace
@@ -2254,8 +2432,65 @@ def feature2point(working_gdb, inFc, point_fc, min_size, delete_input, one_point
     except Exception as e:
         tb = traceback.format_exc()
         error_message = f"Feature to point error: {e}\nTraceback details:\n{tb}"
-        arcpy.AddMessage(error_message)
+        arcpy.AddError(error_message)
 
+
+""" Polygon Features to Point convertion function that honor the 'unique_field' value and 'min_size' criteria both. Currently not in use"""
+# def feature2point_bldg(inFc, point_fc, min_size, delete_input, one_point, unique_field, working_gdb):
+#     # Set the workspace
+#     arcpy.env.overwriteOutput = True
+
+#     try:
+#         # Use Describe object and get Shape Area field
+#         desc = arcpy.da.Describe(inFc)
+#         if desc['shapeType'] == 'Polygon':
+#             size_field  = desc['areaFieldName']
+#             unique_delimit = arcpy.AddFieldDelimiters(inFc, unique_field)
+#             name_query = f"({unique_delimit} = '' or {unique_delimit} = ' ' or {unique_delimit} IS NULL)"
+#             selectionCriteria = ''
+#             if min_size:
+#                 selectionCriteria = f"{size_field} < {min_size}"
+
+#             # Create feature layer with selection criteria   
+#             arcpy.management.MakeFeatureLayer(inFc, "SmallFeatures", selectionCriteria)
+#             # Select features based on unique field
+#             arcpy.management.SelectLayerByAttribute("SmallFeatures", "NEW_SELECTION", f"{selectionCriteria} And {name_query}")
+#             # Get count of selected features
+#             count = count_features("SmallFeatures")
+#             # Convert polygon to point
+#             arcpy.AddMessage("Converting " + str(count) + " to point")
+#             arcpy.management.FeatureToPoint("SmallFeatures", f"{working_gdb}\\points")
+#             # Append point with output feature
+#             arcpy.AddMessage("Adding point to output feature class")
+#             arcpy.management.Append(f"{working_gdb}\\points", point_fc, "NO_TEST")
+
+#             # Delete the features in the polygon feature class
+#             if delete_input:
+#                 arcpy.AddMessage( "Deleting features from " + inFc)
+#                 arcpy.management.DeleteFeatures("SmallFeatures")
+
+#             # Appying domain to the point feature class
+#             fld_source = arcpy.ListFields(inFc)
+#             fld_target = arcpy.ListFields(point_fc)
+#             domain_dict = {f.name: f.domain for f in fld_source if f.domain}
+#             for t in fld_target:
+#                 if t.name in domain_dict:
+#                     domain_name = domain_dict[t.name]
+#                     subtype_code = ""
+#                     arcpy.management.AssignDomainToField(point_fc, t.name, f"{domain_name}", subtype_code)
+#         else:
+#             arcpy.AddMessage("No features meet criteria to be converted to point.")
+
+#             clean_list = ["convert_lyr", f"{working_gdb}\\points", "SmallFeatures", f"{working_gdb}\\points"]
+#             # Delete temp files
+#             arcpy.management.Delete(clean_list)
+
+#     except Exception as e:
+#         tb = traceback.format_exc()
+#         error_message = f"Feature to point for building error: {e}\nTraceback details:\n{tb}"
+#         arcpy.AddMessage(error_message)
+
+""" New Polygon Features to Point convertion function for features less then 'min_size' threshold, regardless of the 'unique_field' value. Currently in use"""
 def feature2point_bldg(inFc, point_fc, min_size, delete_input, one_point, unique_field, working_gdb):
     # Set the workspace
     arcpy.env.overwriteOutput = True
@@ -2263,54 +2498,60 @@ def feature2point_bldg(inFc, point_fc, min_size, delete_input, one_point, unique
     try:
         # Use Describe object and get Shape Area field
         desc = arcpy.da.Describe(inFc)
-        if desc['shapeType'] == 'Polygon':
-            size_field  = desc['areaFieldName']
-            unique_delimit = arcpy.AddFieldDelimiters(inFc, unique_field)
-            name_query = f"({unique_delimit} = '' or {unique_delimit} = ' ' or {unique_delimit} IS NULL)"
-            selectionCriteria = ''
+
+        if desc["shapeType"] == "Polygon":
+            size_field = desc["areaFieldName"]
+            # unique_delimit = arcpy.AddFieldDelimiters(inFc, unique_field)
+
+            selectionCriteria = ""
             if min_size:
                 selectionCriteria = f"{size_field} < {min_size}"
 
-            # Create feature layer with selection criteria   
+            arcpy.AddMessage(f"Selection Criteria: {selectionCriteria}")
+            # Create feature layer with area-based selection only
             arcpy.management.MakeFeatureLayer(inFc, "SmallFeatures", selectionCriteria)
-            # Select features based on unique field
-            arcpy.management.SelectLayerByAttribute("SmallFeatures", "NEW_SELECTION", f"{selectionCriteria} And {name_query}")
-            # Get count of selected features
+
             count = count_features("SmallFeatures")
-            # Convert polygon to point
-            arcpy.AddMessage("Converting " + str(count) + " to point")
-            arcpy.management.FeatureToPoint("SmallFeatures", f"{working_gdb}\\points")
-            # Append point with output feature
-            arcpy.AddMessage("Adding point to output feature class")
-            arcpy.management.Append(f"{working_gdb}\\points", point_fc, "NO_TEST")
 
-            # Delete the features in the polygon feature class
-            if delete_input:
-                arcpy.AddMessage( "Deleting features from " + inFc)
-                arcpy.management.DeleteFeatures("SmallFeatures")
+            if count > 0:
+                # Convert polygon to point
+                arcpy.AddMessage("Converting " + str(count) + " to point")
+                arcpy.management.FeatureToPoint("SmallFeatures", f"{working_gdb}\\points")
 
-            # Appying domain to the point feature class
-            fld_source = arcpy.ListFields(inFc)
-            fld_target = arcpy.ListFields(point_fc)
-            domain_dict = {f.name: f.domain for f in fld_source if f.domain}
-            for t in fld_target:
-                if t.name in domain_dict:
-                    domain_name = domain_dict[t.name]
-                    subtype_code = ""
-                    arcpy.management.AssignDomainToField(point_fc, t.name, f"{domain_name}", subtype_code)
-        else:
-            arcpy.AddMessage("No features meet criteria to be converted to point.")
+                # Append point with output feature
+                arcpy.AddMessage("Adding point to output feature class")
+                arcpy.management.Append(f"{working_gdb}\\points", point_fc, "NO_TEST")
 
-            clean_list = ["convert_lyr", f"{working_gdb}\\points", "SmallFeatures", f"{working_gdb}\\points"]
-            # Delete temp files
+                # Delete the features in the polygon feature class
+                if delete_input:
+                    arcpy.AddMessage("Deleting features from " + inFc)
+                    arcpy.management.DeleteFeatures("SmallFeatures")
+
+                # Applying domain to the point feature class
+                fld_source = arcpy.ListFields(inFc)
+                fld_target = arcpy.ListFields(point_fc)
+                domain_dict = {f.name: f.domain for f in fld_source if f.domain}
+
+                for t in fld_target:
+                    if t.name in domain_dict:
+                        domain_name = domain_dict[t.name]
+                        subtype_code = ""
+                        arcpy.management.AssignDomainToField(point_fc, t.name, f"{domain_name}", subtype_code)
+            else:
+                arcpy.AddMessage("No polygon features meet the criteria of less then 'min_size' to be converted to point.")
+
+            clean_list = ["SmallFeatures", f"{working_gdb}\\points"]
             arcpy.management.Delete(clean_list)
+
+        else:
+            arcpy.AddMessage("Input feature class is not polygon.")
 
     except Exception as e:
         tb = traceback.format_exc()
         error_message = f"Feature to point for building error: {e}\nTraceback details:\n{tb}"
-        arcpy.AddMessage(error_message)
+        arcpy.AddError(error_message)
 
-def gen_shared_features(main_fc, generalize_operations, simple_tolerance, smooth_tolerance, working_gdb, topology_fcs):
+def gen_shared_features(main_fc, generalize_operations, simple_tolerance, smooth_tolerance, working_gdb, topology_fcs, barrier_line_fc):
     # Set enviornments to override outputs and define temp workspace
     arcpy.env.overwriteOutput = 1
     arcpy.env.workspace = working_gdb
@@ -2359,12 +2600,12 @@ def gen_shared_features(main_fc, generalize_operations, simple_tolerance, smooth
                 # If simplication tolerance provided, run simplify
                     arcpy.AddMessage("Simplifying lines...")
                     out_name = f"{main_name}_simplify_{cnt}"
-                    output = arcpy.cartography.SimplifyLine(output, out_name, "POINT_REMOVE", simple_tolerance, "RESOLVE_ERRORS", "KEEP_COLLAPSED_POINTS", "CHECK")
+                    output= arcpy.cartography.SimplifyLine(output, out_name, "POINT_REMOVE", simple_tolerance, "FLAG_ERRORS", "NO_KEEP", "NO_CHECK", barrier_line_fc, "RESOLVE_ERRORS")
                 # If smooth tolerance provided, run smooth
                 elif operation == "SMOOTH":
                     arcpy.AddMessage("Smoothing lines...")
                     out_name = f"{main_name}_smooth_{cnt}"
-                    output = arcpy.cartography.SmoothLine(output, out_name, "PAEK", smooth_tolerance, "FIXED_CLOSED_ENDPOINT", "NO_CHECK")
+                    output=arcpy.cartography.SmoothLine(output,out_name, "PAEK", smooth_tolerance, "FIXED_CLOSED_ENDPOINT", "RESOLVE_ERRORS", barrier_line_fc)
                 else:
                     arcpy.AddWarning("Unknown generalization operation " + operation)
                 cnt += 1   
@@ -2392,6 +2633,8 @@ def gen_shared_features(main_fc, generalize_operations, simple_tolerance, smooth
                     shape_type = arcpy.da.Describe(topo_feat_class)['shapeType']
                     if shape_type == "Polygon":
                         id_cnt = find_id_fields(name, fields)
+                        if id_cnt == -1:
+                            raise Exception(f"Could not find matching ID field for feature class: {name}")
                         left_field = fields[id_cnt+1].name
                         right_field = fields[id_cnt+2].name
                         query, unique_ids = unique_query(output, main_field, left_field, right_field)
@@ -2401,6 +2644,8 @@ def gen_shared_features(main_fc, generalize_operations, simple_tolerance, smooth
                             rebuild_features(output_layer, topo_feat_class, shape_type, unique_ids, left_field, working_gdb, right_field)
                     else:
                         temp_cnt = find_id_fields(name, fields)
+                        if temp_cnt == -1:
+                            raise Exception(f"Could not find matching ID field for feature class: {name}")
                         id_field = fields[temp_cnt].name
                         query, unique_ids = unique_query(output, main_field, id_field, None)
                         if len(unique_ids) >= 1:
@@ -2418,7 +2663,7 @@ def gen_shared_features(main_fc, generalize_operations, simple_tolerance, smooth
     except Exception as e:
         tb = traceback.format_exc()
         error_message = f"Generalised shared features error: {e}\nTraceback details:\n{tb}"
-        arcpy.AddMessage(error_message) 
+        arcpy.AddError(error_message)
 
 def enlarge_polygon_barrier(polygon_fc, sql, intersect_fc, minimum_size, enlarge, barrier_fcs, working_gdb):
     # Set the workspace
@@ -2550,7 +2795,7 @@ def enlarge_polygon_barrier(polygon_fc, sql, intersect_fc, minimum_size, enlarge
     except Exception as e:
         tb = traceback.format_exc()
         error_message = f"Enlarge polygon barrier error: {e}\nTraceback details:\n{tb}"
-        arcpy.AddMessage(error_message)
+        arcpy.AddError(error_message)
 
 
 def erase_polygons_by_replace(enlargeFC, eraseList, sql, working_gdb):
@@ -2595,7 +2840,7 @@ def erase_polygons_by_replace(enlargeFC, eraseList, sql, working_gdb):
     except Exception as e:
         tb = traceback.format_exc()
         error_message = f"Erase polygon by replace error: {e}\nTraceback details:\n{tb}"
-        arcpy.AddMessage(error_message)
+        arcpy.AddError(error_message)
 
 
 def merge_touching_features_new(polygon_fc, sql, name_field, working_gdb):
@@ -2698,7 +2943,7 @@ def merge_touching_features_new(polygon_fc, sql, name_field, working_gdb):
     except Exception as e:
         tb = traceback.format_exc()
         error_message = f"Merge touching features error: {e}\nTraceback details:\n{tb}"
-        arcpy.AddMessage(error_message)
+        arcpy.AddError(error_message)
 
 def remove_by_converting(primaryFC, secondaryFCs, minimumArea, additionalCriteria, working_gdb):
     try:
@@ -2771,7 +3016,7 @@ def remove_by_converting(primaryFC, secondaryFCs, minimumArea, additionalCriteri
     except Exception as e:
         tb = traceback.format_exc()
         error_message = f"Remove by converting error: {e}\nTraceback details:\n{tb}"
-        arcpy.AddMessage(error_message)
+        arcpy.AddError(error_message)
 
 
 def extend_polygon_sides(feature_list, working_gdb, minimumLength, minimumWidth, additional_criteria, simplification_tolerance):
@@ -2984,7 +3229,7 @@ def extend_polygon_sides(feature_list, working_gdb, minimumLength, minimumWidth,
     except Exception as e:
         tb = traceback.format_exc()
         error_message = f"Resize building error: {e}\nTraceback details:\n{tb}"  
-        arcpy.AddMessage(error_message)
+        arcpy.AddError(error_message)
 
 
 def has_features(fc):
@@ -3068,7 +3313,609 @@ def is_repair_needed(fc, method="Esri"):
     arcpy.management.Delete(out_tbl)
     return cnt > 0, issues
 
+
+
 def create_map_add_layers(map_name):
     aprx = arcpy.mp.ArcGISProject("CURRENT")
-    maps = aprx.listMaps(map_name)[0]
+    maps = aprx.listMaps(map_name)
+    if(maps):
+       maps = maps[0]
+    else:
+        maps = aprx.createMap(map_name, 'MAP') 
     return maps.name
+
+
+def update_map(map_name,new_gdb,logger):
+
+    arcpy.AddMessage(f"Working on map: {map_name}")
+
+    try:
+        # === mapx_path ===
+        
+        mapx_path = (r"D:\Workspace_Python\JUPEM\Topo\Arcgispro\NewProject\MyProject\maps\02_GenCarto100K.mapx")
+
+
+        aprx = arcpy.mp.ArcGISProject("CURRENT")
+        logger.info("Starting map update process...")
+
+        # === 1️ Remove existing map if present ===
+        arcpy.AddMessage("Removing .mapx into current project...")
+        existing_maps = [m for m in aprx.listMaps() if m.name == map_name]
+        if existing_maps:
+            for m in existing_maps:
+                logger.info(f"Removing existing map: {m.name}")
+                aprx.deleteItem(m)
+            aprx.save()
+            logger.info(" Existing map removed.\n")
+        else:
+            logger.info("No existing map found. Proceeding...\n")
+
+        # === 2️ Import mapx into project ===
+        arcpy.AddMessage(f"Importing .mapx ({mapx_path}) into current project...")
+        aprx.importDocument(mapx_path)
+
+        imported_maps = [m for m in aprx.listMaps() if m.name == map_name]
+        if not imported_maps:
+            raise RuntimeError(f"Imported map '{map_name}' not found after import.")
+        map_obj = imported_maps[0]
+        arcpy.AddMessage(f"Map '{map_name}' imported successfully.")
+        
+
+        # === 3️ Auto-detect the old GDB from layer source ===
+        arcpy.AddMessage("Detecting the old data sources...")
+        old_gdb = None
+        for lyr in map_obj.listLayers():
+            if lyr.isFeatureLayer or lyr.isRasterLayer:
+                try:
+                    ws = os.path.dirname(lyr.dataSource)
+                    if ws.lower().endswith(".gdb"):
+                        old_gdb = ws
+                        break
+                    # For layers inside dataset: e.g. path\my.gdb\topo
+                    elif ".gdb" in ws.lower():
+                        old_gdb = ws[: ws.lower().find(".gdb") + 4]
+                        break
+                except Exception:
+                    continue
+
+        if not old_gdb:
+            raise RuntimeError("Could not detect old GDB path from map layers.")
+        arcpy.AddMessage(f"Detected old GDB: {old_gdb}")
+
+        # === 4️ Update connection properties ===
+        arcpy.AddMessage(f"Updating data sources...{new_gdb}")
+        map_obj.updateConnectionProperties(
+            old_gdb,
+            new_gdb,
+            auto_update_joins_and_relates=True
+        )
+        
+        # === 5️ Save updated mapx copy ===
+        updated_mapx = os.path.splitext(mapx_path)[0] + "_Updated.mapx"
+        try:
+            map_obj.saveACopy(updated_mapx)
+            logger.info(f" Saved updated mapx as: {updated_mapx}")
+        except Exception as e:
+            logger.warning(f" Could not save mapx copy (non-fatal): {e}")
+
+        # === 6️ Save project ===
+        aprx.listMaps(map_name)[0]
+        aprx.save()
+        arcpy.AddMessage("Map updated and project saved successfully!")
+
+    except Exception as e:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        tb = traceback.format_exc()
+        error_message = f"layer grouping error: {e}\nTraceback details:\n{tb}"
+        arcpy.AddError(error_message)
+        logger.error(error_message)
+
+def import_mapx(mapx_file_name, logger, map_name = "", mapx_dir_name="Mapx"):
+    try:
+        aprx = arcpy.mp.ArcGISProject("CURRENT")
+        logger.info("Starting map update process...")
+        # === 1️ Remove existing map if present ===
+        arcpy.AddMessage("Removing .mapx from current project...")
+        current_working_dir = os.getcwd()
+        # parent_dir = os.path.dirname(current_working_dir)
+        # mapx_path = os.path.join(parent_dir, mapx_dir_name, f"{mapx_file_name}.mapx")
+        mapx_path = os.path.join(current_working_dir, f"{mapx_file_name}.mapx")
+        existing_maps = [m for m in aprx.listMaps() if map_name != "" and m.name == map_name]
+        if existing_maps:
+            for m in existing_maps:
+                logger.info(f"Removing existing map: {m.name}")
+                aprx.deleteItem(m)
+            aprx.save()
+            logger.info(" Existing map removed.\n")
+        else:
+            logger.info("No existing map found. Proceeding...\n")
+
+        # === 2️ Import mapx into project ===
+        arcpy.AddMessage(f"Importing .mapx ({mapx_path}) into current project...")
+        if mapx_path:
+            if os.path.isfile(mapx_path):
+                aprx.importDocument(mapx_path)
+                logger.info(arcpy.AddMessage(f"mapx ({mapx_path}) successfully imported into current project"))
+            else:
+                arcpy.AddError(f"Could not import {mapx_path} into the project. Check for Error in Log.")
+
+        imported_maps = [m for m in aprx.listMaps() if map_name != "" and m.name == map_name]
+        # arcpy.AddMessage(f"imported maps: {imported_maps}")
+        if not imported_maps:
+            imported_maps.append(aprx.createMap(map_name, 'MAP'))  
+        map_obj = imported_maps[0]
+        logger.info(arcpy.AddMessage(f"Map '{map_name}' imported successfully."))
+        return map_obj
+    except Exception as e:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        tb = traceback.format_exc()
+        error_message = f"Mapx import error: {e}\nTraceback details:\n{tb}"
+        arcpy.AddError(error_message)
+        logger.error(error_message)
+
+def update_mapx_datasource(map_obj, new_gdb, logger, will_open_map_view = False):
+    try:
+        aprx = arcpy.mp.ArcGISProject("CURRENT")
+        arcpy.AddMessage("Detecting the old data sources...")
+        old_gdb = None
+        for lyr in map_obj.listLayers():
+            if lyr.isFeatureLayer or lyr.isRasterLayer:
+                try:
+                    ws = os.path.dirname(lyr.dataSource)
+                    if ws.lower().endswith(".gdb"):
+                        old_gdb = ws
+                        break
+                    # For layers inside dataset: e.g. path\my.gdb\topo
+                    elif ".gdb" in ws.lower():
+                        old_gdb = ws[: ws.lower().find(".gdb") + 4]
+                        break
+                except Exception:
+                    continue
+
+        if not old_gdb:
+            # No feature/raster layers in a GDB found.
+            # According to current ArcGIS Pro docs, passing "" (or None)
+            # as current_connection_info will replace all connection
+            # properties with new_workspace_info.
+            arcpy.AddMessage(
+                "No existing GDB-based feature/raster layers detected; "
+                "initializing connection properties with new GDB."
+            )
+            arcpy.AddMessage(f"Initializing data sources... {new_gdb}")
+            map_obj.updateConnectionProperties(
+                "",
+                new_gdb,
+                auto_update_joins_and_relates=True,
+                validate=True  # allow setting even if data not created yet
+            )
+            logger.info("Could not find the old data source for the map. Updating connection properties with new geodatabase.")
+            # map_obj.openView()
+        else:
+            arcpy.AddMessage(f"Detected old GDB: {old_gdb}")
+            if old_gdb != new_gdb:  
+                arcpy.AddMessage(f"Updating data sources... {new_gdb}")
+                map_obj.updateConnectionProperties(
+                    current_connection_info=old_gdb,
+                    new_connection_info=new_gdb,
+                    auto_update_joins_and_relates=True
+                )
+                for lyr in map_obj.listLayers():
+                    if lyr.supports("DATASOURCE"):
+                        lyr.updateConnectionProperties(lyr.connectionProperties, new_gdb)
+                logger.info(f"Updating Map Data Source Connection properties. Replacing {old_gdb} with {new_gdb}")
+                arcpy.AddMessage("Data source has been updated successfully. Proceeding...")
+                aprx.save()
+            else:
+                arcpy.AddMessage(f"As {old_gdb} and {new_gdb} are same, skipping updating connection properties.")
+        logger.info("Mapx datasource updated successfully")
+
+        current_working_dir = os.getcwd()
+        # parent_dir = os.path.dirname(current_working_dir)
+        # updated_mapx = os.path.join(parent_dir, "Mapx", f"updated_{map_obj.name}.mapx")
+        updated_mapx = os.path.join(current_working_dir, f"updated_{map_obj.name}.mapx")
+        is_updated_mapx_file = os.path.isfile(updated_mapx)
+        # Remove the file if exists
+        if(is_updated_mapx_file):
+            os.remove(updated_mapx) 
+        try:
+            updated_map_obj = None
+            if old_gdb != new_gdb:
+                map_obj.exportToMAPX(updated_mapx)
+                logger.info(f" Saved updated mapx as: {updated_mapx}")
+                aprx.closeViews("MAPS")
+                found_maps = aprx.listMaps(map_obj.name)
+                if len(found_maps):
+                    aprx.deleteItem(found_maps[0])
+                aprx.importDocument(updated_mapx)
+                imported_maps = [m for m in aprx.listMaps() if map_obj.name != "" and m.name == map_obj.name]
+                updated_map_obj = imported_maps[0]
+            else:
+                updated_map_obj = map_obj
+            if(will_open_map_view):
+                updated_map_obj.openView()
+        except Exception as e:
+            logger.warning(f" Could not save mapx copy (non-fatal): {e}")
+        aprx.save()
+        arcpy.AddMessage("Map updated and project saved successfully!")
+
+    except Exception as e:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        tb = traceback.format_exc()
+        error_message = f"Mapx import error: {e}\nTraceback details:\n{tb}"
+        arcpy.AddError(error_message)
+        logger.error(error_message)
+
+def generate_near_and_join_tidal_gate(
+    in_features,
+    near_features,
+    near_table_name,
+    logger,
+    output_gdb=None,
+    search_radius=None,
+    location="NO_LOCATION",
+    angle="ANGLE",
+    closest="CLOSEST",
+    closest_count=0,
+    method="PLANAR",
+    distance_unit="Meters",
+):
+    """
+    Ensures NEAR_DIST and NEAR_ANGLE fields exist in `in_features`,
+    generates a near table with `near_features`, joins the table,
+    calculates NEAR_DIST and NEAR_ANGLE, then removes the join.
+    """
+    logger.info(f"in_features are: {in_features}, near_features are: {near_features}")
+    # Allow overwriting outputs
+    arcpy.env.overwriteOutput = True
+    in_feature_fields = arcpy.ListFields(in_features)
+    in_feature_field_names =  [fname.name for fname in in_feature_fields]
+    # arcpy.AddMessage(f"in_feature_fields: {in_feature_fields}")
+
+    # Set default output_gdb to current workspace if not provided
+    if not output_gdb:
+        output_gdb = arcpy.env.workspace
+        if not output_gdb:
+            raise ValueError("No output_gdb provided and no current workspace set.")
+
+    # --- Step 1: Ensure NEAR_DIST and NEAR_ANGLE fields exist ---
+    existing_fields = [f.name.upper() for f in in_feature_fields]
+    required_fields = [
+        ("Near_Dist", "DOUBLE"),
+        ("Near_Angle", "DOUBLE")
+    ]
+
+    for field_name, field_type in required_fields:
+        if field_name.upper() not in existing_fields:
+            arcpy.management.AddField(in_features, field_name, field_type)
+            logger.info(f"Field '{field_name}' added.")
+        else:
+            logger.info(f"Field '{field_name}' already exists, skipping add.")
+
+    # --- Step 2: Generate Near Table ---
+    near_table = os.path.join(output_gdb, near_table_name)
+    arcpy.AddMessage(f"Generating near table: {near_table} and table name: {near_table_name}")
+    arcpy.analysis.GenerateNearTable(
+        in_features=in_features,
+        near_features=near_features,
+        out_table=near_table,
+        search_radius=search_radius,
+        location=location,
+        angle=angle,
+        closest=closest,
+        closest_count=closest_count,
+        method=method,
+        distance_unit=distance_unit
+    )
+    
+    # --- Step 3: Join Near Table ---
+    logger.info(f"Joining near table to {in_features}...")
+    fields_to_add = ["NEAR_DIST",  "NEAR_ANGLE"]
+    arcpy.management.JoinField(in_features, "OBJECTID", near_table, "IN_FID")
+    # --- Step 4: Calculate Fields ---
+    logger.info("Calculating NEAR_DIST and NEAR_ANGLE...")
+    
+    arcpy.management.CalculateField(
+        in_table=in_features,
+        field="Near_Dist",
+        expression=f"!NEAR_DIST_1! / 16",
+        expression_type="PYTHON3"
+    )
+    arcpy.management.CalculateField(
+        in_table=in_features,
+        field="Near_Angle",
+        expression=f"!NEAR_ANGLE_1!",
+        expression_type="PYTHON3"
+    )
+    # #  # Removing DeleteFields for avoiding unnecessary complications
+    # # logger.info(f"Deleting Extra fields from {in_features}")
+    # # arcpy.management.DeleteField(in_features, in_feature_field_names, method="KEEP_FIELDS")
+
+
+def apply_layer_definition(fc_layers , defn_query: str, map_name = None):
+    """
+    Apply a definition query to matching layers in the active map of the current ArcGIS Pro project
+    and save the project.
+
+    Parameters
+    ----------
+    fc_layers : Iterable[str]
+        An iterable of layer name strings to which the definition query should be applied.
+        Names must match layer names in the active map (case-sensitive in ArcGIS Pro by default).
+    defn_query : str
+        A SQL expression compatible with the layers' workspace (e.g., file geodatabase or enterprise
+        geodatabase). The expression is set as the layer's `definitionQuery`.
+
+    Returns
+    -------
+    List[str]
+        A list of layer names that were successfully found and updated.
+
+    Raises
+    ------
+    ValueError
+        If `fc_layers` is empty, or `defn_query` is an empty string.
+    RuntimeError
+        If there is no active map in the current ArcGIS Project (e.g., when no map is open).
+    arcpy.ExecuteError
+        If an ArcPy operation fails internally.
+
+
+    Author: Shounok Rahman
+    Simple modificattion done by Joy
+    Examples
+    --------
+    Apply a filter to multiple layers:
+
+    >>> apply_layer_definition(["BA0010_Residential_Building_A", "BB0010_Commercial_Building_A"], "INVISIBILITY = 0")
+
+    See Also
+    --------
+    arcpy.mp.ArcGISProject
+    arcpy.mp.Map
+    arcpy.mp.Layer
+
+    
+    """
+
+    if not fc_layers:
+        raise ValueError("Parameter 'fc_layers' must contain at least one layer name.")
+    if not isinstance(defn_query, str) or not defn_query.strip():
+        raise ValueError("Parameter 'defn_query' must be a non-empty SQL string.")
+
+    aprx = arcpy.mp.ArcGISProject("CURRENT")
+    map_obj = aprx.activeMap
+    if(map_name):
+        map_obj = aprx.listMaps(map_name)[0]
+    if map_obj is None:
+        raise RuntimeError("No active map found in CURRENT ArcGIS Pro project.")
+
+    map_layers = map_obj.listLayers()
+
+    # Exact match
+    existing_layers = [ml for ml in map_layers if ml.name in fc_layers]
+
+    if existing_layers:
+        arcpy.AddMessage(f"Applying definition query to layers: {[lyr.name for lyr in existing_layers]}")
+        arcpy.AddMessage(f"Total definition query applied: {len(existing_layers)}")
+    else:
+        arcpy.AddWarning(f"No matching layers found for names: {fc_layers}")
+
+    for lyr in existing_layers:
+        if lyr.supports("DEFINITIONQUERY"):
+            lyr.definitionQuery = defn_query
+        else:
+            arcpy.AddWarning(f"Layer does not support definition queries: {lyr.name}")
+
+    aprx.save()
+    return [lyr.name for lyr in existing_layers]
+
+def get_feature_layer_by_feature_class(feature_class_name, map_name = None):
+    """
+    Get the Feature Layers from the Active Map by Feature Class BaseName.
+
+    Parameters
+    ----------
+    feature_class_name : string
+        The name of the feature class.
+    map_name: string
+        The name of the Map
+
+    Returns
+    -------
+    List<layer_object>
+        Returns a list of feature layers by matching feature class names 
+
+    Author: Shounok Rahman
+    """
+    aprx = arcpy.mp.ArcGISProject("CURRENT")
+    active_map = None
+    if(map_name):
+        map_list = aprx.listMaps(map_name)
+        active_map = map_list[0]
+    else: 
+        active_map = aprx.activeMap
+    active_layers = active_map.listLayers(feature_class_name)
+    result_layers = []
+    for lyr in active_layers:
+        if lyr.isGroupLayer:
+            pass
+        elif (lyr.name == feature_class_name):
+            result_layers.append(lyr)
+    return result_layers    
+
+# def get_feature_layer_from_map_by_feature_class(feature_class_name, map_name):
+#     """
+#     Get the Feature Layers from the Active Map by Feature Class BaseName.
+
+#     Parameters
+#     ----------
+#     feature_class_name : string
+#         The name of the feature class.
+#     map_name: string
+#         The name of the Map
+
+#     Returns
+#     -------
+#     List<layer_object>
+#         Returns a list of feature layers by matching feature class names 
+
+#     Author: Shounok Rahman
+#     """
+#     aprx = arcpy.mp.ArcGISProject("CURRENT")
+#     active_map = aprx.activeMap
+#     active_layers = active_map.listLayers(feature_class_name)
+#     result_layers = []
+#     for lyr in active_layers:
+#         if lyr.isGroupLayer:
+#             pass
+#         elif (lyr.name == feature_class_name):
+#             result_layers.append(lyr)
+#     return result_layers    
+
+def add_source_tracking(fc):
+    """
+    Adds and populates persistent source-tracking fields on a feature class.
+
+    Parameters
+    ----------
+    fc : str
+        Path to the feature class to which source-tracking fields will be added.
+        The feature class may reside in a file geodatabase or enterprise
+        geodatabase.
+    
+    Fields Added
+    ------------
+    SRC_FC : TEXT (length 255)
+        Stores the base name of the source feature class.
+
+    SRC_OID : LONG
+        Stores the original OBJECTID value of each feature at the time this
+        function is executed.
+
+    Behavior
+    --------
+    - Existing fields with the same names are reused and repopulated.
+    - All rows in the feature class are updated.
+    - Geometry and non-tracking attributes are not modified.
+
+    Notes
+    -----
+    - OBJECTID values are not preserved through geoprocessing operations such
+      as ``Merge``; therefore, this function provides a persistent identifier
+      required for safe geometry replacement workflows.
+
+    Author
+    --------
+    Shounok Rahman
+    GIS Specialist, ESRI Bangladesh
+    
+    Examples
+    --------
+    >>> add_source_tracking("Residential_Building_A")
+    >>> add_source_tracking("Residential_Building_P")
+
+    """
+    if "SRC_FC" not in [f.name for f in arcpy.ListFields(fc)]:
+        arcpy.management.AddField(fc, "SRC_FC", "TEXT", field_length=255)
+
+    if "SRC_OID" not in [f.name for f in arcpy.ListFields(fc)]:
+        arcpy.management.AddField(fc, "SRC_OID", "LONG")
+
+    fc_name = arcpy.Describe(fc).baseName
+
+    with arcpy.da.UpdateCursor(fc, ["SRC_FC", "SRC_OID", "OID@"]) as cursor:
+        for row in cursor:
+            row[0] = fc_name
+            row[1] = row[2]
+            cursor.updateRow(row)
+
+def close_active_map_views ( logger ) -> bool:
+    maps_closed = False
+    aprx = arcpy.mp.ArcGISProject('CURRENT')
+    try:
+        aprx.closeViews('MAPS')
+        logger.info("All active map view has been closed")
+        maps_closed = True
+    except:
+        logger.error("Could not close map views. Please try closing views manually")
+    return maps_closed
+
+def resolve_fc_from_fc_list(fc_name, fc_list):
+         matches = [fc for fc in fc_list if fc_name in fc]
+         return matches[0] if matches else None
+
+def init_layer_name_resolver(excel_path: str) -> None:
+    """Call once (e.g., in main.py) to initialize the global resolver."""
+    global _LAYER_NAMES
+    v = Validator(excel_file=excel_path)  # adjust if your ctor differs
+    _LAYER_NAMES = v.get_layer_names("common_layer_names")
+
+def resolve_lyr() -> LayerNames:
+    """Zero-arg accessor usable anywhere after initialization."""
+    if _LAYER_NAMES is None:
+        raise RuntimeError(
+            "Layer name resolver not initialized. Call init_layer_name_resolver(excel_path) first."
+        )
+    return _LAYER_NAMES
+
+def replace_gdb_from_backup(backup_path_edit, working_gdb, logger):
+
+    arcpy.AddMessage("Started replace_gdb_from_backup tool")
+    logger.info(f"Started replace_gdb_from_backup tool, replacing {working_gdb} with geodatabase from {backup_path_edit} directory.")
+    # Check if backup_path_edit exists
+    if not os.path.exists(backup_path_edit):
+        arcpy.AddWarning("Backup path does not exist.")
+        return
+    try:
+        file_list = os.listdir(backup_path_edit)
+        
+        working_gdb_name = os.path.basename(working_gdb)
+        
+        for file_name in file_list:
+            if file_name == working_gdb_name:
+                arcpy.AddMessage("File exists in Edit Folder.")
+                full_file_path = Path(backup_path_edit) / file_name
+
+                arcpy.management.Delete(working_gdb)
+                arcpy.AddMessage("Current GDB deleted")
+
+                shutil.copytree(full_file_path, working_gdb)
+                arcpy.AddMessage("Current GDB replaced with GDB from Edit folder.")
+                
+                # Add the copied geodatabase as database connection in ArcGIS Pro
+                try:
+                    aprx = arcpy.mp.ArcGISProject("CURRENT")
+                    db_list = aprx.databases
+
+                    found = False
+                    for db in db_list:
+                        if isinstance(db, dict):
+                            if working_gdb.lower() in str(db.get('connectionString', '')).lower():
+                                # arcpy.AddMessage(f"The working geodatabase is: {working_gdb.lower()} and db is dict.")
+                                found = True
+                                break
+                        elif isinstance(db, str):
+                            if working_gdb.lower() == db.lower():
+                                # arcpy.AddMessage(f"The working geodatabase is: {working_gdb.lower()} and db is str.")
+                                found = True
+                                break
+                                
+                    if not found:
+                        db_list.append(working_gdb)
+                        aprx.updateDatabases(db_list)
+                        logger.info(f"Geodatabase {working_gdb_name} added as database connection.")
+                except Exception as e:
+                    arcpy.AddWarning(f"Could not add {working_gdb_name} as database connection: {e}")
+                    logger.warning(f"Could not add {working_gdb_name} as database connection: {e}")
+            else:
+                arcpy.AddMessage(f"No GDB replacement required, exiting replace_gdb_from_backup tool")
+
+    except Exception as e:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        tb = traceback.format_exc()
+        error_message = f"Contour Cleanup error: {e}\nTraceback details:\n{tb}"
+        logger.error(error_message)
+        arcpy.AddError(error_message)
+        raise
+
+

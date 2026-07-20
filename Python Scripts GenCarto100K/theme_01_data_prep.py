@@ -9,7 +9,7 @@ def contour_clean_up(aoi, feature_list, working_gdb, buffer_distance, vertex_lim
     arcpy.env.overwriteOutput = True
     try:
         # Get contour feature
-        contour_fcs = [contour for contour in feature_list if 'RA0010_Contour_Line_L' in contour][0]
+        contour_fcs = [contour for contour in feature_list if resolve_lyr().Contour_Line_L in contour][0]
         base_name = arcpy.da.Describe(contour_fcs)['name']
         # Creating buffer fc
         buffer_fc = f'{working_gdb}\\aoi_buffer'
@@ -31,6 +31,7 @@ def contour_clean_up(aoi, feature_list, working_gdb, buffer_distance, vertex_lim
         exc_type, exc_value, exc_traceback = sys.exc_info()
         tb = traceback.format_exc()
         error_message = f"Contour clean up error: {e}\nTraceback details:\n{tb}"
+        arcpy.AddError(error_message)
         logger.error(error_message)
         simplified_msgs('Contour clean up', f'{exc_value}\n') 
 
@@ -43,7 +44,7 @@ def split_fcs(aoi, fc_list, buffer_distance, working_gdb, feature_to_split, logg
     try:
         # Remove empty string
         feature_to_split_list = list(filter(str.strip, feature_to_split))
-        feature_to_split_list = [fc for a_lyr in feature_to_split_list for fc in fc_list if str(a_lyr) in fc and has_features(fc) and not 'RA0010_Contour_Line_L' in fc]
+        feature_to_split_list = [fc for a_lyr in feature_to_split_list for fc in fc_list if str(a_lyr) in fc and has_features(fc) and not resolve_lyr().Contour_Line_L in fc]
         if not feature_to_split_list:
             arcpy.AddMessage('.....No features to process.')
             return
@@ -83,6 +84,7 @@ def split_fcs(aoi, fc_list, buffer_distance, working_gdb, feature_to_split, logg
         exc_type, exc_value, exc_traceback = sys.exc_info()
         tb = traceback.format_exc()
         error_message = f'Split feature classes error: {e}\nTraceback details:\n{tb}'
+        arcpy.AddError(error_message)
         logger.error(error_message)
         simplified_msgs('Split feature classes', f'{exc_value}\n')
 
@@ -173,6 +175,7 @@ def clean_data(aoi_fc, fcs, working_gdb, not_include_fields, clean_fc_name, exte
         exc_type, exc_value, exc_traceback = sys.exc_info()
         tb = traceback.format_exc()
         error_message = f"Clean data lines error: {e}\nTraceback details:\n{tb}"
+        arcpy.AddError(error_message)
         logger.error(error_message)
         simplified_msgs('Clean data lines', f'{exc_value}\n')
 
@@ -186,12 +189,12 @@ def cal_orient_degree(point_fc_list, fc_4_orient_deg, logger):
         point_fcs = [fc for item in fc_4_orient_deg for fc in point_fc_list if str(item) in fc]
 
         for fc in point_fcs:
-            if 'HD0040_Jetty_Pier_P' in fc:
+            if resolve_lyr().Jetty_Pier_P in fc:
                 # Add Field
                 arcpy.management.AddField(in_table=fc, field_name='orientation_degree', field_type='DOUBLE')
                 # Calculate Field
                 arcpy.management.CalculateField(in_table=fc, field='orientation_degree', expression='!orientation_degree!*180 /3.141592654', expression_type='PYTHON3')
-            elif 'TA0180_Kilometer_Post_P' in fc or 'ZA0050_Height_Point_P' in fc:
+            elif resolve_lyr().Kilometer_Post_P in fc or resolve_lyr().Height_Point_P in fc:
                 # Add Field
                 arcpy.management.AddField(in_table=fc, field_name='orientation_degree', field_type='DOUBLE')
                 arcpy.management.AddField(in_table=fc, field_name='OFFSETX', field_type='DOUBLE')
@@ -209,10 +212,11 @@ def cal_orient_degree(point_fc_list, fc_4_orient_deg, logger):
         exc_type, exc_value, exc_traceback = sys.exc_info()
         tb = traceback.format_exc()
         error_message = f"Cal orient degree error: {e}\nTraceback details:\n{tb}"
+        arcpy.AddError(error_message)
         logger.error(error_message)
         simplified_msgs('Cal orient degree', f'{exc_value}\n')
 
-def create_buffer_25k(working_gdb, buffer_distance_point, fc_list, buffer_points_25k, logger):
+def create_buffer_50k(working_gdb, buffer_distance_point, fc_list, buffer_points_25k, logger):
     arcpy.AddMessage('Buffer zone creation from given point fc input.....')
     # Set environment
     arcpy.env.overwriteOutput = True
@@ -231,6 +235,7 @@ def create_buffer_25k(working_gdb, buffer_distance_point, fc_list, buffer_points
         arcpy.AddMessage(f'Buffer points for 25k error: \n{exc_value}')
         tb = traceback.format_exc()
         error_message = f"Buffer points for 25k error: {e}\nTraceback details:\n{tb}"
+        arcpy.AddError(error_message)
         logger.error(error_message)
         simplified_msgs('Buffer points for 25k', f'{exc_value}\n')
 
@@ -252,6 +257,7 @@ def add_identifier_BUA(fc_list, bau_field_fc, logger):
         exc_type, exc_value, exc_traceback = sys.exc_info()
         tb = traceback.format_exc()
         error_message = f"Add identifier BUA field error: {e}\nTraceback details:\n{tb}"
+        arcpy.AddError(error_message)
         logger.error(error_message)
         simplified_msgs('Add identifier BUA field', f'{exc_value}\n')
 
@@ -267,49 +273,198 @@ def add_invisibility_hierarchy_field(fc_list, logger):
         exc_type, exc_value, exc_traceback = sys.exc_info()
         tb = traceback.format_exc()
         error_message = f"Add invisibility hierarchy field error: {e}\nTraceback details:\n{tb}"
+        arcpy.AddError(error_message)
         logger.error(error_message)
         simplified_msgs('Add invisibility hierarchy field', f'{exc_value}\n')
 
+# def create_partition(in_feature_loc, feature_count, fc_list, logger):
+#     arcpy.AddMessage('Creating partition layer.....')   
+#     # Set environment
+#     arcpy.env.overwriteOutput = True
+#     arcpy.env.parallelProcessingFactor = "100%"
+    
+#     try:
+#         arcpy.AddMessage(in_feature_loc)
+#         arcpy.AddMessage(feature_count)
+#         #arcpy.AddMessage(fc_list)
+#         out_features = f'{in_feature_loc}\\CartoPartitionA'
+#         if arcpy.Exists(out_features):
+#            arcpy.management.Delete([out_features])
+#            arcpy.AddMessage("Carto Partition deleted")
+#         else:
+#            arcpy.AddMessage("Carto Partition does not  exist. Proceeding to CreateCartographicPartitions") 
+#         # Create Carto Partition
+#         # fc_list = [fc for fc in fc_list if 'CartoPartitionA' not in fc]
+#         arcpy.AddMessage(fc_list)
+#         arcpy.cartography.CreateCartographicPartitions(fc_list, out_features, feature_count, "FEATURES")
+
+#     except Exception as e:
+#         exc_type, exc_value, exc_traceback = sys.exc_info()
+#         tb = traceback.format_exc()
+#         error_message = f"Create partition error: {e}\nTraceback details:\n{tb}"
+#         arcpy.AddError(error_message)
+#         logger.error(error_message)
+#         simplified_msgs('Create partition', f'{exc_value}\n')
+        
+        
+        
+        
 def create_partition(in_feature_loc, feature_count, fc_list, logger):
-    arcpy.AddMessage('Creating partition layer.....')   
-    # Set environment
+
+    arcpy.AddMessage("Creating partition layer.....")
+
     arcpy.env.overwriteOutput = True
     arcpy.env.parallelProcessingFactor = "100%"
-    
+
     try:
-        out_features = f'{in_feature_loc}\\CartoPartitionA'
+
+        arcpy.AddMessage(f"Workspace: {in_feature_loc}")
+        arcpy.AddMessage(f"Feature Count: {feature_count}")
+
+        # Output partition feature class
+        out_features = os.path.join(in_feature_loc, "CartoPartitionA")
+
+        # Delete existing partition if it exists
         if arcpy.Exists(out_features):
-            arcpy.management.Delete([out_features])
-        # Create Carto Partition
-        arcpy.cartography.CreateCartographicPartitions(fc_list, out_features, feature_count, "FEATURES")
+            arcpy.AddMessage(f"Deleting existing partition: {out_features}")
+            arcpy.management.Delete(out_features)
+            arcpy.AddMessage("CartoPartitionA deleted")
+        else:
+            arcpy.AddMessage("CartoPartitionA does not exist")
+
+        # ---------------------------------------------------------
+        # Handle both list and semicolon-delimited string inputs
+        # ---------------------------------------------------------
+        if isinstance(fc_list, str):
+            fc_list = [fc.strip() for fc in fc_list.split(";") if fc.strip()]
+
+        # Remove CartoPartitionA from input list
+        cleaned_fc_list = []
+
+        for fc in fc_list:
+
+            fc_name = os.path.basename(fc)
+
+            if fc_name.lower() == "cartopartitiona":
+                arcpy.AddMessage(f"Skipping partition FC: {fc}")
+                continue
+
+            if not arcpy.Exists(fc):
+                arcpy.AddWarning(f"Input feature does not exist: {fc}")
+                continue
+
+            cleaned_fc_list.append(fc)
+
+        # Check inputs
+        if len(cleaned_fc_list) == 0:
+            raise Exception(
+                "No valid input feature classes found after filtering."
+            )
+
+        arcpy.AddMessage("Input feature classes:")
+        for fc in cleaned_fc_list:
+            arcpy.AddMessage(f"   {fc}")
+
+        arcpy.AddMessage(f"Output partition FC: {out_features}")
+
+        # Create partitions
+        arcpy.cartography.CreateCartographicPartitions(
+            cleaned_fc_list,
+            out_features,
+            feature_count,
+            "FEATURES"
+        )
+
+        arcpy.AddMessage("Cartographic partitions created successfully.")
 
     except Exception as e:
+
         exc_type, exc_value, exc_traceback = sys.exc_info()
         tb = traceback.format_exc()
-        error_message = f"Create partition error: {e}\nTraceback details:\n{tb}"
-        logger.error(error_message)
-        simplified_msgs('Create partition', f'{exc_value}\n')
 
-def data_cleaning_all_funcs(aoi, fc_list, in_feature_loc, working_gdb, buffer_distance, vertex_limit, buffer_distance_point, feature_count, not_include_fields, 
-                            fcs_trim_extend, extend_val, trim_val, buffer_points_25K, feature_to_split, bau_field_fc,logger):
+        error_message = (
+            f"Create partition error: {e}\n"
+            f"Traceback details:\n{tb}"
+        )
+
+        arcpy.AddError(error_message)
+
+        if logger:
+            logger.error(error_message)
+
+        simplified_msgs(
+            "Create partition",
+            f"{exc_value}\n"
+        )
+
+        raise        
+        
+
+def trans_delete_dangles(trans_lines, sql, compare_fcs, seg_length, working_gdb, recursive):
+    # Define environment variables
+    arcpy.env.overwriteOutput = 1
+    arcpy.env.workspace = working_gdb
+
+    try:
+        # Denote dangles using points using the
+        # Feature Vertices to Points GP tool at dangles
+        arcpy.AddMessage("Creating points at dangles...")
+        dangles = arcpy.management.FeatureVerticesToPoints(trans_lines, "dangles", "DANGLE").getOutput(0)
+        # Use Describe function to get SHAPE Length field
+        shp_len_fld = arcpy.da.Describe(trans_lines)['lengthFieldName']
+        # Create feature layer of hydro lines where
+        # length of segment < seg_length and Name field
+        # is an empty string or NULL
+    
+        where = f"{shp_len_fld} < {seg_length}"
+        if sql:
+            where += " AND "  + "(" + sql + ")"
+        arcpy.management.MakeFeatureLayer(trans_lines, "transport", where)
+        feature_count = count_features("transport")
+        if feature_count >= 1:
+            if recursive == "true":
+                delete_dangles("transport", dangles, seg_length, compare_fcs, working_gdb)
+                arcpy.management.SelectLayerByAttribute("transport", "NEW_SELECTION", where)
+        else:
+            delete_dangles("transport", dangles, seg_length, compare_fcs, working_gdb)
+
+        # Delete temp files
+        arcpy.management.Delete([dangles, "transport"])
+
+    except Exception as e:
+            tb = traceback.format_exc()
+            error_message = f"Delete dangles error: {e}\nTraceback details:\n{tb}"
+            arcpy.AddMessage(error_message)
+
+
+def data_cleaning_all_funcs(aoi, fc_list, in_feature_loc, working_gdb, val_dict, not_include_fields, 
+                            fcs_trim_extend, buffer_points_25K, feature_to_split, bau_field_fc, trans_build_up_buildings, seg_length, logger):
     arcpy.AddMessage('Starting Data cleaning process.....')
     # Set environment variables
     arcpy.env.overwriteOutput = True
     try:
+        # # Remove dangling roads and tracks wich are under given segment length (for example: less then 150m)
+        # input_line_list = [fc for in_line in [resolve_lyr().Road_L, resolve_lyr().Track_L] for fc in fc_list if str(in_line) in fc]
+        # compare_fcs_list = list(filter(str.strip, trans_build_up_buildings))
+        # compare_fcs_list = sorted([fc for a_lyr in trans_build_up_buildings for fc in fc_list if str(a_lyr) in fc])
+        # # Delete dangles
+        # delete_dngl_sql = val_dict['dataprep_delete_dngl_sql']
+        # recursive = "true"
+        # for trans_lines in input_line_list:
+        #     trans_delete_dangles(trans_lines, delete_dngl_sql, compare_fcs_list, seg_length, working_gdb, recursive)
+
+
+
         # Split contour features
-        contour_clean_up(aoi, fc_list, working_gdb, buffer_distance, vertex_limit, logger)
+        contour_clean_up(aoi, fc_list, working_gdb, val_dict['Data_prep_buffer_distance'], val_dict['Data_prep_vertex_limit_feature_dice'], logger)
         # Split feature classes
-        split_fcs(aoi, fc_list, buffer_distance, working_gdb, feature_to_split, logger)
+        split_fcs(aoi, fc_list, val_dict['Data_prep_buffer_distance'], working_gdb, feature_to_split, logger)
         # Clean data
-        clean_data(aoi, fc_list, working_gdb, not_include_fields, fcs_trim_extend, extend_val, trim_val, logger)
+        clean_data(aoi, fc_list, working_gdb, not_include_fields, fcs_trim_extend,  val_dict['Data_prep_extend_val'], val_dict['Data_prep_trim_dangle_value'], logger)
         # Create buffer
-        create_buffer_25k(working_gdb, buffer_distance_point, fc_list, buffer_points_25K, logger)
-        # # Add Identifier BUA Field
-        # add_identifier_BUA(fc_list, bau_field_fc, logger)
-        # # Add Invisibility and Hierarchy Field
-        # add_invisibility_hierarchy_field(fc_list, logger)
+        create_buffer_50k(working_gdb, val_dict['Data_prep_buffer_distance'], fc_list, buffer_points_25K, logger)
         # Create Carto Partition
-        create_partition(in_feature_loc, feature_count, fc_list, logger)
+        create_partition(in_feature_loc, val_dict['Data_prep_feature_count'], fc_list, logger)
         # Polygon to line conversion for boundary
         aoi = f"{in_feature_loc}\\AOI"
         arcpy.management.PolygonToLine(aoi, f"{in_feature_loc}\\AOI_L", "IDENTIFY_NEIGHBORS")
@@ -318,5 +473,6 @@ def data_cleaning_all_funcs(aoi, fc_list, in_feature_loc, working_gdb, buffer_di
         exc_type, exc_value, exc_traceback = sys.exc_info()
         tb = traceback.format_exc()
         error_message = f"Data cleaning for all funcs error: {e}\nTraceback details:\n{tb}"
+        arcpy.AddError(error_message)
         logger.error(error_message)
         simplified_msgs('Data cleaning for all funcs', f'{exc_value}\n')

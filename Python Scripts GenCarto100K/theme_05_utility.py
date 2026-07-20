@@ -18,7 +18,7 @@ def lookupSubTypeValue(table, value):
     except Exception as e:
         tb = traceback.format_exc()
         error_message = f"Look up subtype field error: {e}\nTraceback details:\n{tb}"
-        arcpy.AddMessage(error_message)
+        arcpy.AddError(error_message)
 
 def extract_and_replace_by_type(working_gdb, powerlineFC, powerlineBuffer, polygonFCToRemove_, valid, replacePolygonFC):
     """ main driver of program """
@@ -57,7 +57,7 @@ def extract_and_replace_by_type(working_gdb, powerlineFC, powerlineBuffer, polyg
 
             if has_features(removedGeom2):
                 # Add the Clip features to the target feature class
-                if valid == "Yes":
+                if valid:
                     arcpy.AddMessage("Expanding features")
                     arcpy.management.Append(removedGeom, replacePolygonFC, "NO_TEST")
                 else:
@@ -89,7 +89,7 @@ def extract_and_replace_by_type(working_gdb, powerlineFC, powerlineBuffer, polyg
     except Exception as e:
         tb = traceback.format_exc()
         error_message = f"Extract and replace by type error: {e}\nTraceback details:\n{tb}"
-        arcpy.AddMessage(error_message)
+        arcpy.AddError(error_message)
 
 def multipart_to_singlepart(working_gdb, FC, sql):
     # Define environment variables
@@ -120,7 +120,7 @@ def multipart_to_singlepart(working_gdb, FC, sql):
     except Exception as e:
         tb = traceback.format_exc()
         error_message = f"Multipart to singlepart error: {e}\nTraceback details:\n{tb}"
-        arcpy.AddMessage(error_message)
+        arcpy.AddError(error_message)
 
 def multipart_to_singlepart_(working_gdb, FC, sql):
     # Define environment variables
@@ -154,7 +154,7 @@ def multipart_to_singlepart_(working_gdb, FC, sql):
     except Exception as e:
         tb = traceback.format_exc()
         error_message = f"Multipart to singlepart error: {e}\nTraceback details:\n{tb}"
-        arcpy.AddMessage(error_message)
+        arcpy.AddError(error_message)
 
 def feature_to_point(working_db, inFc, sql, min_size, outputFc, deleteInput, onePoint, uniqueField):
     # Set the workspace
@@ -253,7 +253,7 @@ def feature_to_point(working_db, inFc, sql, min_size, outputFc, deleteInput, one
     except Exception as e:
         tb = traceback.format_exc()
         error_message = f"Feature to point error: {e}\nTraceback details:\n{tb}"
-        arcpy.AddMessage(error_message)
+        arcpy.AddError(error_message)
 
 def detect_small_util(working_gdb, primaryFC, secondaryFCs, minimumArea, additionalCriteria):
     try:
@@ -318,20 +318,20 @@ def detect_small_util(working_gdb, primaryFC, secondaryFCs, minimumArea, additio
     except Exception as e:
         tb = traceback.format_exc()
         error_message = f"Remove by converting error: {e}\nTraceback details:\n{tb}"
-        arcpy.AddMessage(error_message)
+        arcpy.AddError(error_message)
 
-def merge_parallel_powerlines(fc_list, Distance, Distance_shorter, merge_fields, update, working_gdb):
+def merge_parallel_powerlines(fc_list, Distance, Distance_shorter, short_dis_val, merge_fields, update, working_gdb):
     try:
-        powerlineFC = [fc for fc in fc_list if 'UA0010_Powerline_L' in fc][0]
+        powerlineFC = [fc for fc in fc_list if resolve_lyr().Powerline_L in fc][0]
        
         # Add and calculate field
-        arcpy.management.AddField(powerlineFC, merge_fields, "SHORT", "", "", 10, "", "NULLABLE", "NON_REQUIRED", "")
+        arcpy.management.AddField(powerlineFC, merge_fields, "SHORT", "", "", short_dis_val, "", "NULLABLE", "NON_REQUIRED", "")
 
         code_block = """def CalcMerge(PLT):
         if PLT is None or PLT == 0:
             return 100
         else:
-            return None
+            return PLT
     """
         arcpy.management.CalculateField(powerlineFC, merge_fields, "CalcMerge(!PLT!)", "PYTHON3", code_block)
         
@@ -343,7 +343,7 @@ def merge_parallel_powerlines(fc_list, Distance, Distance_shorter, merge_fields,
     except Exception as e:
         tb = traceback.format_exc()
         error_message = f"Merge parallel powerlines error: {e}\nTraceback details:\n{tb}"
-        arcpy.AddMessage(error_message)
+        arcpy.AddError(error_message)
 
 def vegetation_under_powerlines(fc_list, utility_compare_features, utility_beffer_dist, working_gdb):
     # Set environment
@@ -353,29 +353,36 @@ def vegetation_under_powerlines(fc_list, utility_compare_features, utility_beffe
 
     compare_features = list(filter(str.strip, utility_compare_features))
     compare_features = sorted([fc for a_lyr in compare_features for fc in fc_list if str(a_lyr) in fc])
-    powerlineFC = [fc for fc in fc_list if 'UA0010_Powerline_L' in fc][0]
-    Grass_A = [fc for fc in fc_list if 'VC1110_Grass_A' in fc][0]
+    powerlineFC = [fc for fc in fc_list if resolve_lyr().Powerline_L in fc][0]
+    Grass_A = [fc for fc in fc_list if resolve_lyr().Grass_A in fc][0]
     miscFC = [fc for fc in compare_features if os.path.basename(fc).startswith(("VC"))]
     agricultureFC = [fc for fc in compare_features if os.path.basename(fc).startswith(("VA"))]
     forestFC = [fc for fc in compare_features if os.path.basename(fc).startswith(("VB"))]
     argri_selected_fc = [
-            "VA1010_Mix_Traditional_Farming_A",
-            "VA1020_Cocoa_A",
-            "VA1030_Coconut_A",
-            "VA1050_Coffee_A",
-            "VA1060_Oil_Palm_A",
-            "VA1070_Tea_A",
-            "VA1290_Rumbia_A",
-            "VA9010_Sundry_Tree_A",
-            "VA1310_Mixed_Fruit_Crops_A"
+            resolve_lyr().Mix_Traditional_Farming_A,
+            resolve_lyr().Cocoa_A,
+            resolve_lyr().Coconut_A,
+            resolve_lyr().Coffee_A,
+            resolve_lyr().Oil_Palm_A,
+            resolve_lyr().Tea_A,
+            resolve_lyr().Rumbia_A,
+            resolve_lyr().Sundry_Tree_A,
+            resolve_lyr().Mixed_Fruit_Crops_A,
             ]  
-    misc_selected_fc = [ "VC1010_Bamboo_A","VC1100_Riung_A"]
+    misc_selected_fc = [ resolve_lyr().Bamboo_A, resolve_lyr().Riung_A]
     misc_selected_incl_fc = [fc for fc in miscFC if os.path.basename(fc) in misc_selected_fc]
     misc_selected_excl_fc = [fc for fc in miscFC if os.path.basename(fc) not in misc_selected_fc]
     agriculture_selected_incl = [fc for fc in agricultureFC if os.path.basename(fc) in argri_selected_fc]
     argri_selected_excl = [fc for fc in agricultureFC if os.path.basename(fc) not in argri_selected_fc]
 
     try:
+        # start here of additional lines for 100k from below 100k_VUP
+        comp_fc = miscFC+agricultureFC+forestFC
+        for fc in comp_fc:
+            if has_features(fc):
+                arcpy.management.RepairGeometry(in_features=fc, delete_null=True,
+                                                           validation_method="ESRI")
+        # end here of additional lines for 100k_VUP
         # Replace all forest with grass
         extract_and_replace_by_type(working_gdb, powerlineFC, utility_beffer_dist, forestFC, False, Grass_A)
         # Misc types to replace with grass
@@ -398,7 +405,7 @@ def vegetation_under_powerlines(fc_list, utility_compare_features, utility_beffe
     except Exception as e:
         tb = traceback.format_exc()
         error_message = f"Vegetation under powerlines error: {e}\nTraceback details:\n{tb}"
-        arcpy.AddMessage(error_message)
+        arcpy.AddError(error_message)
 
 def vegetation_under_powerlines_(fc_list, utility_compare_features, utility_beffer_dist, working_gdb):
     # Set environment
@@ -431,13 +438,6 @@ def vegetation_under_powerlines_(fc_list, utility_compare_features, utility_beff
     argri_selected_excl = [fc for fc in agricultureFC if os.path.basename(fc) not in argri_selected_fc]
 
     try:
-        # start here of additional lines for 100k from below 100k_VUP
-        comp_fc = miscFC+agricultureFC+forestFC
-        for fc in comp_fc:
-            if has_features(fc):
-                arcpy.management.RepairGeometry(in_features=fc, delete_null=True,
-                                                           validation_method="ESRI")
-        # end here of additional lines for 100k_VUP
         # Replace all forest with grass
         extract_and_replace_by_type(working_gdb, powerlineFC, utility_beffer_dist, forestFC, False, Grass_A)
         # Misc types to replace with grass
@@ -459,7 +459,7 @@ def vegetation_under_powerlines_(fc_list, utility_compare_features, utility_beff
     except Exception as e:
         tb = traceback.format_exc()
         error_message = f"Vegetation under powerlines error: {e}\nTraceback details:\n{tb}"
-        arcpy.AddMessage(error_message)
+        arcpy.AddError(error_message)
 
 def building_to_point(fc_list, utility_area_features, utility_point_features, working_gdb, utility_min_size, utility_min_size_building, utility_addi_criteria, unique_field, 
                       utility_compare_features, utility_delete_input, utility_create_one_point):
@@ -474,7 +474,7 @@ def building_to_point(fc_list, utility_area_features, utility_point_features, wo
         compare_features = [fc for a_lyr in compare_features for fc in fc_list if str(a_lyr) in fc]
 
         for in_fc, output_fc in zip(area_features, point_features):
-            if "UA0030_Power_Station_A" in in_fc:
+            if resolve_lyr().Power_Station_A in in_fc:
                 feature_to_point(working_gdb, in_fc, None, utility_min_size_building, output_fc, utility_delete_input, utility_create_one_point, unique_field)
             else:
                 feature_to_point(working_gdb, in_fc, None, utility_min_size, output_fc, utility_delete_input, utility_create_one_point, unique_field)
@@ -485,7 +485,7 @@ def building_to_point(fc_list, utility_area_features, utility_point_features, wo
             fc_name = desc["name"]
             area_field = desc['areaFieldName']
             detect_small_util(working_gdb, feature_name, compare_features, utility_min_size, utility_addi_criteria)
-            if "U_Electrical_Station_A" in area_features:
+            if resolve_lyr().Electrical_Station_A in area_features:
                 fc_lyr = arcpy.management.MakeFeatureLayer(feature_name, f"fc_lyr_{fc_name}", f"{area_field} < {utility_min_size_building}")
             else:
                 fc_lyr = arcpy.management.MakeFeatureLayer(feature_name, f"fc_lyr_{fc_name}", f"{area_field} < {utility_min_size}")
@@ -495,14 +495,14 @@ def building_to_point(fc_list, utility_area_features, utility_point_features, wo
     except Exception as e:
         tb = traceback.format_exc()
         error_message = f"Building to point error: {e}\nTraceback details:\n{tb}"
-        arcpy.AddMessage(error_message)
+        arcpy.AddError(error_message)
 
 def delete_small_util_sewerage(fc_list, working_gdb, utility_compare_features, utility_min_size_sewerage, utility_addi_criteria_sewerage):
     try:
         # Get feature classes
         compare_features = list(filter(str.strip, utility_compare_features))
         secondaryFCs = [fc for a_lyr in compare_features for fc in fc_list if str(a_lyr) in fc]
-        primaryFC = [fc for fc in fc_list if 'UF0010_Sewage_Treatment_Plant_A' in fc][0]
+        primaryFC = [fc for fc in fc_list if resolve_lyr().Sewage_Treatment_Plant_A in fc][0]
         #arcpy.AddMessage(secondaryFCs)
         # Delete small utility
         detect_small_util(working_gdb, primaryFC, secondaryFCs, utility_min_size_sewerage, utility_addi_criteria_sewerage)
@@ -510,27 +510,78 @@ def delete_small_util_sewerage(fc_list, working_gdb, utility_compare_features, u
     except Exception as e:
         tb = traceback.format_exc()
         error_message = f"Delete small utility sewerage error: {e}\nTraceback details:\n{tb}"
-        arcpy.AddMessage(error_message)
+        arcpy.AddError(error_message)
 
-def gen_utility(fc_list, utility_area_features, utility_point_features, utility_compare_features, utility_min_size_sewerage, utility_min_size_building, utility_min_size, utility_beffer_dist, 
-                utility_dist, utility_dist_shorter, utility_addi_criteria_sewerage, utility_addi_criteria, utility_merge_field, working_gdb, unique_field, update,
-                utility_delete_input, utility_create_one_point,logger):
+def merge_clustered_utility_points(fc_list, aggregate_distance, will_be_point_inside, utility_merge_clusters, working_gdb):
+    arcpy.env.workspace = working_gdb
+    
+    try:
+        cluster_feature_classes = list(filter(str.strip, utility_merge_clusters))
+        existing_cluster_fcs = [fc for cfc in cluster_feature_classes for fc in fc_list if str(cfc) in fc]
+        for ecf in existing_cluster_fcs:
+            if has_features(ecf):
+                if(int(arcpy.management.GetCount(ecf)[0]) > 2):
+                    temp_aggrgt_point_fc = f"{working_gdb}\\TEMP_UTILITY_CLUSTERED_POINTS"
+                    temp_featpoint_fc = f"{working_gdb}\\TEMP_UTILITY_FEATUREPOINT"
+                    temp_spatial_joined_point_fc = f"{working_gdb}\\TEMP_UTILITY_SPATIALJOIN_FC"
+                    # arcpy.management.MakeFeatureLayer(ecf, "temp_ecf_input_layer")
+                    # arcpy.AddMessage(f"ecf: {ecf}, temp_aggrgt_point_fc: {temp_aggrgt_point_fc} and aggregate_distance: {aggregate_distance}; temp_ecf_input_layer: {arcpy.Describe(temp_ecf_input_layer).name}")
+                    aggregated_Tbl = arcpy.cartography.AggregatePoints(ecf, temp_aggrgt_point_fc, f"{aggregate_distance} meters")
+                    temp_input_efc_lyr = "temp_input_efc_lyr"
+                    arcpy.management.FeatureToPoint(temp_aggrgt_point_fc, temp_featpoint_fc, will_be_point_inside)
+                    arcpy.analysis.SpatialJoin(temp_featpoint_fc, ecf, temp_spatial_joined_point_fc, "JOIN_ONE_TO_ONE", join_type = "KEEP_ALL", match_option = "WITHIN_A_DISTANCE", search_radius = f"{aggregate_distance} meters")
+                    # arcpy.AddMessage(f"aggregated_Tbl: {f"{aggregated_Tbl}_Tbl"}")
+                    orig_utility_features_to_delete = []
+                    with arcpy.da.SearchCursor(f"{aggregated_Tbl}_Tbl", ['INPUT_FID']) as cur:
+                        for input_fid in cur:
+                            orig_utility_features_to_delete.append(input_fid[0])
+                            expression = arcpy.AddFieldDelimiters(temp_input_efc_lyr, "OBJECTID") + f" = {input_fid[0]}"
+                            # arcpy.AddMessage(f"expression: {expression}")
+                            arcpy.management.MakeFeatureLayer(ecf, temp_input_efc_lyr)
+                            arcpy.management.SelectLayerByAttribute(temp_input_efc_lyr, "NEW_SELECTION", expression)
+                            # arcpy.AddMessage(f"Deleting feature from {temp_input_efc_lyr}")
+                            arcpy.management.DeleteFeatures(temp_input_efc_lyr)
+                            
+                    arcpy.management.DeleteField(temp_spatial_joined_point_fc, ["Join_Count", "TARGET_FID", "JOIN_FID", "ORIG_FID"])
+                    # arcpy.AddMessage(f"Copying features into {ecf} from {temp_spatial_joined_point_fc}")
+                    arcpy.management.Append(temp_spatial_joined_point_fc, ecf, 'NO_TEST')
+                    # Cleaning Up Temporary Files
+                    arcpy.AddMessage("Cleaning up temporary files from merging clustered utility points...")
+                    if arcpy.Exists(temp_aggrgt_point_fc):
+                        arcpy.management.Delete(temp_aggrgt_point_fc, "FeatureClass")
+                    if arcpy.Exists(temp_featpoint_fc):
+                        arcpy.management.Delete(temp_featpoint_fc, "FeatureClass")
+                    if arcpy.Exists(temp_spatial_joined_point_fc):
+                        arcpy.management.Delete(temp_spatial_joined_point_fc, "FeatureClass")
+                else:
+                    arcpy.AddMessage(f"Not enough points for cluster in {ecf}. Skipping...")
+
+    except Exception as e:
+        tb = traceback.format_exc()
+        error_message = f"Merge Clustered Utility Points error: {e}\nTraceback details:\n{tb}"
+        arcpy.AddError(error_message)
+
+# # Utility Generalization
+def gen_utility(fc_list, utility_area_features, utility_point_features, utility_compare_features, val_dict, utility_merge_clusters, working_gdb, logger):
     arcpy.AddMessage('Starting utility features generalization.....')
     arcpy.env.overwriteOutput = True
     try:
-        
-        # # Merge parallel powerlines
-        merge_parallel_powerlines(fc_list, utility_dist, utility_dist_shorter, utility_merge_field, update, working_gdb)
+        aggregate_distance = val_dict['Utility_aggregate_val']
+        ## Merge parallel powerlines
+        # #merge_parallel_powerlines(fc_list, utility_dist, utility_dist_shorter, utility_merge_field, update, working_gdb)
+        merge_parallel_powerlines(fc_list, val_dict['Utility_merge_paraller_distance'], val_dict['Utility_powerline_val'],val_dict['Utility_merge_paraller_distance_shorter'], val_dict['Utility_merge_field'], val_dict['Utility_update_val'], working_gdb)
         # # Vegetation under powerlines
-        vegetation_under_powerlines(fc_list, utility_compare_features, utility_beffer_dist, working_gdb)
+        vegetation_under_powerlines(fc_list, utility_compare_features, val_dict['Utility_beffer_distance'], working_gdb)
         # # Convert utility buildings to point
-        building_to_point(fc_list, utility_area_features, utility_point_features, working_gdb, utility_min_size, utility_min_size_building, utility_addi_criteria, unique_field, utility_compare_features, utility_delete_input, utility_create_one_point)
+        building_to_point(fc_list, utility_area_features, utility_point_features, working_gdb, val_dict['Utility_min_size'], val_dict['Utility_min_size_building'], val_dict['Utility_addi_criteria'], val_dict['Utility_unique_field'], utility_compare_features, val_dict['Utility_delete_input'], val_dict['Utility_create_one_point_each_unique_value'])
         # # Delete small utility features
-        delete_small_util_sewerage(fc_list, working_gdb, utility_compare_features, utility_min_size_sewerage, utility_addi_criteria_sewerage)
-
+        delete_small_util_sewerage(fc_list, working_gdb, utility_compare_features, val_dict['Utility_min_size_sewerage'] , val_dict['Utility_addi_criteria_sewerage'])
+        # # Merge Cluster of Utility Points (i.e. UC0100_Suction_Tank_P)
+        merge_clustered_utility_points(fc_list, aggregate_distance, False, utility_merge_clusters, working_gdb)
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         tb = traceback.format_exc()
         error_message = f"Utility generalisation error: {e}\nTraceback details:\n{tb}"
+        arcpy.AddError(error_message)
         logger.error(error_message)
         simplified_msgs('Utility generalisation', f'{exc_value}\n')

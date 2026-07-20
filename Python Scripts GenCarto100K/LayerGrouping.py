@@ -181,6 +181,7 @@ def layer_grouping(map_name, excel_file, sheet_name, logger):
         exc_type, exc_value, exc_traceback = sys.exc_info()
         tb = traceback.format_exc()
         error_message = f'layer grouping error: {e}\nTraceback details:\n{tb}'
+        arcpy.AddError(error_message)
         logger.error(error_message)
 
 def reorder_group_layers(map_name, excel_file, sheet_name, logger):
@@ -242,6 +243,7 @@ def reorder_group_layers(map_name, excel_file, sheet_name, logger):
         exc_type, exc_value, exc_traceback = sys.exc_info()
         tb = traceback.format_exc()
         error_message = f'Reorder group layer error: {e}\nTraceback details:\n{tb}'
+        arcpy.AddError(error_message)
         logger.error(error_message)
 
 def wipe_map(m):
@@ -262,7 +264,7 @@ def wipe_map(m):
             exc_type, exc_value, exc_traceback = sys.exc_info()
             tb = traceback.format_exc()
             error_message = f'reorder group layer error: {e}\nTraceback details:\n{tb}'
-            arcpy.AddMessage(error_message)
+            arcpy.AddError(error_message)
 
 def clear_map_contents(map_name):
     aprx = arcpy.mp.ArcGISProject("CURRENT")
